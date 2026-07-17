@@ -1,0 +1,693 @@
+[
+  {
+    "id": "sql1",
+    "type": "mcq_single",
+    "topic": "SQL Basics",
+    "marks": 2,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which SQL statement is used to retrieve data from a table?",
+    "options": [
+      { "id": "a", "text": "GET" },
+      { "id": "b", "text": "SELECT" },
+      { "id": "c", "text": "FETCHDATA" },
+      { "id": "d", "text": "OPEN" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "sql2",
+    "type": "mcq_single",
+    "topic": "Filtering",
+    "marks": 2,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which clause is used to filter rows in a query?",
+    "options": [
+      { "id": "a", "text": "GROUP BY" },
+      { "id": "b", "text": "ORDER BY" },
+      { "id": "c", "text": "WHERE" },
+      { "id": "d", "text": "HAVING" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "sql3",
+    "type": "mcq_multi",
+    "topic": "Joins",
+    "marks": 3,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which are valid SQL JOIN types?",
+    "options": [
+      { "id": "a", "text": "INNER JOIN" },
+      { "id": "b", "text": "LEFT JOIN" },
+      { "id": "c", "text": "TOP JOIN" },
+      { "id": "d", "text": "RIGHT JOIN" }
+    ],
+    "correctOptionIds": ["a", "b", "d"]
+  },
+  {
+    "id": "sql4",
+    "type": "mcq_single",
+    "topic": "Aggregation",
+    "marks": 2,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which function returns the number of rows?",
+    "options": [
+      { "id": "a", "text": "COUNT()" },
+      { "id": "b", "text": "SUM()" },
+      { "id": "c", "text": "AVG()" },
+      { "id": "d", "text": "ROW()" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "sql5",
+    "type": "mcq_single",
+    "topic": "Constraints",
+    "marks": 2,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which constraint uniquely identifies a row?",
+    "options": [
+      { "id": "a", "text": "FOREIGN KEY" },
+      { "id": "b", "text": "CHECK" },
+      { "id": "c", "text": "PRIMARY KEY" },
+      { "id": "d", "text": "DEFAULT" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "sql6",
+    "type": "mcq_multi",
+    "topic": "Normalization",
+    "marks": 3,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Benefits of normalization include:",
+    "options": [
+      { "id": "a", "text": "Reduced redundancy" },
+      { "id": "b", "text": "Improved data integrity" },
+      { "id": "c", "text": "More duplicate data" },
+      { "id": "d", "text": "Better consistency" }
+    ],
+    "correctOptionIds": ["a", "b", "d"]
+  },
+  {
+    "id": "sql7",
+    "type": "mcq_single",
+    "topic": "Indexing",
+    "marks": 2,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "What is the primary purpose of an index?",
+    "options": [
+      { "id": "a", "text": "Store backups" },
+      { "id": "b", "text": "Improve query performance" },
+      { "id": "c", "text": "Replace tables" },
+      { "id": "d", "text": "Delete duplicates" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "sql8",
+    "type": "mcq_single",
+    "topic": "Transactions",
+    "marks": 2,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which command permanently saves a transaction?",
+    "options": [
+      { "id": "a", "text": "SAVE" },
+      { "id": "b", "text": "COMMIT" },
+      { "id": "c", "text": "ROLLBACK" },
+      { "id": "d", "text": "PERSIST" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "sql9",
+    "type": "mcq_multi",
+    "topic": "ACID",
+    "marks": 3,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which are ACID properties?",
+    "options": [
+      { "id": "a", "text": "Atomicity" },
+      { "id": "b", "text": "Consistency" },
+      { "id": "c", "text": "Isolation" },
+      { "id": "d", "text": "Distribution" }
+    ],
+    "correctOptionIds": ["a", "b", "c"]
+  },
+  {
+    "id": "sql10",
+    "type": "mcq_single",
+    "topic": "Subqueries",
+    "marks": 2,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "A subquery is:",
+    "options": [
+      { "id": "a", "text": "A query inside another query" },
+      { "id": "b", "text": "A backup table" },
+      { "id": "c", "text": "A stored procedure" },
+      { "id": "d", "text": "A database trigger" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "sql11",
+    "type": "coding",
+    "topic": "Joins",
+    "marks": 10,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Write a query to fetch employee names with their department names from Employees and Departments tables."
+  },
+  {
+    "id": "sql12",
+    "type": "coding",
+    "topic": "Aggregation",
+    "marks": 10,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Write a query to find the second highest salary from Employees table."
+  },
+  {
+    "id": "sql13",
+    "type": "coding",
+    "topic": "Window Functions",
+    "marks": 10,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "hard",
+    "stem": "Write a query to rank employees by salary within each department."
+  },
+  {
+    "id": "sql14",
+    "type": "subjective",
+    "topic": "Indexing",
+    "marks": 5,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Explain clustered and non-clustered indexes with examples."
+  },
+  {
+    "id": "sql15",
+    "type": "subjective",
+    "topic": "Transactions",
+    "marks": 5,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Explain ACID properties and why they are important."
+  },
+  {
+    "id": "sql16",
+    "type": "mcq_single",
+    "topic": "Stored Procedures",
+    "marks": 2,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which object stores reusable SQL logic?",
+    "options": [
+      { "id": "a", "text": "Trigger" },
+      { "id": "b", "text": "View" },
+      { "id": "c", "text": "Stored Procedure" },
+      { "id": "d", "text": "Index" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "sql17",
+    "type": "mcq_single",
+    "topic": "Views",
+    "marks": 2,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "A SQL View is:",
+    "options": [
+      { "id": "a", "text": "A virtual table" },
+      { "id": "b", "text": "A physical backup" },
+      { "id": "c", "text": "An index" },
+      { "id": "d", "text": "A transaction" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "sql18",
+    "type": "mcq_multi",
+    "topic": "Functions",
+    "marks": 3,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which are aggregate functions?",
+    "options": [
+      { "id": "a", "text": "SUM" },
+      { "id": "b", "text": "COUNT" },
+      { "id": "c", "text": "AVG" },
+      { "id": "d", "text": "SUBSTRING" }
+    ],
+    "correctOptionIds": ["a", "b", "c"]
+  },
+  {
+    "id": "sql19",
+    "type": "coding",
+    "topic": "CTE",
+    "marks": 10,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "hard",
+    "stem": "Write a recursive CTE to display an employee-manager hierarchy."
+  },
+  {
+    "id": "sql20",
+    "type": "subjective",
+    "topic": "Optimization",
+    "marks": 5,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "How would you troubleshoot a slow-running query?"
+  },
+  {
+    "id": "sql21",
+    "type": "mcq_single",
+    "topic": "Constraints",
+    "marks": 2,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which constraint prevents duplicate values?",
+    "options": [
+      { "id": "a", "text": "UNIQUE" },
+      { "id": "b", "text": "CHECK" },
+      { "id": "c", "text": "DEFAULT" },
+      { "id": "d", "text": "FOREIGN KEY" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "sql22",
+    "type": "mcq_single",
+    "topic": "DDL",
+    "marks": 2,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which command removes a table and its data?",
+    "options": [
+      { "id": "a", "text": "DELETE" },
+      { "id": "b", "text": "TRUNCATE" },
+      { "id": "c", "text": "DROP TABLE" },
+      { "id": "d", "text": "REMOVE" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "sql23",
+    "type": "coding",
+    "topic": "SQL Queries",
+    "marks": 10,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Write a query to find duplicate records in a table."
+  },
+  {
+    "id": "sql24",
+    "type": "subjective",
+    "topic": "Database Design",
+    "marks": 5,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Describe the differences between OLTP and OLAP systems."
+  },
+  {
+    "id": "sql25",
+    "type": "coding",
+    "topic": "Window Functions",
+    "marks": 10,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "hard",
+    "stem": "Write a query to calculate a running total of sales by date."
+  },
+ 
+  {
+    "id": "nextjs1",
+    "type": "mcq_single",
+    "topic": "Next.js Fundamentals",
+    "marks": 2,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which company maintains Next.js?",
+    "options": [
+      { "id": "a", "text": "Meta" },
+      { "id": "b", "text": "Google" },
+      { "id": "c", "text": "Vercel" },
+      { "id": "d", "text": "Microsoft" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "nextjs2",
+    "type": "mcq_single",
+    "topic": "Routing",
+    "marks": 2,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which folder defines routes in the App Router?",
+    "options": [
+      { "id": "a", "text": "pages" },
+      { "id": "b", "text": "src" },
+      { "id": "c", "text": "app" },
+      { "id": "d", "text": "routes" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "nextjs3",
+    "type": "mcq_multi",
+    "topic": "Rendering",
+    "marks": 3,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which rendering strategies are supported by Next.js?",
+    "options": [
+      { "id": "a", "text": "SSR" },
+      { "id": "b", "text": "SSG" },
+      { "id": "c", "text": "ISR" },
+      { "id": "d", "text": "CSR only" }
+    ],
+    "correctOptionIds": ["a", "b", "c"]
+  },
+  {
+    "id": "nextjs4",
+    "type": "mcq_single",
+    "topic": "Components",
+    "marks": 2,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Server Components are rendered on:",
+    "options": [
+      { "id": "a", "text": "Browser" },
+      { "id": "b", "text": "Server" },
+      { "id": "c", "text": "CDN only" },
+      { "id": "d", "text": "Database" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "nextjs5",
+    "type": "mcq_single",
+    "topic": "Navigation",
+    "marks": 2,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which component is used for client-side navigation?",
+    "options": [
+      { "id": "a", "text": "Navigate" },
+      { "id": "b", "text": "RouterLink" },
+      { "id": "c", "text": "Link" },
+      { "id": "d", "text": "Anchor" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "nextjs6",
+    "type": "mcq_multi",
+    "topic": "Data Fetching",
+    "marks": 3,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Benefits of Server Components include:",
+    "options": [
+      { "id": "a", "text": "Reduced bundle size" },
+      { "id": "b", "text": "Direct data fetching" },
+      { "id": "c", "text": "Improved SEO" },
+      { "id": "d", "text": "Require useEffect" }
+    ],
+    "correctOptionIds": ["a", "b", "c"]
+  },
+  {
+    "id": "nextjs7",
+    "type": "coding",
+    "topic": "Routing",
+    "marks": 10,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Create a dynamic route to display a product by productId using App Router."
+  },
+  {
+    "id": "nextjs8",
+    "type": "coding",
+    "topic": "API Routes",
+    "marks": 10,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Create a GET API route that returns a list of users in JSON format."
+  },
+  {
+    "id": "nextjs9",
+    "type": "subjective",
+    "topic": "Rendering",
+    "marks": 5,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Explain SSR, SSG, and ISR with practical use cases."
+  },
+  {
+    "id": "nextjs10",
+    "type": "subjective",
+    "topic": "Performance",
+    "marks": 5,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "How does Next.js optimize application performance?"
+  },
+  {
+    "id": "nextjs11",
+    "type": "mcq_single",
+    "topic": "Images",
+    "marks": 2,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which component optimizes images?",
+    "options": [
+      { "id": "a", "text": "Image" },
+      { "id": "b", "text": "Img" },
+      { "id": "c", "text": "Picture" },
+      { "id": "d", "text": "Media" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "nextjs12",
+    "type": "mcq_multi",
+    "topic": "Caching",
+    "marks": 3,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which caching features exist in Next.js?",
+    "options": [
+      { "id": "a", "text": "Data Cache" },
+      { "id": "b", "text": "Router Cache" },
+      { "id": "c", "text": "Full Route Cache" },
+      { "id": "d", "text": "Browser Cache Only" }
+    ],
+    "correctOptionIds": ["a", "b", "c"]
+  },
+  {
+    "id": "nextjs13",
+    "type": "coding",
+    "topic": "Server Actions",
+    "marks": 10,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "hard",
+    "stem": "Create a Server Action that inserts a new record into a database."
+  },
+  {
+    "id": "nextjs14",
+    "type": "coding",
+    "topic": "Authentication",
+    "marks": 10,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "hard",
+    "stem": "Implement protected routes using middleware."
+  },
+  {
+    "id": "nextjs15",
+    "type": "subjective",
+    "topic": "Middleware",
+    "marks": 5,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "What are Next.js Middleware use cases?"
+  },
+  {
+    "id": "nextjs16",
+    "type": "mcq_single",
+    "topic": "Deployment",
+    "marks": 2,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which platform is most commonly associated with Next.js deployments?",
+    "options": [
+      { "id": "a", "text": "Vercel" },
+      { "id": "b", "text": "Heroku" },
+      { "id": "c", "text": "Firebase" },
+      { "id": "d", "text": "Netlify Only" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "nextjs17",
+    "type": "coding",
+    "topic": "Metadata API",
+    "marks": 10,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Configure dynamic metadata for a blog details page."
+  },
+  {
+    "id": "nextjs18",
+    "type": "mcq_single",
+    "topic": "Environment Variables",
+    "marks": 2,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which prefix exposes an environment variable to the browser?",
+    "options": [
+      { "id": "a", "text": "CLIENT_" },
+      { "id": "b", "text": "PUBLIC_" },
+      { "id": "c", "text": "NEXT_PUBLIC_" },
+      { "id": "d", "text": "BROWSER_" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "nextjs19",
+    "type": "mcq_multi",
+    "topic": "React Server Components",
+    "marks": 3,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Client Components require:",
+    "options": [
+      { "id": "a", "text": "\"use client\"" },
+      { "id": "b", "text": "Browser APIs" },
+      { "id": "c", "text": "Interactivity support" },
+      { "id": "d", "text": "Server-only code" }
+    ],
+    "correctOptionIds": ["a", "b", "c"]
+  },
+  {
+    "id": "nextjs20",
+    "type": "subjective",
+    "topic": "Architecture",
+    "marks": 5,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Explain the App Router architecture in Next.js."
+  },
+  {
+    "id": "nextjs21",
+    "type": "coding",
+    "topic": "Forms",
+    "marks": 10,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Build a contact form using Server Actions."
+  },
+  {
+    "id": "nextjs22",
+    "type": "mcq_single",
+    "topic": "SEO",
+    "marks": 2,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which feature helps improve SEO?",
+    "options": [
+      { "id": "a", "text": "SSR" },
+      { "id": "b", "text": "Local Storage" },
+      { "id": "c", "text": "useEffect" },
+      { "id": "d", "text": "Client-only rendering" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "nextjs23",
+    "type": "coding",
+    "topic": "Caching",
+    "marks": 10,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "hard",
+    "stem": "Implement ISR for a product catalog page with 60-second revalidation."
+  },
+  {
+    "id": "nextjs24",
+    "type": "subjective",
+    "topic": "Security",
+    "marks": 5,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Describe best practices for securing a Next.js application."
+  },
+  {
+    "id": "nextjs25",
+    "type": "coding",
+    "topic": "Authentication",
+    "marks": 10,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "hard",
+    "stem": "Implement login functionality using NextAuth and protected dashboard access."
+  }
+]
+ 
