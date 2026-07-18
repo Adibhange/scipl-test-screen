@@ -12,9 +12,6 @@ import {
 	ShieldAlert,
 	Save,
 	Lock,
-	Code2,
-	FileText,
-	LayoutList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,15 +33,14 @@ import {
 import { cn } from "@/lib/utils";
 import type { Question, AnswerValue, Candidate } from "@/types";
 import { CodeEditor } from "@/components/interview/code-editor";
+import {
+	AssessmentRoundCard,
+	type AssessmentRound,
+} from "@/components/interview/assessment-round-card";
+import { AssessmentStatusBar } from "@/components/interview/assessment-status-bar";
 
 // ── Round config ──────────────────────────────────────────────
-const ROUNDS: {
-	id: number;
-	label: string;
-	types: string[];
-	limit: number;
-	durationSeconds: number;
-}[] = [
+const ROUNDS: AssessmentRound[] = [
 	{
 		id: 1,
 		label: "MCQ",
@@ -80,6 +76,32 @@ type Props = {
 	onDone: () => void;
 };
 
+const ATTEMPT_STORAGE_KEY = "assessment-attempt";
+
+type SavedAttempt = {
+	candidateEmail: string;
+	roundIdx: number;
+	completedRounds: number[];
+	current: number;
+	answers: Record<string, AnswerValue>;
+	flagged: Record<string, boolean>;
+	secondsLeft: number;
+	tabSwitches: number;
+	hasStarted: boolean;
+	showRoundGate: boolean;
+	savedAt: number;
+};
+
+function getSavedAttempt(candidateEmail: string): SavedAttempt | null {
+	if (typeof window === "undefined") return null;
+	try {
+		const saved = JSON.parse(sessionStorage.getItem(ATTEMPT_STORAGE_KEY) ?? "null") as SavedAttempt | null;
+		return saved?.candidateEmail === candidateEmail ? saved : null;
+	} catch {
+		return null;
+	}
+}
+
 function formatTime(s: number) {
 	const m = Math.floor(s / 60)
 		.toString()
@@ -96,6 +118,7 @@ export function CandidateTestScreen({
 	onSubmit,
 	onDone,
 }: Props) {
+	const [savedAttempt] = useState(() => getSavedAttempt(candidate.email));
 	// Split and shuffle questions into rounds
 	const roundQuestions = useMemo(() => {
 		return ROUNDS.map((r) => {
@@ -108,22 +131,26 @@ export function CandidateTestScreen({
 		});
 	}, [questions]);
 
-	const [roundIdx, setRoundIdx] = useState(0); // 0-based index into ROUNDS
-	const [completedRounds, setCompletedRounds] = useState<number[]>([]); // round ids completed
-	const [current, setCurrent] = useState(0);
-	const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
-	const [flagged, setFlagged] = useState<Record<string, boolean>>({});
-	const [secondsLeft, setSecondsLeft] = useState(ROUNDS[0].durationSeconds);
-	const [tabSwitches, setTabSwitches] = useState(0);
+	const [roundIdx, setRoundIdx] = useState(savedAttempt?.roundIdx ?? 0);
+	const [completedRounds, setCompletedRounds] = useState<number[]>(savedAttempt?.completedRounds ?? []);
+	const [current, setCurrent] = useState(savedAttempt?.current ?? 0);
+	const [answers, setAnswers] = useState<Record<string, AnswerValue>>(savedAttempt?.answers ?? {});
+	const [flagged, setFlagged] = useState<Record<string, boolean>>(savedAttempt?.flagged ?? {});
+	const [secondsLeft, setSecondsLeft] = useState(() => {
+		if (!savedAttempt) return ROUNDS[0].durationSeconds;
+		if (savedAttempt.showRoundGate || !savedAttempt.hasStarted) return savedAttempt.secondsLeft;
+		return Math.max(0, savedAttempt.secondsLeft - Math.floor((Date.now() - savedAttempt.savedAt) / 1000));
+	});
+	const [tabSwitches, setTabSwitches] = useState(savedAttempt?.tabSwitches ?? 0);
 	const [showWarning, setShowWarning] = useState(false);
 	const [saveState, setSaveState] = useState<"saved" | "saving">("saved");
 	const [allSubmitted, setAllSubmitted] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [roundSubmitting, setRoundSubmitting] = useState(false);
-	const [hasStarted, setHasStarted] = useState(false);
+	const [hasStarted, setHasStarted] = useState(savedAttempt?.hasStarted ?? false);
 	const [isConfirmingSubmit, setIsConfirmingSubmit] = useState(false);
 	// Show a "ready for next round" gate between rounds
-	const [showRoundGate, setShowRoundGate] = useState(false);
+	const [showRoundGate, setShowRoundGate] = useState(savedAttempt?.showRoundGate ?? false);
 	const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const guardRef = useRef<HTMLDivElement>(null);
 
@@ -132,19 +159,27 @@ export function CandidateTestScreen({
 	const q = activeQuestions[current];
 	const hasQuestions = activeQuestions.length > 0;
 
-	// Reset timer & current question when round changes
 	useEffect(() => {
-		setSecondsLeft(ROUNDS[roundIdx].durationSeconds);
-		setCurrent(0);
-	}, [roundIdx]);
+		if (!hasStarted || allSubmitted) return;
+		const snapshot: SavedAttempt = {
+			candidateEmail: candidate.email,
+			roundIdx,
+			completedRounds,
+			current,
+			answers,
+			flagged,
+			secondsLeft,
+			tabSwitches,
+			hasStarted,
+			showRoundGate,
+			savedAt: Date.now(),
+		};
+		sessionStorage.setItem(ATTEMPT_STORAGE_KEY, JSON.stringify(snapshot));
+	}, [answers, allSubmitted, candidate.email, completedRounds, current, flagged, hasStarted, roundIdx, secondsLeft, showRoundGate, tabSwitches]);
 
 	const handleSubmitAll = useCallback(async () => {
 		setSubmitting(true);
 		try {
-			const totalSeconds = ROUNDS.reduce(
-				(acc, r) => acc + r.durationSeconds,
-				0,
-			);
 			const usedSeconds = ROUNDS.reduce((acc, r, i) => {
 				if (i < roundIdx) return acc + r.durationSeconds;
 				if (i === roundIdx) return acc + (r.durationSeconds - secondsLeft);
@@ -176,8 +211,23 @@ export function CandidateTestScreen({
 	}, [activeRound.id, roundIdx, handleSubmitAll]);
 
 	function advanceToNextRound() {
+		const nextIndex = roundIdx + 1;
 		setShowRoundGate(false);
-		setRoundIdx((r) => r + 1);
+		setSecondsLeft(ROUNDS[nextIndex].durationSeconds);
+		setCurrent(0);
+		setRoundIdx(nextIndex);
+	}
+
+	function startAssessment() {
+		sessionStorage.removeItem(ATTEMPT_STORAGE_KEY);
+		setSecondsLeft(ROUNDS[0].durationSeconds);
+		setCurrent(0);
+		setHasStarted(true);
+	}
+
+	function finishAssessment() {
+		sessionStorage.removeItem(ATTEMPT_STORAGE_KEY);
+		onDone();
 	}
 
 	// Countdown — resets per round
@@ -208,6 +258,7 @@ export function CandidateTestScreen({
 		roundIdx,
 		activeRound.id,
 		handleSubmitAll,
+		hasStarted,
 		showRoundGate,
 	]);
 
@@ -243,12 +294,6 @@ export function CandidateTestScreen({
 		pctLeft > 0.5 ? "ok"
 		: pctLeft > 0.15 ? "warn"
 		: "danger";
-	const toneClasses = {
-		ok: "text-emerald-600 border-emerald-200 bg-emerald-50",
-		warn: "text-amber-600 border-amber-200 bg-amber-50",
-		danger: "text-red-600 border-red-200 bg-red-50 animate-pulse",
-	};
-
 	const triggerAutosave = useCallback(() => {
 		setSaveState("saving");
 		if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -325,7 +370,7 @@ export function CandidateTestScreen({
 						</div>
 					</div>
 					<Button
-						onClick={onDone}
+						onClick={finishAssessment}
 						className='w-full'
 						size='lg'>
 						Back to Dashboard
@@ -350,27 +395,12 @@ export function CandidateTestScreen({
 
 					<div className='grid gap-4'>
 						{ROUNDS.map((r, i) => (
-							<div
+							<AssessmentRoundCard
 								key={r.id}
-								className='flex items-center gap-4 p-4 rounded-xl border bg-card hover:bg-accent/5 transition-colors'>
-								<div className='w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-lg'>
-									{r.id}
-								</div>
-								<div className='flex-1'>
-									<h3 className='font-semibold'>{r.label} Assessment</h3>
-									<p className='text-xs text-muted-foreground'>
-										{r.types.join(", ").replace(/_/g, " ")}
-									</p>
-								</div>
-								<div className='text-right'>
-									<div className='text-sm font-medium'>
-										{roundQuestions[i].length} Questions
-									</div>
-									<div className='text-xs text-muted-foreground'>
-										{r.durationSeconds / 60} Minutes
-									</div>
-								</div>
-							</div>
+								round={r}
+								questionCount={roundQuestions[i].length}
+								index={i}
+							/>
 						))}
 					</div>
 
@@ -393,7 +423,7 @@ export function CandidateTestScreen({
 					</div>
 
 					<Button
-						onClick={() => setHasStarted(true)}
+						onClick={startAssessment}
 						className='w-full'
 						size='lg'>
 						I&apos;m ready, start the test
@@ -463,7 +493,7 @@ export function CandidateTestScreen({
 						No questions available for {activeRound.label} round.
 					</p>
 					{roundIdx < ROUNDS.length - 1 ?
-						<Button onClick={() => setRoundIdx((r) => r + 1)}>
+						<Button onClick={advanceToNextRound}>
 							Next Round
 						</Button>
 					:	<Button
@@ -481,11 +511,12 @@ export function CandidateTestScreen({
 	return (
 		<div
 			ref={guardRef}
-			className='select-none space-y-4'>
+			className='mx-auto flex min-h-[calc(100vh-2rem)] max-w-7xl select-none flex-col gap-4 capitalize'>
 			{/* Header */}
-			<Card>
-				<CardContent className='py-3 flex items-center justify-between flex-wrap gap-3'>
-					<div className='flex items-center gap-3'>
+			<Card className='overflow-hidden border-slate-200 shadow-sm'>
+				<CardContent className='p-4 sm:p-5'>
+					<div className='flex items-center justify-between gap-4'>
+					<div className='flex min-w-0 items-center gap-3'>
 						<div className='w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary'>
 							{candidate.name
 								.split(" ")
@@ -494,55 +525,15 @@ export function CandidateTestScreen({
 								.slice(0, 2)
 								.toUpperCase()}
 						</div>
-						<div className='leading-tight'>
+						<div className='min-w-0 leading-tight'>
 							<div className='text-sm font-medium'>{candidate.name}</div>
-							<div className='text-xs text-muted-foreground'>
+							<div className='truncate text-xs text-muted-foreground'>
 								{candidate.role} · {candidate.experience} yrs
 							</div>
 						</div>
 					</div>
 
-					{/* Round stepper */}
-					<div className='flex items-center gap-2'>
-						{ROUNDS.map((r, i) => {
-							const done = completedRounds.includes(r.id);
-							const active = i === roundIdx;
-							const Icon =
-								r.id === 1 ? LayoutList
-								: r.id === 2 ? FileText
-								: Code2;
-
-							return (
-								<div
-									key={r.id}
-									className='flex items-center gap-1'>
-									<div
-										className={cn(
-											"flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border-2",
-											done &&
-												"bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm opacity-80",
-											active &&
-												!done &&
-												"bg-primary border-primary text-primary-foreground shadow-md scale-105 ring-4 ring-primary/10",
-											!done &&
-												!active &&
-												"bg-muted/50 border-transparent text-muted-foreground",
-										)}>
-										<Icon
-											className={cn("w-4 h-4", active && "animate-pulse")}
-										/>
-										<span className='hidden sm:inline'>{r.label}</span>
-										{done && <CheckCircle2 className='w-4 h-4' />}
-									</div>
-									{i < ROUNDS.length - 1 && (
-										<ChevronRight className='w-4 h-4 text-muted-foreground/40' />
-									)}
-								</div>
-							);
-						})}
-					</div>
-
-					<div className='flex items-center gap-4'>
+					<div className='flex shrink-0 items-center gap-4'>
 						<div
 							className={cn(
 								"flex items-center gap-2 px-4 py-1.5 rounded-full border-2 text-lg font-mono font-bold shadow-sm transition-all",
@@ -560,6 +551,14 @@ export function CandidateTestScreen({
 							/>
 							{formatTime(secondsLeft)}
 						</div>
+					</div>
+					</div>
+					<div className='mt-4'>
+						<AssessmentStatusBar
+							rounds={ROUNDS}
+							activeIndex={roundIdx}
+							completedRounds={completedRounds}
+						/>
 					</div>
 				</CardContent>
 			</Card>
@@ -585,7 +584,7 @@ export function CandidateTestScreen({
 				</Alert>
 			)}
 
-			<div className='grid grid-cols-[220px_1fr] gap-4 items-start'>
+			<div className='grid flex-1 items-start gap-4 lg:grid-cols-[240px_minmax(0,1fr)]'>
 				{/* Navigator */}
 				<div className='space-y-4'>
 					<Card className='overflow-hidden'>
@@ -859,10 +858,11 @@ export function CandidateTestScreen({
 
 						<Separator />
 
-						<div className='flex items-center justify-between px-6 py-3'>
+						<div className='flex items-center justify-between px-4 py-2 sm:px-6'>
 							<Button
 								variant='ghost'
 								size='sm'
+								className='h-8 px-2.5 text-xs'
 								disabled={current === 0}
 								onClick={() => setCurrent((c) => c - 1)}>
 								<ChevronLeft className='w-4 h-4 mr-1.5' /> Previous
@@ -872,11 +872,13 @@ export function CandidateTestScreen({
 								<Button
 									variant='outline'
 									size='sm'
+									className='h-8 px-2.5 text-xs'
 									onClick={() => setCurrent((c) => c + 1)}>
 									Save and next <ChevronRight className='w-4 h-4 ml-1.5' />
 								</Button>
 							:	<Button
 									size='sm'
+									className='h-8 px-2.5 text-xs'
 									onClick={() => setIsConfirmingSubmit(true)}
 									disabled={roundSubmitting || submitting}>
 									<Send className='w-3.5 h-3.5 mr-1.5' />

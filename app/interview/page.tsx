@@ -1,30 +1,53 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useSyncExternalStore } from "react"
 import { useRouter } from "next/navigation"
 import { CandidateTestScreen } from "@/components/interview/candidate-test-screen"
 import type { Candidate, Question, AnswerValue } from "@/types"
 
+let cachedCandidateValue: string | null = null
+let cachedCandidate: Candidate | null = null
+
+function getStoredCandidate() {
+  if (typeof window === "undefined") return null
+
+  const value = sessionStorage.getItem("candidate")
+  if (value === cachedCandidateValue) return cachedCandidate
+
+  cachedCandidateValue = value
+  try {
+    cachedCandidate = value ? (JSON.parse(value) as Candidate) : null
+  } catch {
+    cachedCandidate = null
+  }
+  return cachedCandidate
+}
+
+function subscribeToCandidate() {
+  return () => {}
+}
+
 export default function InterviewPage() {
   const router = useRouter()
-  const [candidate, setCandidate] = useState<Candidate | null>(null)
+  const candidate = useSyncExternalStore(
+    subscribeToCandidate,
+    getStoredCandidate,
+    () => null,
+  )
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("candidate")
-    if (!stored) {
+    if (!candidate) {
       router.replace("/")
       return
     }
-    const data: Candidate = JSON.parse(stored)
-    setCandidate(data)
 
-    fetch(`/api/questions?role=${encodeURIComponent(data.role)}&experience=${encodeURIComponent(data.experience)}&all=1`)
+    fetch(`/api/questions?role=${encodeURIComponent(candidate.role)}&experience=${encodeURIComponent(candidate.experience)}&all=1`)
       .then((res) => res.json())
       .then((result) => setQuestions(result))
       .finally(() => setLoading(false))
-  }, [router])
+  }, [candidate, router])
 
   async function handleSubmit(payload: {
     answers: Record<string, AnswerValue>

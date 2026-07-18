@@ -93,8 +93,6 @@ export function CandidateForm({
 		email: "",
 	});
 
-	const [submitted, setSubmitted] = useState(false);
-
 	const firstName = form.name.split(" ")[0] || "";
 	const surname = form.name.split(" ").slice(1).join(" ");
 
@@ -104,7 +102,6 @@ export function CandidateForm({
 	const selectedRole = ROLES.find((r) => r.value === form.role);
 
 	const accent = selectedRole?.accent ?? "#4F46E5";
-	const soft = selectedRole?.soft ?? "#EEF2FF";
 
 	function handleChange(field: keyof Candidate, value: string) {
 		setForm((prev) => ({
@@ -180,8 +177,6 @@ export function CandidateForm({
 		e.preventDefault();
 
 		if (!isValid) return;
-
-		setSubmitted(true);
 
 		onSubmit(form);
 	}
