@@ -9,10 +9,7 @@ const watchDirectory = path.dirname(filePath)
 function getSupabaseConfig() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ""
   const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    ""
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 
   return { supabaseUrl, supabaseKey }
 }
@@ -22,14 +19,16 @@ async function syncQuestions() {
 
   if (!supabaseUrl || !supabaseKey) {
     console.warn(
-      "Supabase credentials are missing. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) to .env to enable syncing."
+      "Supabase credentials are missing. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to .env to enable syncing."
     )
-    return
+    process.exitCode = 1
+    return false
   }
 
   if (!fs.existsSync(filePath)) {
     console.warn(`Questions file not found at ${filePath}`)
-    return
+    process.exitCode = 1
+    return false
   }
 
   let payload
@@ -37,7 +36,8 @@ async function syncQuestions() {
     payload = JSON.parse(fs.readFileSync(filePath, "utf8"))
   } catch (error) {
     console.error("Failed to parse questions.json:", error)
-    return
+    process.exitCode = 1
+    return false
   }
 
   const questions = Array.isArray(payload) ? payload : [payload]
@@ -64,10 +64,12 @@ async function syncQuestions() {
       console.warn("Supabase sync skipped:", error.message)
     }
 
-    return
+    process.exitCode = 1
+    return false
   }
 
   console.log(`Synced ${rows.length} question records to Supabase.`)
+  return true
 }
 
 let syncTimer = null
@@ -79,13 +81,12 @@ function scheduleSync() {
   }, 1000)
 }
 
-console.log(`Watching ${filePath} for changes...`)
-fs.watch(watchDirectory, (eventType, filename) => {
-  if (!filename) return
-  if (filename.toLowerCase() !== "questions.json") return
-  if (eventType === "change") {
-    scheduleSync()
-  }
-})
+if (process.argv.includes("--watch")) {
+  console.log(`Watching ${filePath} for changes...`)
+  fs.watch(watchDirectory, (eventType, filename) => {
+    if (!filename || filename.toLowerCase() !== "questions.json") return
+    if (eventType === "change") scheduleSync()
+  })
+}
 
 void syncQuestions()

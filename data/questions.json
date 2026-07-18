@@ -9,10 +9,22 @@
     "difficulty": "easy",
     "stem": "Which SQL statement is used to retrieve data from a table?",
     "options": [
-      { "id": "a", "text": "GET" },
-      { "id": "b", "text": "SELECT" },
-      { "id": "c", "text": "FETCHDATA" },
-      { "id": "d", "text": "OPEN" }
+      {
+        "id": "a",
+        "text": "GET"
+      },
+      {
+        "id": "b",
+        "text": "SELECT"
+      },
+      {
+        "id": "c",
+        "text": "FETCHDATA"
+      },
+      {
+        "id": "d",
+        "text": "OPEN"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -26,10 +38,22 @@
     "difficulty": "easy",
     "stem": "Which clause is used to filter rows in a query?",
     "options": [
-      { "id": "a", "text": "GROUP BY" },
-      { "id": "b", "text": "ORDER BY" },
-      { "id": "c", "text": "WHERE" },
-      { "id": "d", "text": "HAVING" }
+      {
+        "id": "a",
+        "text": "GROUP BY"
+      },
+      {
+        "id": "b",
+        "text": "ORDER BY"
+      },
+      {
+        "id": "c",
+        "text": "WHERE"
+      },
+      {
+        "id": "d",
+        "text": "HAVING"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -37,18 +61,34 @@
     "id": "sql3",
     "type": "mcq_multi",
     "topic": "Joins",
-    "marks": 3,
+    "marks": 2,
     "role": "SQL Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Which are valid SQL JOIN types?",
     "options": [
-      { "id": "a", "text": "INNER JOIN" },
-      { "id": "b", "text": "LEFT JOIN" },
-      { "id": "c", "text": "TOP JOIN" },
-      { "id": "d", "text": "RIGHT JOIN" }
+      {
+        "id": "a",
+        "text": "INNER JOIN"
+      },
+      {
+        "id": "b",
+        "text": "LEFT JOIN"
+      },
+      {
+        "id": "c",
+        "text": "TOP JOIN"
+      },
+      {
+        "id": "d",
+        "text": "RIGHT JOIN"
+      }
     ],
-    "correctOptionIds": ["a", "b", "d"]
+    "correctOptionIds": [
+      "a",
+      "b",
+      "d"
+    ]
   },
   {
     "id": "sql4",
@@ -60,10 +100,22 @@
     "difficulty": "easy",
     "stem": "Which function returns the number of rows?",
     "options": [
-      { "id": "a", "text": "COUNT()" },
-      { "id": "b", "text": "SUM()" },
-      { "id": "c", "text": "AVG()" },
-      { "id": "d", "text": "ROW()" }
+      {
+        "id": "a",
+        "text": "COUNT()"
+      },
+      {
+        "id": "b",
+        "text": "SUM()"
+      },
+      {
+        "id": "c",
+        "text": "AVG()"
+      },
+      {
+        "id": "d",
+        "text": "ROW()"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -77,10 +129,22 @@
     "difficulty": "easy",
     "stem": "Which constraint uniquely identifies a row?",
     "options": [
-      { "id": "a", "text": "FOREIGN KEY" },
-      { "id": "b", "text": "CHECK" },
-      { "id": "c", "text": "PRIMARY KEY" },
-      { "id": "d", "text": "DEFAULT" }
+      {
+        "id": "a",
+        "text": "FOREIGN KEY"
+      },
+      {
+        "id": "b",
+        "text": "CHECK"
+      },
+      {
+        "id": "c",
+        "text": "PRIMARY KEY"
+      },
+      {
+        "id": "d",
+        "text": "DEFAULT"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -88,18 +152,34 @@
     "id": "sql6",
     "type": "mcq_multi",
     "topic": "Normalization",
-    "marks": 3,
+    "marks": 2,
     "role": "SQL Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Benefits of normalization include:",
     "options": [
-      { "id": "a", "text": "Reduced redundancy" },
-      { "id": "b", "text": "Improved data integrity" },
-      { "id": "c", "text": "More duplicate data" },
-      { "id": "d", "text": "Better consistency" }
+      {
+        "id": "a",
+        "text": "Reduced redundancy"
+      },
+      {
+        "id": "b",
+        "text": "Improved data integrity"
+      },
+      {
+        "id": "c",
+        "text": "More duplicate data"
+      },
+      {
+        "id": "d",
+        "text": "Better consistency"
+      }
     ],
-    "correctOptionIds": ["a", "b", "d"]
+    "correctOptionIds": [
+      "a",
+      "b",
+      "d"
+    ]
   },
   {
     "id": "sql7",
@@ -111,10 +191,22 @@
     "difficulty": "medium",
     "stem": "What is the primary purpose of an index?",
     "options": [
-      { "id": "a", "text": "Store backups" },
-      { "id": "b", "text": "Improve query performance" },
-      { "id": "c", "text": "Replace tables" },
-      { "id": "d", "text": "Delete duplicates" }
+      {
+        "id": "a",
+        "text": "Store backups"
+      },
+      {
+        "id": "b",
+        "text": "Improve query performance"
+      },
+      {
+        "id": "c",
+        "text": "Replace tables"
+      },
+      {
+        "id": "d",
+        "text": "Delete duplicates"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -128,10 +220,22 @@
     "difficulty": "medium",
     "stem": "Which command permanently saves a transaction?",
     "options": [
-      { "id": "a", "text": "SAVE" },
-      { "id": "b", "text": "COMMIT" },
-      { "id": "c", "text": "ROLLBACK" },
-      { "id": "d", "text": "PERSIST" }
+      {
+        "id": "a",
+        "text": "SAVE"
+      },
+      {
+        "id": "b",
+        "text": "COMMIT"
+      },
+      {
+        "id": "c",
+        "text": "ROLLBACK"
+      },
+      {
+        "id": "d",
+        "text": "PERSIST"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -139,18 +243,34 @@
     "id": "sql9",
     "type": "mcq_multi",
     "topic": "ACID",
-    "marks": 3,
+    "marks": 2,
     "role": "SQL Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Which are ACID properties?",
     "options": [
-      { "id": "a", "text": "Atomicity" },
-      { "id": "b", "text": "Consistency" },
-      { "id": "c", "text": "Isolation" },
-      { "id": "d", "text": "Distribution" }
+      {
+        "id": "a",
+        "text": "Atomicity"
+      },
+      {
+        "id": "b",
+        "text": "Consistency"
+      },
+      {
+        "id": "c",
+        "text": "Isolation"
+      },
+      {
+        "id": "d",
+        "text": "Distribution"
+      }
     ],
-    "correctOptionIds": ["a", "b", "c"]
+    "correctOptionIds": [
+      "a",
+      "b",
+      "c"
+    ]
   },
   {
     "id": "sql10",
@@ -162,10 +282,22 @@
     "difficulty": "medium",
     "stem": "A subquery is:",
     "options": [
-      { "id": "a", "text": "A query inside another query" },
-      { "id": "b", "text": "A backup table" },
-      { "id": "c", "text": "A stored procedure" },
-      { "id": "d", "text": "A database trigger" }
+      {
+        "id": "a",
+        "text": "A query inside another query"
+      },
+      {
+        "id": "b",
+        "text": "A backup table"
+      },
+      {
+        "id": "c",
+        "text": "A stored procedure"
+      },
+      {
+        "id": "d",
+        "text": "A database trigger"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -229,10 +361,22 @@
     "difficulty": "medium",
     "stem": "Which object stores reusable SQL logic?",
     "options": [
-      { "id": "a", "text": "Trigger" },
-      { "id": "b", "text": "View" },
-      { "id": "c", "text": "Stored Procedure" },
-      { "id": "d", "text": "Index" }
+      {
+        "id": "a",
+        "text": "Trigger"
+      },
+      {
+        "id": "b",
+        "text": "View"
+      },
+      {
+        "id": "c",
+        "text": "Stored Procedure"
+      },
+      {
+        "id": "d",
+        "text": "Index"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -246,10 +390,22 @@
     "difficulty": "easy",
     "stem": "A SQL View is:",
     "options": [
-      { "id": "a", "text": "A virtual table" },
-      { "id": "b", "text": "A physical backup" },
-      { "id": "c", "text": "An index" },
-      { "id": "d", "text": "A transaction" }
+      {
+        "id": "a",
+        "text": "A virtual table"
+      },
+      {
+        "id": "b",
+        "text": "A physical backup"
+      },
+      {
+        "id": "c",
+        "text": "An index"
+      },
+      {
+        "id": "d",
+        "text": "A transaction"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -257,18 +413,34 @@
     "id": "sql18",
     "type": "mcq_multi",
     "topic": "Functions",
-    "marks": 3,
+    "marks": 2,
     "role": "SQL Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Which are aggregate functions?",
     "options": [
-      { "id": "a", "text": "SUM" },
-      { "id": "b", "text": "COUNT" },
-      { "id": "c", "text": "AVG" },
-      { "id": "d", "text": "SUBSTRING" }
+      {
+        "id": "a",
+        "text": "SUM"
+      },
+      {
+        "id": "b",
+        "text": "COUNT"
+      },
+      {
+        "id": "c",
+        "text": "AVG"
+      },
+      {
+        "id": "d",
+        "text": "SUBSTRING"
+      }
     ],
-    "correctOptionIds": ["a", "b", "c"]
+    "correctOptionIds": [
+      "a",
+      "b",
+      "c"
+    ]
   },
   {
     "id": "sql19",
@@ -300,10 +472,22 @@
     "difficulty": "easy",
     "stem": "Which constraint prevents duplicate values?",
     "options": [
-      { "id": "a", "text": "UNIQUE" },
-      { "id": "b", "text": "CHECK" },
-      { "id": "c", "text": "DEFAULT" },
-      { "id": "d", "text": "FOREIGN KEY" }
+      {
+        "id": "a",
+        "text": "UNIQUE"
+      },
+      {
+        "id": "b",
+        "text": "CHECK"
+      },
+      {
+        "id": "c",
+        "text": "DEFAULT"
+      },
+      {
+        "id": "d",
+        "text": "FOREIGN KEY"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -317,10 +501,22 @@
     "difficulty": "easy",
     "stem": "Which command removes a table and its data?",
     "options": [
-      { "id": "a", "text": "DELETE" },
-      { "id": "b", "text": "TRUNCATE" },
-      { "id": "c", "text": "DROP TABLE" },
-      { "id": "d", "text": "REMOVE" }
+      {
+        "id": "a",
+        "text": "DELETE"
+      },
+      {
+        "id": "b",
+        "text": "TRUNCATE"
+      },
+      {
+        "id": "c",
+        "text": "DROP TABLE"
+      },
+      {
+        "id": "d",
+        "text": "REMOVE"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -354,7 +550,6 @@
     "difficulty": "hard",
     "stem": "Write a query to calculate a running total of sales by date."
   },
- 
   {
     "id": "nextjs1",
     "type": "mcq_single",
@@ -365,10 +560,22 @@
     "difficulty": "easy",
     "stem": "Which company maintains Next.js?",
     "options": [
-      { "id": "a", "text": "Meta" },
-      { "id": "b", "text": "Google" },
-      { "id": "c", "text": "Vercel" },
-      { "id": "d", "text": "Microsoft" }
+      {
+        "id": "a",
+        "text": "Meta"
+      },
+      {
+        "id": "b",
+        "text": "Google"
+      },
+      {
+        "id": "c",
+        "text": "Vercel"
+      },
+      {
+        "id": "d",
+        "text": "Microsoft"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -382,10 +589,22 @@
     "difficulty": "easy",
     "stem": "Which folder defines routes in the App Router?",
     "options": [
-      { "id": "a", "text": "pages" },
-      { "id": "b", "text": "src" },
-      { "id": "c", "text": "app" },
-      { "id": "d", "text": "routes" }
+      {
+        "id": "a",
+        "text": "pages"
+      },
+      {
+        "id": "b",
+        "text": "src"
+      },
+      {
+        "id": "c",
+        "text": "app"
+      },
+      {
+        "id": "d",
+        "text": "routes"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -393,18 +612,34 @@
     "id": "nextjs3",
     "type": "mcq_multi",
     "topic": "Rendering",
-    "marks": 3,
+    "marks": 2,
     "role": "NextJS Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Which rendering strategies are supported by Next.js?",
     "options": [
-      { "id": "a", "text": "SSR" },
-      { "id": "b", "text": "SSG" },
-      { "id": "c", "text": "ISR" },
-      { "id": "d", "text": "CSR only" }
+      {
+        "id": "a",
+        "text": "SSR"
+      },
+      {
+        "id": "b",
+        "text": "SSG"
+      },
+      {
+        "id": "c",
+        "text": "ISR"
+      },
+      {
+        "id": "d",
+        "text": "CSR only"
+      }
     ],
-    "correctOptionIds": ["a", "b", "c"]
+    "correctOptionIds": [
+      "a",
+      "b",
+      "c"
+    ]
   },
   {
     "id": "nextjs4",
@@ -416,10 +651,22 @@
     "difficulty": "easy",
     "stem": "Server Components are rendered on:",
     "options": [
-      { "id": "a", "text": "Browser" },
-      { "id": "b", "text": "Server" },
-      { "id": "c", "text": "CDN only" },
-      { "id": "d", "text": "Database" }
+      {
+        "id": "a",
+        "text": "Browser"
+      },
+      {
+        "id": "b",
+        "text": "Server"
+      },
+      {
+        "id": "c",
+        "text": "CDN only"
+      },
+      {
+        "id": "d",
+        "text": "Database"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -433,10 +680,22 @@
     "difficulty": "easy",
     "stem": "Which component is used for client-side navigation?",
     "options": [
-      { "id": "a", "text": "Navigate" },
-      { "id": "b", "text": "RouterLink" },
-      { "id": "c", "text": "Link" },
-      { "id": "d", "text": "Anchor" }
+      {
+        "id": "a",
+        "text": "Navigate"
+      },
+      {
+        "id": "b",
+        "text": "RouterLink"
+      },
+      {
+        "id": "c",
+        "text": "Link"
+      },
+      {
+        "id": "d",
+        "text": "Anchor"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -444,18 +703,34 @@
     "id": "nextjs6",
     "type": "mcq_multi",
     "topic": "Data Fetching",
-    "marks": 3,
+    "marks": 2,
     "role": "NextJS Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Benefits of Server Components include:",
     "options": [
-      { "id": "a", "text": "Reduced bundle size" },
-      { "id": "b", "text": "Direct data fetching" },
-      { "id": "c", "text": "Improved SEO" },
-      { "id": "d", "text": "Require useEffect" }
+      {
+        "id": "a",
+        "text": "Reduced bundle size"
+      },
+      {
+        "id": "b",
+        "text": "Direct data fetching"
+      },
+      {
+        "id": "c",
+        "text": "Improved SEO"
+      },
+      {
+        "id": "d",
+        "text": "Require useEffect"
+      }
     ],
-    "correctOptionIds": ["a", "b", "c"]
+    "correctOptionIds": [
+      "a",
+      "b",
+      "c"
+    ]
   },
   {
     "id": "nextjs7",
@@ -507,10 +782,22 @@
     "difficulty": "easy",
     "stem": "Which component optimizes images?",
     "options": [
-      { "id": "a", "text": "Image" },
-      { "id": "b", "text": "Img" },
-      { "id": "c", "text": "Picture" },
-      { "id": "d", "text": "Media" }
+      {
+        "id": "a",
+        "text": "Image"
+      },
+      {
+        "id": "b",
+        "text": "Img"
+      },
+      {
+        "id": "c",
+        "text": "Picture"
+      },
+      {
+        "id": "d",
+        "text": "Media"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -518,18 +805,34 @@
     "id": "nextjs12",
     "type": "mcq_multi",
     "topic": "Caching",
-    "marks": 3,
+    "marks": 2,
     "role": "NextJS Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Which caching features exist in Next.js?",
     "options": [
-      { "id": "a", "text": "Data Cache" },
-      { "id": "b", "text": "Router Cache" },
-      { "id": "c", "text": "Full Route Cache" },
-      { "id": "d", "text": "Browser Cache Only" }
+      {
+        "id": "a",
+        "text": "Data Cache"
+      },
+      {
+        "id": "b",
+        "text": "Router Cache"
+      },
+      {
+        "id": "c",
+        "text": "Full Route Cache"
+      },
+      {
+        "id": "d",
+        "text": "Browser Cache Only"
+      }
     ],
-    "correctOptionIds": ["a", "b", "c"]
+    "correctOptionIds": [
+      "a",
+      "b",
+      "c"
+    ]
   },
   {
     "id": "nextjs13",
@@ -571,10 +874,22 @@
     "difficulty": "easy",
     "stem": "Which platform is most commonly associated with Next.js deployments?",
     "options": [
-      { "id": "a", "text": "Vercel" },
-      { "id": "b", "text": "Heroku" },
-      { "id": "c", "text": "Firebase" },
-      { "id": "d", "text": "Netlify Only" }
+      {
+        "id": "a",
+        "text": "Vercel"
+      },
+      {
+        "id": "b",
+        "text": "Heroku"
+      },
+      {
+        "id": "c",
+        "text": "Firebase"
+      },
+      {
+        "id": "d",
+        "text": "Netlify Only"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -598,10 +913,22 @@
     "difficulty": "easy",
     "stem": "Which prefix exposes an environment variable to the browser?",
     "options": [
-      { "id": "a", "text": "CLIENT_" },
-      { "id": "b", "text": "PUBLIC_" },
-      { "id": "c", "text": "NEXT_PUBLIC_" },
-      { "id": "d", "text": "BROWSER_" }
+      {
+        "id": "a",
+        "text": "CLIENT_"
+      },
+      {
+        "id": "b",
+        "text": "PUBLIC_"
+      },
+      {
+        "id": "c",
+        "text": "NEXT_PUBLIC_"
+      },
+      {
+        "id": "d",
+        "text": "BROWSER_"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -609,18 +936,34 @@
     "id": "nextjs19",
     "type": "mcq_multi",
     "topic": "React Server Components",
-    "marks": 3,
+    "marks": 2,
     "role": "NextJS Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Client Components require:",
     "options": [
-      { "id": "a", "text": "\"use client\"" },
-      { "id": "b", "text": "Browser APIs" },
-      { "id": "c", "text": "Interactivity support" },
-      { "id": "d", "text": "Server-only code" }
+      {
+        "id": "a",
+        "text": "\"use client\""
+      },
+      {
+        "id": "b",
+        "text": "Browser APIs"
+      },
+      {
+        "id": "c",
+        "text": "Interactivity support"
+      },
+      {
+        "id": "d",
+        "text": "Server-only code"
+      }
     ],
-    "correctOptionIds": ["a", "b", "c"]
+    "correctOptionIds": [
+      "a",
+      "b",
+      "c"
+    ]
   },
   {
     "id": "nextjs20",
@@ -652,10 +995,22 @@
     "difficulty": "medium",
     "stem": "Which feature helps improve SEO?",
     "options": [
-      { "id": "a", "text": "SSR" },
-      { "id": "b", "text": "Local Storage" },
-      { "id": "c", "text": "useEffect" },
-      { "id": "d", "text": "Client-only rendering" }
+      {
+        "id": "a",
+        "text": "SSR"
+      },
+      {
+        "id": "b",
+        "text": "Local Storage"
+      },
+      {
+        "id": "c",
+        "text": "useEffect"
+      },
+      {
+        "id": "d",
+        "text": "Client-only rendering"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -695,14 +1050,26 @@
     "topic": "Project Management Fundamentals",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "easy",
     "stem": "What is the primary goal of project management?",
     "options": [
-      { "id": "a", "text": "Reduce Team Size" },
-      { "id": "b", "text": "Meet Project Objectives within Constraints" },
-      { "id": "c", "text": "Increase Documentation" },
-      { "id": "d", "text": "Eliminate Risks" }
+      {
+        "id": "a",
+        "text": "Reduce Team Size"
+      },
+      {
+        "id": "b",
+        "text": "Meet Project Objectives within Constraints"
+      },
+      {
+        "id": "c",
+        "text": "Increase Documentation"
+      },
+      {
+        "id": "d",
+        "text": "Eliminate Risks"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -712,14 +1079,26 @@
     "topic": "Project Lifecycle",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "easy",
     "stem": "Which phase formally authorizes a project?",
     "options": [
-      { "id": "a", "text": "Execution" },
-      { "id": "b", "text": "Planning" },
-      { "id": "c", "text": "Initiation" },
-      { "id": "d", "text": "Closure" }
+      {
+        "id": "a",
+        "text": "Execution"
+      },
+      {
+        "id": "b",
+        "text": "Planning"
+      },
+      {
+        "id": "c",
+        "text": "Initiation"
+      },
+      {
+        "id": "d",
+        "text": "Closure"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -729,14 +1108,26 @@
     "topic": "Stakeholders",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "easy",
     "stem": "Who is a stakeholder in a project?",
     "options": [
-      { "id": "a", "text": "Only Customers" },
-      { "id": "b", "text": "Only Team Members" },
-      { "id": "c", "text": "Anyone Impacted by the Project" },
-      { "id": "d", "text": "Only Project Sponsors" }
+      {
+        "id": "a",
+        "text": "Only Customers"
+      },
+      {
+        "id": "b",
+        "text": "Only Team Members"
+      },
+      {
+        "id": "c",
+        "text": "Anyone Impacted by the Project"
+      },
+      {
+        "id": "d",
+        "text": "Only Project Sponsors"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -746,14 +1137,26 @@
     "topic": "Scope Management",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "easy",
     "stem": "Scope creep refers to:",
     "options": [
-      { "id": "a", "text": "Controlled Scope Change" },
-      { "id": "b", "text": "Uncontrolled Expansion of Scope" },
-      { "id": "c", "text": "Budget Increase" },
-      { "id": "d", "text": "Resource Allocation" }
+      {
+        "id": "a",
+        "text": "Controlled Scope Change"
+      },
+      {
+        "id": "b",
+        "text": "Uncontrolled Expansion of Scope"
+      },
+      {
+        "id": "c",
+        "text": "Budget Increase"
+      },
+      {
+        "id": "d",
+        "text": "Resource Allocation"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -763,14 +1166,26 @@
     "topic": "Project Scheduling",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "easy",
     "stem": "Which tool is commonly used to visualize project schedules?",
     "options": [
-      { "id": "a", "text": "Mind Map" },
-      { "id": "b", "text": "Gantt Chart" },
-      { "id": "c", "text": "ER Diagram" },
-      { "id": "d", "text": "Pie Chart" }
+      {
+        "id": "a",
+        "text": "Mind Map"
+      },
+      {
+        "id": "b",
+        "text": "Gantt Chart"
+      },
+      {
+        "id": "c",
+        "text": "ER Diagram"
+      },
+      {
+        "id": "d",
+        "text": "Pie Chart"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -780,14 +1195,26 @@
     "topic": "Risk Management",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "medium",
     "stem": "What is the first step in risk management?",
     "options": [
-      { "id": "a", "text": "Risk Mitigation" },
-      { "id": "b", "text": "Risk Identification" },
-      { "id": "c", "text": "Risk Monitoring" },
-      { "id": "d", "text": "Risk Reporting" }
+      {
+        "id": "a",
+        "text": "Risk Mitigation"
+      },
+      {
+        "id": "b",
+        "text": "Risk Identification"
+      },
+      {
+        "id": "c",
+        "text": "Risk Monitoring"
+      },
+      {
+        "id": "d",
+        "text": "Risk Reporting"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -797,14 +1224,26 @@
     "topic": "Agile",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "medium",
     "stem": "In Agile methodology, work is completed in:",
     "options": [
-      { "id": "a", "text": "Milestones" },
-      { "id": "b", "text": "Phases" },
-      { "id": "c", "text": "Sprints" },
-      { "id": "d", "text": "Programs" }
+      {
+        "id": "a",
+        "text": "Milestones"
+      },
+      {
+        "id": "b",
+        "text": "Phases"
+      },
+      {
+        "id": "c",
+        "text": "Sprints"
+      },
+      {
+        "id": "d",
+        "text": "Programs"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -814,14 +1253,26 @@
     "topic": "Scrum",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "medium",
     "stem": "Who owns and prioritizes the Product Backlog?",
     "options": [
-      { "id": "a", "text": "Project Manager" },
-      { "id": "b", "text": "Developer" },
-      { "id": "c", "text": "Scrum Master" },
-      { "id": "d", "text": "Product Owner" }
+      {
+        "id": "a",
+        "text": "Project Manager"
+      },
+      {
+        "id": "b",
+        "text": "Developer"
+      },
+      {
+        "id": "c",
+        "text": "Scrum Master"
+      },
+      {
+        "id": "d",
+        "text": "Product Owner"
+      }
     ],
     "correctOptionId": "d"
   },
@@ -831,14 +1282,26 @@
     "topic": "Communication Management",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "easy",
     "stem": "Which skill is most important for a Project Manager?",
     "options": [
-      { "id": "a", "text": "Programming" },
-      { "id": "b", "text": "Communication" },
-      { "id": "c", "text": "Graphic Design" },
-      { "id": "d", "text": "Video Editing" }
+      {
+        "id": "a",
+        "text": "Programming"
+      },
+      {
+        "id": "b",
+        "text": "Communication"
+      },
+      {
+        "id": "c",
+        "text": "Graphic Design"
+      },
+      {
+        "id": "d",
+        "text": "Video Editing"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -848,14 +1311,26 @@
     "topic": "Budget Management",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "easy",
     "stem": "Which document outlines estimated project costs?",
     "options": [
-      { "id": "a", "text": "Risk Register" },
-      { "id": "b", "text": "Budget" },
-      { "id": "c", "text": "Issue Log" },
-      { "id": "d", "text": "Scope Statement" }
+      {
+        "id": "a",
+        "text": "Risk Register"
+      },
+      {
+        "id": "b",
+        "text": "Budget"
+      },
+      {
+        "id": "c",
+        "text": "Issue Log"
+      },
+      {
+        "id": "d",
+        "text": "Scope Statement"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -865,14 +1340,26 @@
     "topic": "Quality Management",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "medium",
     "stem": "Quality Assurance focuses on:",
     "options": [
-      { "id": "a", "text": "Preventing Defects" },
-      { "id": "b", "text": "Finding Defects Only" },
-      { "id": "c", "text": "Hiring Resources" },
-      { "id": "d", "text": "Increasing Budget" }
+      {
+        "id": "a",
+        "text": "Preventing Defects"
+      },
+      {
+        "id": "b",
+        "text": "Finding Defects Only"
+      },
+      {
+        "id": "c",
+        "text": "Hiring Resources"
+      },
+      {
+        "id": "d",
+        "text": "Increasing Budget"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -882,14 +1369,26 @@
     "topic": "Project Charter",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "medium",
     "stem": "What is the purpose of a Project Charter?",
     "options": [
-      { "id": "a", "text": "Close a Project" },
-      { "id": "b", "text": "Authorize a Project" },
-      { "id": "c", "text": "Track Risks" },
-      { "id": "d", "text": "Manage Payroll" }
+      {
+        "id": "a",
+        "text": "Close a Project"
+      },
+      {
+        "id": "b",
+        "text": "Authorize a Project"
+      },
+      {
+        "id": "c",
+        "text": "Track Risks"
+      },
+      {
+        "id": "d",
+        "text": "Manage Payroll"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -899,14 +1398,26 @@
     "topic": "Resource Management",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "medium",
     "stem": "Resource allocation means:",
     "options": [
-      { "id": "a", "text": "Assigning Resources to Tasks" },
-      { "id": "b", "text": "Hiring Employees" },
-      { "id": "c", "text": "Reducing Budget" },
-      { "id": "d", "text": "Closing Projects" }
+      {
+        "id": "a",
+        "text": "Assigning Resources to Tasks"
+      },
+      {
+        "id": "b",
+        "text": "Hiring Employees"
+      },
+      {
+        "id": "c",
+        "text": "Reducing Budget"
+      },
+      {
+        "id": "d",
+        "text": "Closing Projects"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -916,14 +1427,26 @@
     "topic": "Monitoring and Control",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "medium",
     "stem": "A milestone is best described as:",
     "options": [
-      { "id": "a", "text": "A Budget" },
-      { "id": "b", "text": "A Significant Event or Achievement" },
-      { "id": "c", "text": "A Team Member" },
-      { "id": "d", "text": "A Risk" }
+      {
+        "id": "a",
+        "text": "A Budget"
+      },
+      {
+        "id": "b",
+        "text": "A Significant Event or Achievement"
+      },
+      {
+        "id": "c",
+        "text": "A Team Member"
+      },
+      {
+        "id": "d",
+        "text": "A Risk"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -933,14 +1456,26 @@
     "topic": "Agile Metrics",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "medium",
     "stem": "Velocity in Agile measures:",
     "options": [
-      { "id": "a", "text": "Budget Performance" },
-      { "id": "b", "text": "Work Completed in a Sprint" },
-      { "id": "c", "text": "Defect Rate" },
-      { "id": "d", "text": "Resource Usage" }
+      {
+        "id": "a",
+        "text": "Budget Performance"
+      },
+      {
+        "id": "b",
+        "text": "Work Completed in a Sprint"
+      },
+      {
+        "id": "c",
+        "text": "Defect Rate"
+      },
+      {
+        "id": "d",
+        "text": "Resource Usage"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -950,14 +1485,26 @@
     "topic": "Issue Management",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "medium",
     "stem": "An issue log is used to track:",
     "options": [
-      { "id": "a", "text": "Known Problems" },
-      { "id": "b", "text": "Requirements" },
-      { "id": "c", "text": "Resources" },
-      { "id": "d", "text": "Budgets" }
+      {
+        "id": "a",
+        "text": "Known Problems"
+      },
+      {
+        "id": "b",
+        "text": "Requirements"
+      },
+      {
+        "id": "c",
+        "text": "Resources"
+      },
+      {
+        "id": "d",
+        "text": "Budgets"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -967,14 +1514,26 @@
     "topic": "Leadership",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "medium",
     "stem": "A Project Manager should primarily act as:",
     "options": [
-      { "id": "a", "text": "Supervisor Only" },
-      { "id": "b", "text": "Leader and Facilitator" },
-      { "id": "c", "text": "Developer" },
-      { "id": "d", "text": "Tester" }
+      {
+        "id": "a",
+        "text": "Supervisor Only"
+      },
+      {
+        "id": "b",
+        "text": "Leader and Facilitator"
+      },
+      {
+        "id": "c",
+        "text": "Developer"
+      },
+      {
+        "id": "d",
+        "text": "Tester"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -984,14 +1543,26 @@
     "topic": "Change Management",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "medium",
     "stem": "What should happen before implementing a major scope change?",
     "options": [
-      { "id": "a", "text": "Immediate Implementation" },
-      { "id": "b", "text": "Formal Change Approval" },
-      { "id": "c", "text": "Project Closure" },
-      { "id": "d", "text": "Resource Removal" }
+      {
+        "id": "a",
+        "text": "Immediate Implementation"
+      },
+      {
+        "id": "b",
+        "text": "Formal Change Approval"
+      },
+      {
+        "id": "c",
+        "text": "Project Closure"
+      },
+      {
+        "id": "d",
+        "text": "Resource Removal"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -1001,14 +1572,26 @@
     "topic": "Project Constraints",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "hard",
     "stem": "The triple constraint of project management consists of:",
     "options": [
-      { "id": "a", "text": "Scope, Time, Cost" },
-      { "id": "b", "text": "Risk, Quality, Cost" },
-      { "id": "c", "text": "Team, Budget, Client" },
-      { "id": "d", "text": "Resources, Scope, Profit" }
+      {
+        "id": "a",
+        "text": "Scope, Time, Cost"
+      },
+      {
+        "id": "b",
+        "text": "Risk, Quality, Cost"
+      },
+      {
+        "id": "c",
+        "text": "Team, Budget, Client"
+      },
+      {
+        "id": "d",
+        "text": "Resources, Scope, Profit"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -1018,14 +1601,26 @@
     "topic": "Project Closure",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "medium",
     "stem": "Which activity is commonly performed during project closure?",
     "options": [
-      { "id": "a", "text": "Requirements Gathering" },
-      { "id": "b", "text": "Sprint Planning" },
-      { "id": "c", "text": "Lessons Learned Documentation" },
-      { "id": "d", "text": "Risk Identification" }
+      {
+        "id": "a",
+        "text": "Requirements Gathering"
+      },
+      {
+        "id": "b",
+        "text": "Sprint Planning"
+      },
+      {
+        "id": "c",
+        "text": "Lessons Learned Documentation"
+      },
+      {
+        "id": "d",
+        "text": "Risk Identification"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -1035,14 +1630,26 @@
     "topic": "Team Management",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "medium",
     "stem": "Conflict within a project team should ideally be resolved through:",
     "options": [
-      { "id": "a", "text": "Ignoring It" },
-      { "id": "b", "text": "Collaboration and Communication" },
-      { "id": "c", "text": "Escalation Only" },
-      { "id": "d", "text": "Replacing Team Members" }
+      {
+        "id": "a",
+        "text": "Ignoring It"
+      },
+      {
+        "id": "b",
+        "text": "Collaboration and Communication"
+      },
+      {
+        "id": "c",
+        "text": "Escalation Only"
+      },
+      {
+        "id": "d",
+        "text": "Replacing Team Members"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -1052,14 +1659,26 @@
     "topic": "Earned Value Management",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "hard",
     "stem": "What does CPI stand for in Earned Value Management?",
     "options": [
-      { "id": "a", "text": "Cost Performance Index" },
-      { "id": "b", "text": "Customer Performance Indicator" },
-      { "id": "c", "text": "Critical Process Index" },
-      { "id": "d", "text": "Control Performance Indicator" }
+      {
+        "id": "a",
+        "text": "Cost Performance Index"
+      },
+      {
+        "id": "b",
+        "text": "Customer Performance Indicator"
+      },
+      {
+        "id": "c",
+        "text": "Critical Process Index"
+      },
+      {
+        "id": "d",
+        "text": "Control Performance Indicator"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -1069,14 +1688,26 @@
     "topic": "Procurement Management",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "medium",
     "stem": "Procurement management involves:",
     "options": [
-      { "id": "a", "text": "Managing External Vendors and Contracts" },
-      { "id": "b", "text": "Managing Code Reviews" },
-      { "id": "c", "text": "Managing Payroll" },
-      { "id": "d", "text": "Managing Databases" }
+      {
+        "id": "a",
+        "text": "Managing External Vendors and Contracts"
+      },
+      {
+        "id": "b",
+        "text": "Managing Code Reviews"
+      },
+      {
+        "id": "c",
+        "text": "Managing Payroll"
+      },
+      {
+        "id": "d",
+        "text": "Managing Databases"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -1086,14 +1717,26 @@
     "topic": "Project Planning",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "medium",
     "stem": "A Work Breakdown Structure (WBS) is used to:",
     "options": [
-      { "id": "a", "text": "Break Project Scope into Smaller Deliverables" },
-      { "id": "b", "text": "Track Employee Attendance" },
-      { "id": "c", "text": "Calculate Taxes" },
-      { "id": "d", "text": "Manage Vendors" }
+      {
+        "id": "a",
+        "text": "Break Project Scope into Smaller Deliverables"
+      },
+      {
+        "id": "b",
+        "text": "Track Employee Attendance"
+      },
+      {
+        "id": "c",
+        "text": "Calculate Taxes"
+      },
+      {
+        "id": "d",
+        "text": "Manage Vendors"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -1103,32 +1746,55 @@
     "topic": "Project Success",
     "marks": 2,
     "role": "Project Manager",
-    "experience": "2-3",
+    "experience": "1-3",
     "difficulty": "hard",
     "stem": "A project is generally considered successful when:",
     "options": [
-      { "id": "a", "text": "It Finishes Early Only" },
-      { "id": "b", "text": "It Meets Scope, Schedule, Cost, and Quality Objectives" },
-      { "id": "c", "text": "The Budget Is Increased" },
-      { "id": "d", "text": "The Team Size Grows" }
+      {
+        "id": "a",
+        "text": "It Finishes Early Only"
+      },
+      {
+        "id": "b",
+        "text": "It Meets Scope, Schedule, Cost, and Quality Objectives"
+      },
+      {
+        "id": "c",
+        "text": "The Budget Is Increased"
+      },
+      {
+        "id": "d",
+        "text": "The Team Size Grows"
+      }
     ],
     "correctOptionId": "b"
   },
-
   {
     "id": "rn1",
     "type": "mcq_single",
     "topic": "React Native Basics",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "easy",
     "stem": "What is React Native primarily used for?",
     "options": [
-      { "id": "a", "text": "Web Development" },
-      { "id": "b", "text": "Mobile Application Development" },
-      { "id": "c", "text": "Database Management" },
-      { "id": "d", "text": "Cloud Computing" }
+      {
+        "id": "a",
+        "text": "Web Development"
+      },
+      {
+        "id": "b",
+        "text": "Mobile Application Development"
+      },
+      {
+        "id": "c",
+        "text": "Database Management"
+      },
+      {
+        "id": "d",
+        "text": "Cloud Computing"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -1136,16 +1802,28 @@
     "id": "rn2",
     "type": "mcq_single",
     "topic": "Components",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "easy",
     "stem": "Which component is equivalent to a div in React Native?",
     "options": [
-      { "id": "a", "text": "Container" },
-      { "id": "b", "text": "View" },
-      { "id": "c", "text": "Section" },
-      { "id": "d", "text": "Box" }
+      {
+        "id": "a",
+        "text": "Container"
+      },
+      {
+        "id": "b",
+        "text": "View"
+      },
+      {
+        "id": "c",
+        "text": "Section"
+      },
+      {
+        "id": "d",
+        "text": "Box"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -1153,16 +1831,28 @@
     "id": "rn3",
     "type": "mcq_single",
     "topic": "Text Component",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "easy",
     "stem": "Which component is used to display text in React Native?",
     "options": [
-      { "id": "a", "text": "Label" },
-      { "id": "b", "text": "Text" },
-      { "id": "c", "text": "Typography" },
-      { "id": "d", "text": "Paragraph" }
+      {
+        "id": "a",
+        "text": "Label"
+      },
+      {
+        "id": "b",
+        "text": "Text"
+      },
+      {
+        "id": "c",
+        "text": "Typography"
+      },
+      {
+        "id": "d",
+        "text": "Paragraph"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -1170,16 +1860,28 @@
     "id": "rn4",
     "type": "mcq_single",
     "topic": "Hooks",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "easy",
     "stem": "Which Hook is used to manage component state?",
     "options": [
-      { "id": "a", "text": "useEffect" },
-      { "id": "b", "text": "useState" },
-      { "id": "c", "text": "useContext" },
-      { "id": "d", "text": "useMemo" }
+      {
+        "id": "a",
+        "text": "useEffect"
+      },
+      {
+        "id": "b",
+        "text": "useState"
+      },
+      {
+        "id": "c",
+        "text": "useContext"
+      },
+      {
+        "id": "d",
+        "text": "useMemo"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -1187,16 +1889,28 @@
     "id": "rn5",
     "type": "mcq_single",
     "topic": "Hooks",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "easy",
     "stem": "Which Hook is commonly used for API calls?",
     "options": [
-      { "id": "a", "text": "useMemo" },
-      { "id": "b", "text": "useRef" },
-      { "id": "c", "text": "useEffect" },
-      { "id": "d", "text": "useCallback" }
+      {
+        "id": "a",
+        "text": "useMemo"
+      },
+      {
+        "id": "b",
+        "text": "useRef"
+      },
+      {
+        "id": "c",
+        "text": "useEffect"
+      },
+      {
+        "id": "d",
+        "text": "useCallback"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -1204,16 +1918,28 @@
     "id": "rn6",
     "type": "mcq_single",
     "topic": "Styling",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "easy",
     "stem": "Which API is used to create styles in React Native?",
     "options": [
-      { "id": "a", "text": "CSS" },
-      { "id": "b", "text": "Bootstrap" },
-      { "id": "c", "text": "StyleSheet" },
-      { "id": "d", "text": "Tailwind" }
+      {
+        "id": "a",
+        "text": "CSS"
+      },
+      {
+        "id": "b",
+        "text": "Bootstrap"
+      },
+      {
+        "id": "c",
+        "text": "StyleSheet"
+      },
+      {
+        "id": "d",
+        "text": "Tailwind"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -1221,16 +1947,28 @@
     "id": "rn7",
     "type": "mcq_single",
     "topic": "Navigation",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Which library is commonly used for navigation in React Native?",
     "options": [
-      { "id": "a", "text": "Redux" },
-      { "id": "b", "text": "Axios" },
-      { "id": "c", "text": "React Navigation" },
-      { "id": "d", "text": "Jest" }
+      {
+        "id": "a",
+        "text": "Redux"
+      },
+      {
+        "id": "b",
+        "text": "Axios"
+      },
+      {
+        "id": "c",
+        "text": "React Navigation"
+      },
+      {
+        "id": "d",
+        "text": "Jest"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -1238,16 +1976,28 @@
     "id": "rn8",
     "type": "mcq_single",
     "topic": "Lists",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Which component is optimized for rendering large lists?",
     "options": [
-      { "id": "a", "text": "FlatList" },
-      { "id": "b", "text": "View" },
-      { "id": "c", "text": "Scroll" },
-      { "id": "d", "text": "ListView" }
+      {
+        "id": "a",
+        "text": "FlatList"
+      },
+      {
+        "id": "b",
+        "text": "View"
+      },
+      {
+        "id": "c",
+        "text": "Scroll"
+      },
+      {
+        "id": "d",
+        "text": "ListView"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -1255,16 +2005,28 @@
     "id": "rn9",
     "type": "mcq_single",
     "topic": "Storage",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Which package is commonly used for local key-value storage?",
     "options": [
-      { "id": "a", "text": "AsyncStorage" },
-      { "id": "b", "text": "MongoDB" },
-      { "id": "c", "text": "MySQL" },
-      { "id": "d", "text": "PostgreSQL" }
+      {
+        "id": "a",
+        "text": "AsyncStorage"
+      },
+      {
+        "id": "b",
+        "text": "MongoDB"
+      },
+      {
+        "id": "c",
+        "text": "MySQL"
+      },
+      {
+        "id": "d",
+        "text": "PostgreSQL"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -1272,16 +2034,28 @@
     "id": "rn10",
     "type": "mcq_single",
     "topic": "Network Requests",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "easy",
     "stem": "Which function can be used to make HTTP requests?",
     "options": [
-      { "id": "a", "text": "fetch()" },
-      { "id": "b", "text": "connect()" },
-      { "id": "c", "text": "send()" },
-      { "id": "d", "text": "post()" }
+      {
+        "id": "a",
+        "text": "fetch()"
+      },
+      {
+        "id": "b",
+        "text": "connect()"
+      },
+      {
+        "id": "c",
+        "text": "send()"
+      },
+      {
+        "id": "d",
+        "text": "post()"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -1289,16 +2063,28 @@
     "id": "rn11",
     "type": "mcq_single",
     "topic": "Images",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "easy",
     "stem": "Which component is used to display images?",
     "options": [
-      { "id": "a", "text": "Img" },
-      { "id": "b", "text": "Image" },
-      { "id": "c", "text": "Picture" },
-      { "id": "d", "text": "Photo" }
+      {
+        "id": "a",
+        "text": "Img"
+      },
+      {
+        "id": "b",
+        "text": "Image"
+      },
+      {
+        "id": "c",
+        "text": "Picture"
+      },
+      {
+        "id": "d",
+        "text": "Photo"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -1306,16 +2092,28 @@
     "id": "rn12",
     "type": "mcq_single",
     "topic": "Touch Events",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Which component provides opacity feedback when pressed?",
     "options": [
-      { "id": "a", "text": "Button" },
-      { "id": "b", "text": "TouchableOpacity" },
-      { "id": "c", "text": "View" },
-      { "id": "d", "text": "Text" }
+      {
+        "id": "a",
+        "text": "Button"
+      },
+      {
+        "id": "b",
+        "text": "TouchableOpacity"
+      },
+      {
+        "id": "c",
+        "text": "View"
+      },
+      {
+        "id": "d",
+        "text": "Text"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -1323,16 +2121,28 @@
     "id": "rn13",
     "type": "mcq_single",
     "topic": "Layout",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "React Native uses which layout system by default?",
     "options": [
-      { "id": "a", "text": "Grid" },
-      { "id": "b", "text": "Table" },
-      { "id": "c", "text": "Flexbox" },
-      { "id": "d", "text": "Bootstrap" }
+      {
+        "id": "a",
+        "text": "Grid"
+      },
+      {
+        "id": "b",
+        "text": "Table"
+      },
+      {
+        "id": "c",
+        "text": "Flexbox"
+      },
+      {
+        "id": "d",
+        "text": "Bootstrap"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -1340,16 +2150,28 @@
     "id": "rn14",
     "type": "mcq_single",
     "topic": "Platform API",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Which API is used to detect Android or iOS platform?",
     "options": [
-      { "id": "a", "text": "Environment" },
-      { "id": "b", "text": "DeviceInfo" },
-      { "id": "c", "text": "Platform" },
-      { "id": "d", "text": "Navigator" }
+      {
+        "id": "a",
+        "text": "Environment"
+      },
+      {
+        "id": "b",
+        "text": "DeviceInfo"
+      },
+      {
+        "id": "c",
+        "text": "Platform"
+      },
+      {
+        "id": "d",
+        "text": "Navigator"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -1357,16 +2179,28 @@
     "id": "rn15",
     "type": "mcq_single",
     "topic": "State Management",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Which library is widely used for global state management?",
     "options": [
-      { "id": "a", "text": "Redux" },
-      { "id": "b", "text": "Axios" },
-      { "id": "c", "text": "Jest" },
-      { "id": "d", "text": "Expo" }
+      {
+        "id": "a",
+        "text": "Redux"
+      },
+      {
+        "id": "b",
+        "text": "Axios"
+      },
+      {
+        "id": "c",
+        "text": "Jest"
+      },
+      {
+        "id": "d",
+        "text": "Expo"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -1374,16 +2208,28 @@
     "id": "rn16",
     "type": "mcq_single",
     "topic": "Expo",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "What is Expo?",
     "options": [
-      { "id": "a", "text": "Database Service" },
-      { "id": "b", "text": "React Native Framework and Toolchain" },
-      { "id": "c", "text": "Testing Tool" },
-      { "id": "d", "text": "CSS Library" }
+      {
+        "id": "a",
+        "text": "Database Service"
+      },
+      {
+        "id": "b",
+        "text": "React Native Framework and Toolchain"
+      },
+      {
+        "id": "c",
+        "text": "Testing Tool"
+      },
+      {
+        "id": "d",
+        "text": "CSS Library"
+      }
     ],
     "correctOptionId": "b"
   },
@@ -1391,16 +2237,28 @@
     "id": "rn17",
     "type": "mcq_single",
     "topic": "Debugging",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Which method is commonly used for debugging?",
     "options": [
-      { "id": "a", "text": "console.log()" },
-      { "id": "b", "text": "debug()" },
-      { "id": "c", "text": "echo()" },
-      { "id": "d", "text": "trace()" }
+      {
+        "id": "a",
+        "text": "console.log()"
+      },
+      {
+        "id": "b",
+        "text": "debug()"
+      },
+      {
+        "id": "c",
+        "text": "echo()"
+      },
+      {
+        "id": "d",
+        "text": "trace()"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -1408,16 +2266,28 @@
     "id": "rn18",
     "type": "mcq_single",
     "topic": "Safe Area",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Which component helps render content within device safe boundaries?",
     "options": [
-      { "id": "a", "text": "SafeAreaView" },
-      { "id": "b", "text": "View" },
-      { "id": "c", "text": "Container" },
-      { "id": "d", "text": "BoundaryView" }
+      {
+        "id": "a",
+        "text": "SafeAreaView"
+      },
+      {
+        "id": "b",
+        "text": "View"
+      },
+      {
+        "id": "c",
+        "text": "Container"
+      },
+      {
+        "id": "d",
+        "text": "BoundaryView"
+      }
     ],
     "correctOptionId": "a"
   },
@@ -1425,16 +2295,28 @@
     "id": "rn19",
     "type": "mcq_single",
     "topic": "Performance",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Which component is preferred over ScrollView for very large datasets?",
     "options": [
-      { "id": "a", "text": "View" },
-      { "id": "b", "text": "Image" },
-      { "id": "c", "text": "FlatList" },
-      { "id": "d", "text": "Text" }
+      {
+        "id": "a",
+        "text": "View"
+      },
+      {
+        "id": "b",
+        "text": "Image"
+      },
+      {
+        "id": "c",
+        "text": "FlatList"
+      },
+      {
+        "id": "d",
+        "text": "Text"
+      }
     ],
     "correctOptionId": "c"
   },
@@ -1442,20 +2324,31 @@
     "id": "rn20",
     "type": "mcq_single",
     "topic": "Lifecycle",
-    "marks": 1,
+    "marks": 2,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "Which Hook can replicate componentDidMount behavior?",
     "options": [
-      { "id": "a", "text": "useState" },
-      { "id": "b", "text": "useMemo" },
-      { "id": "c", "text": "useEffect(() => {}, [])" },
-      { "id": "d", "text": "useRef" }
+      {
+        "id": "a",
+        "text": "useState"
+      },
+      {
+        "id": "b",
+        "text": "useMemo"
+      },
+      {
+        "id": "c",
+        "text": "useEffect(() => {}, [])"
+      },
+      {
+        "id": "d",
+        "text": "useRef"
+      }
     ],
     "correctOptionId": "c"
   },
- 
   {
     "id": "rn_coding1",
     "type": "coding",
@@ -1486,12 +2379,11 @@
     "difficulty": "hard",
     "stem": "Develop a Login and Registration screen using controlled components with form validation for email and password fields."
   },
- 
   {
     "id": "rn_theory1",
-    "type": "theory",
+    "type": "subjective",
     "topic": "React Native Architecture",
-    "marks": 10,
+    "marks": 5,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "medium",
@@ -1499,9 +2391,9 @@
   },
   {
     "id": "rn_theory2",
-    "type": "theory",
+    "type": "subjective",
     "topic": "Navigation",
-    "marks": 10,
+    "marks": 5,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "medium",
@@ -1509,15 +2401,14 @@
   },
   {
     "id": "rn_theory3",
-    "type": "theory",
+    "type": "subjective",
     "topic": "Performance Optimization",
-    "marks": 10,
+    "marks": 5,
     "role": "React Native Developer",
     "experience": "1-3",
     "difficulty": "hard",
     "stem": "Describe techniques to optimize React Native applications including FlatList optimization, memoization, lazy loading, and reducing unnecessary re-renders."
   },
- 
   {
     "id": "rn_subjective1",
     "type": "subjective",
@@ -1557,7 +2448,404 @@
     "experience": "1-3",
     "difficulty": "medium",
     "stem": "What challenges do developers face when creating cross-platform mobile applications and how does React Native address them?"
+  },
+  {
+    "id": "sql26",
+    "type": "mcq_single",
+    "topic": "Indexes",
+    "marks": 2,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which statement creates an index on the email column of users?",
+    "options": [
+      {
+        "id": "a",
+        "text": "CREATE INDEX idx_users_email ON users(email)"
+      },
+      {
+        "id": "b",
+        "text": "ALTER TABLE users INDEX email"
+      },
+      {
+        "id": "c",
+        "text": "MAKE INDEX users.email"
+      },
+      {
+        "id": "d",
+        "text": "ADD INDEX email TO users"
+      }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "sql27",
+    "type": "mcq_single",
+    "topic": "Transactions",
+    "marks": 2,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which command permanently saves the changes in the current transaction?",
+    "options": [
+      {
+        "id": "a",
+        "text": "COMMIT"
+      },
+      {
+        "id": "b",
+        "text": "ROLLBACK"
+      },
+      {
+        "id": "c",
+        "text": "SAVEPOINT"
+      },
+      {
+        "id": "d",
+        "text": "GRANT"
+      }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "sql28",
+    "type": "mcq_single",
+    "topic": "Constraints",
+    "marks": 2,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which constraint prevents duplicate non-null values in a column?",
+    "options": [
+      {
+        "id": "a",
+        "text": "UNIQUE"
+      },
+      {
+        "id": "b",
+        "text": "CHECK"
+      },
+      {
+        "id": "c",
+        "text": "DEFAULT"
+      },
+      {
+        "id": "d",
+        "text": "FOREIGN KEY"
+      }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "sql29",
+    "type": "mcq_single",
+    "topic": "Aggregation",
+    "marks": 2,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which clause filters groups after GROUP BY has been evaluated?",
+    "options": [
+      {
+        "id": "a",
+        "text": "HAVING"
+      },
+      {
+        "id": "b",
+        "text": "WHERE"
+      },
+      {
+        "id": "c",
+        "text": "ORDER BY"
+      },
+      {
+        "id": "d",
+        "text": "DISTINCT"
+      }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "sql30",
+    "type": "mcq_single",
+    "topic": "Window Functions",
+    "marks": 2,
+    "role": "SQL Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which keyword starts a window-function clause?",
+    "options": [
+      {
+        "id": "a",
+        "text": "OVER"
+      },
+      {
+        "id": "b",
+        "text": "PARTITION"
+      },
+      {
+        "id": "c",
+        "text": "WINDOW"
+      },
+      {
+        "id": "d",
+        "text": "RANK"
+      }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "nextjs26",
+    "type": "mcq_single",
+    "topic": "App Router",
+    "marks": 2,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which file convention creates a route segment in the Next.js App Router?",
+    "options": [
+      {
+        "id": "a",
+        "text": "page.tsx"
+      },
+      {
+        "id": "b",
+        "text": "route.ts"
+      },
+      {
+        "id": "c",
+        "text": "layout.css"
+      },
+      {
+        "id": "d",
+        "text": "next.config.ts"
+      }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "nextjs27",
+    "type": "mcq_single",
+    "topic": "Server Components",
+    "marks": 2,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Where do React Server Components execute by default in Next.js?",
+    "options": [
+      {
+        "id": "a",
+        "text": "On the server"
+      },
+      {
+        "id": "b",
+        "text": "Only in the browser"
+      },
+      {
+        "id": "c",
+        "text": "In a service worker"
+      },
+      {
+        "id": "d",
+        "text": "On the CDN client"
+      }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "nextjs28",
+    "type": "mcq_single",
+    "topic": "Client Components",
+    "marks": 2,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which directive is required at the top of a component that uses useState?",
+    "options": [
+      {
+        "id": "a",
+        "text": "use client directive"
+      },
+      {
+        "id": "b",
+        "text": "use server directive"
+      },
+      {
+        "id": "c",
+        "text": "use browser directive"
+      },
+      {
+        "id": "d",
+        "text": "use state directive"
+      }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "nextjs29",
+    "type": "mcq_single",
+    "topic": "Caching",
+    "marks": 2,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which API can be used to invalidate cached data for a specific path?",
+    "options": [
+      {
+        "id": "a",
+        "text": "revalidatePath"
+      },
+      {
+        "id": "b",
+        "text": "refreshPath"
+      },
+      {
+        "id": "c",
+        "text": "invalidateRoute"
+      },
+      {
+        "id": "d",
+        "text": "clearCache"
+      }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "nextjs30",
+    "type": "mcq_single",
+    "topic": "Route Handlers",
+    "marks": 2,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which file is used to define an App Router route handler?",
+    "options": [
+      {
+        "id": "a",
+        "text": "route.ts"
+      },
+      {
+        "id": "b",
+        "text": "handler.ts"
+      },
+      {
+        "id": "c",
+        "text": "api.ts"
+      },
+      {
+        "id": "d",
+        "text": "server.ts"
+      }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "nextjs31",
+    "type": "mcq_single",
+    "topic": "Metadata",
+    "marks": 2,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which export defines static metadata for a Next.js page or layout?",
+    "options": [
+      {
+        "id": "a",
+        "text": "metadata"
+      },
+      {
+        "id": "b",
+        "text": "head"
+      },
+      {
+        "id": "c",
+        "text": "document"
+      },
+      {
+        "id": "d",
+        "text": "seo"
+      }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "nextjs32",
+    "type": "mcq_single",
+    "topic": "Navigation",
+    "marks": 2,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which module provides useRouter in the App Router?",
+    "options": [
+      {
+        "id": "a",
+        "text": "next/navigation"
+      },
+      {
+        "id": "b",
+        "text": "next/router"
+      },
+      {
+        "id": "c",
+        "text": "react-router-dom"
+      },
+      {
+        "id": "d",
+        "text": "next/link"
+      }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "nextjs33",
+    "type": "mcq_single",
+    "topic": "Images",
+    "marks": 2,
+    "role": "NextJS Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which Next.js component optimizes images automatically?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Image"
+      },
+      {
+        "id": "b",
+        "text": "Picture"
+      },
+      {
+        "id": "c",
+        "text": "OptimizedImage"
+      },
+      {
+        "id": "d",
+        "text": "NextImage"
+      }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "rn_coding4",
+    "type": "coding",
+    "topic": "Offline persistence",
+    "marks": 10,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "hard",
+    "stem": "Implement a React Native task list that stores tasks locally, restores them on launch, and handles an empty state.",
+    "starterCode": "// Build the task-list screen here"
+  },
+  {
+    "id": "rn_coding5",
+    "type": "coding",
+    "topic": "Navigation and parameters",
+    "marks": 10,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Create a typed details screen that reads an item ID from navigation parameters and renders loading, error, and success states.",
+    "starterCode": "// Build the details screen here"
   }
 ]
-
- 

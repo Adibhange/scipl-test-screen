@@ -4,10 +4,11 @@
 	"private": true,
 	"scripts": {
 		"dev": "next dev",
-		"build": "next build",
+		"build": "next build && npm run sync:questions",
 		"start": "next start",
 		"lint": "eslint",
-		"sync:questions": "node scripts/sync-questions-to-supabase.mjs"
+		"sync:questions": "node scripts/sync-questions-to-supabase.mjs",
+		"sync:questions:watch": "node scripts/sync-questions-to-supabase.mjs --watch"
 	},
 	"dependencies": {
 		"class-variance-authority": "^0.7.1",
