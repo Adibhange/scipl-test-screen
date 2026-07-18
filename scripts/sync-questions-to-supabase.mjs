@@ -51,6 +51,34 @@ async function syncQuestions() {
     auth: { persistSession: false },
   })
 
+  const { data: existingRows, error: existingError } = await client
+    .from("question_documents")
+    .select("id")
+
+  if (existingError) {
+    console.warn("Supabase sync skipped:", existingError.message)
+    process.exitCode = 1
+    return false
+  }
+
+  const nextIds = new Set(rows.map((row) => row.id))
+  const obsoleteIds = (existingRows ?? [])
+    .map((row) => row.id)
+    .filter((id) => !nextIds.has(id))
+
+  if (obsoleteIds.length) {
+    const { error: deleteError } = await client
+      .from("question_documents")
+      .delete()
+      .in("id", obsoleteIds)
+
+    if (deleteError) {
+      console.warn("Supabase removal skipped:", deleteError.message)
+      process.exitCode = 1
+      return false
+    }
+  }
+
   const { error } = await client
     .from("question_documents")
     .upsert(rows, { onConflict: "id", ignoreDuplicates: false })
@@ -68,7 +96,7 @@ async function syncQuestions() {
     return false
   }
 
-  console.log(`Synced ${rows.length} question records to Supabase.`)
+  console.log(`Synced ${rows.length} questions; removed ${obsoleteIds.length} obsolete records.`)
   return true
 }
 

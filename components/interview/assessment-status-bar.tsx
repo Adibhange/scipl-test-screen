@@ -15,7 +15,7 @@ export function AssessmentStatusBar({
 }) {
 	return (
 		<div className='rounded-2xl border border-slate-200 bg-white p-2 shadow-sm'>
-			<div className='grid grid-cols-3 gap-1'>
+			<div className={cn("grid gap-1", rounds.length === 1 ? "grid-cols-1" : "grid-cols-3")}>
 				{rounds.map((round, index) => {
 					const completed = completedRounds.includes(round.id);
 					const active = index === activeIndex;

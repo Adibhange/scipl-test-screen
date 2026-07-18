@@ -4,13 +4,11 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
 	Clock,
 	Flag,
-	ChevronLeft,
 	ChevronRight,
 	CheckCircle2,
 	Send,
 	Terminal,
 	ShieldAlert,
-	Save,
 	Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -53,8 +51,10 @@ type Props = {
 };
 
 const ATTEMPT_STORAGE_KEY = "assessment-attempt";
+const ASSESSMENT_VERSION = "round-flow-v2";
 
 type SavedAttempt = {
+	version: string;
 	candidateEmail: string;
 	roundIdx: number;
 	completedRounds: number[];
@@ -63,6 +63,7 @@ type SavedAttempt = {
 	flagged: Record<string, boolean>;
 	secondsLeft: number;
 	tabSwitches: number;
+	mcqFlagUses: number;
 	hasStarted: boolean;
 	showRoundGate: boolean;
 	savedAt: number;
@@ -72,7 +73,7 @@ function getSavedAttempt(candidateEmail: string): SavedAttempt | null {
 	if (typeof window === "undefined") return null;
 	try {
 		const saved = JSON.parse(sessionStorage.getItem(ATTEMPT_STORAGE_KEY) ?? "null") as SavedAttempt | null;
-		return saved?.candidateEmail === candidateEmail ? saved : null;
+		return saved?.candidateEmail === candidateEmail && saved.version === ASSESSMENT_VERSION ? saved : null;
 	} catch {
 		return null;
 	}
@@ -95,7 +96,16 @@ export function CandidateTestScreen({
 	onDone,
 }: Props) {
 	const [savedAttempt] = useState(() => getSavedAttempt(candidate.email));
-	const ROUNDS = getAssessmentRounds(candidate.role ?? "");
+	const ROUNDS = useMemo(
+		() => getAssessmentRounds(candidate.role ?? ""),
+		[candidate.role],
+	);
+	const savedRoundIndex =
+		savedAttempt &&
+		savedAttempt.roundIdx >= 0 &&
+		savedAttempt.roundIdx < ROUNDS.length ?
+			savedAttempt.roundIdx
+		: 0;
 	// Split and shuffle questions into rounds
 	const roundQuestions = useMemo(() => {
 		return ROUNDS.map((r) => {
@@ -106,9 +116,9 @@ export function CandidateTestScreen({
 			// If you want true randomness, use: .sort(() => Math.random() - 0.5)
 			return shuffled.slice(0, r.limit);
 		});
-	}, [questions]);
+	}, [ROUNDS, questions]);
 
-	const [roundIdx, setRoundIdx] = useState(savedAttempt?.roundIdx ?? 0);
+	const [roundIdx, setRoundIdx] = useState(savedRoundIndex);
 	const [completedRounds, setCompletedRounds] = useState<number[]>(savedAttempt?.completedRounds ?? []);
 	const [current, setCurrent] = useState(savedAttempt?.current ?? 0);
 	const [answers, setAnswers] = useState<Record<string, AnswerValue>>(savedAttempt?.answers ?? {});
@@ -119,8 +129,9 @@ export function CandidateTestScreen({
 		return Math.max(0, savedAttempt.secondsLeft - Math.floor((Date.now() - savedAttempt.savedAt) / 1000));
 	});
 	const [tabSwitches, setTabSwitches] = useState(savedAttempt?.tabSwitches ?? 0);
+	const [mcqFlagUses, setMcqFlagUses] = useState(savedAttempt?.mcqFlagUses ?? 0);
 	const [showWarning, setShowWarning] = useState(false);
-	const [saveState, setSaveState] = useState<"saved" | "saving">("saved");
+	const [draftAnswers, setDraftAnswers] = useState<Record<string, AnswerValue>>({});
 	const [allSubmitted, setAllSubmitted] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [roundSubmitting, setRoundSubmitting] = useState(false);
@@ -128,17 +139,17 @@ export function CandidateTestScreen({
 	const [isConfirmingSubmit, setIsConfirmingSubmit] = useState(false);
 	// Show a "ready for next round" gate between rounds
 	const [showRoundGate, setShowRoundGate] = useState(savedAttempt?.showRoundGate ?? false);
-	const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const guardRef = useRef<HTMLDivElement>(null);
 
-	const activeRound = ROUNDS[roundIdx];
-	const activeQuestions = roundQuestions[roundIdx] ?? [];
+	const activeRound = ROUNDS[roundIdx] ?? ROUNDS[0];
+	const activeQuestions = roundQuestions[roundIdx] ?? roundQuestions[0] ?? [];
 	const q = activeQuestions[current];
 	const hasQuestions = activeQuestions.length > 0;
 
 	useEffect(() => {
 		if (!hasStarted || allSubmitted) return;
 		const snapshot: SavedAttempt = {
+			version: ASSESSMENT_VERSION,
 			candidateEmail: candidate.email,
 			roundIdx,
 			completedRounds,
@@ -147,12 +158,13 @@ export function CandidateTestScreen({
 			flagged,
 			secondsLeft,
 			tabSwitches,
+			mcqFlagUses,
 			hasStarted,
 			showRoundGate,
 			savedAt: Date.now(),
 		};
 		sessionStorage.setItem(ATTEMPT_STORAGE_KEY, JSON.stringify(snapshot));
-	}, [answers, allSubmitted, candidate.email, completedRounds, current, flagged, hasStarted, roundIdx, secondsLeft, showRoundGate, tabSwitches]);
+	}, [answers, allSubmitted, candidate.email, completedRounds, current, flagged, hasStarted, mcqFlagUses, roundIdx, secondsLeft, showRoundGate, tabSwitches]);
 
 	const handleSubmitAll = useCallback(async () => {
 		setSubmitting(true);
@@ -172,7 +184,7 @@ export function CandidateTestScreen({
 		} finally {
 			setSubmitting(false);
 		}
-	}, [answers, flagged, tabSwitches, roundIdx, secondsLeft, onSubmit]);
+	}, [ROUNDS, answers, flagged, tabSwitches, roundIdx, secondsLeft, onSubmit]);
 
 	const handleSubmitRound = useCallback(async () => {
 		setRoundSubmitting(true);
@@ -185,7 +197,7 @@ export function CandidateTestScreen({
 			await handleSubmitAll();
 		}
 		setRoundSubmitting(false);
-	}, [activeRound.id, roundIdx, handleSubmitAll]);
+	}, [ROUNDS.length, activeRound.id, roundIdx, handleSubmitAll]);
 
 	function advanceToNextRound() {
 		const nextIndex = roundIdx + 1;
@@ -237,6 +249,7 @@ export function CandidateTestScreen({
 		handleSubmitAll,
 		hasStarted,
 		showRoundGate,
+		ROUNDS.length,
 	]);
 
 	// Tab-switch detection
@@ -271,21 +284,50 @@ export function CandidateTestScreen({
 		pctLeft > 0.5 ? "ok"
 		: pctLeft > 0.15 ? "warn"
 		: "danger";
-	const triggerAutosave = useCallback(() => {
-		setSaveState("saving");
-		if (saveTimer.current) clearTimeout(saveTimer.current);
-		saveTimer.current = setTimeout(() => setSaveState("saved"), 600);
-	}, []);
-
 	function setAnswer(val: AnswerValue) {
 		if (!q) return;
-		setAnswers((a) => ({ ...a, [q.id]: val }));
-		triggerAutosave();
+		setDraftAnswers((current) => ({ ...current, [q.id]: val }));
 	}
+
+	function saveCurrentAnswer() {
+		if (!q || !(q.id in draftAnswers)) return;
+		setAnswers((current) => ({ ...current, [q.id]: draftAnswers[q.id] }));
+		setDraftAnswers((current) => {
+			const remaining = { ...current };
+			delete remaining[q.id];
+			return remaining;
+		});
+	}
+
+	function saveAndNext() {
+		saveCurrentAnswer();
+		setCurrent((index) => index + 1);
+	}
+
+	const isMcqRound = activeRound.id === 1;
+	const isSingleRoundAssessment = ROUNDS.length === 1;
+	const canFlagCurrent = flagged[q?.id ?? ""] || !isMcqRound || mcqFlagUses < 5;
+	const displayedAnswer = q ? (draftAnswers[q.id] ?? answers[q.id]) : undefined;
 
 	function toggleFlag() {
 		if (!q) return;
-		setFlagged((f) => ({ ...f, [q.id]: !f[q.id] }));
+		if (flagged[q.id]) {
+			setFlagged((current) => ({ ...current, [q.id]: false }));
+			return;
+		}
+
+		if (isMcqRound && mcqFlagUses >= 5) return;
+
+		setFlagged((current) => ({ ...current, [q.id]: true }));
+		if (isMcqRound) setMcqFlagUses((count) => count + 1);
+		if (current < activeQuestions.length - 1) setCurrent((index) => index + 1);
+	}
+
+	function selectQuestion(index: number) {
+		const target = activeQuestions[index];
+		if (index === current || (isMcqRound && flagged[target.id])) {
+			setCurrent(index);
+		}
 	}
 
 	function statusFor(idx: number) {
@@ -360,53 +402,75 @@ export function CandidateTestScreen({
 	// ── Not Started ──
 	if (!hasStarted) {
 		return (
-			<Card className='max-w-2xl mx-auto'>
-				<CardContent className='p-8 space-y-8'>
-					<div className='space-y-2 text-center'>
-						<h1 className='text-3xl font-bold'>Welcome, {candidate.name}</h1>
-						<p className='text-muted-foreground'>
-							Please review the test structure before starting. Once you start,
-							the timer will begin for Round 1.
-						</p>
-					</div>
+			<div className='mx-auto max-w-5xl space-y-5'>
+				<Card className='overflow-hidden border-slate-200 shadow-sm'>
+					<CardContent className='p-6 sm:p-8'>
+						<div className='flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between'>
+							<div className='flex items-center gap-4'>
+								<div className='flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-lg font-bold text-[#4F46E5]'>
+									{candidate.name
+										.split(" ")
+										.map((name) => name[0])
+										.join("")
+										.slice(0, 2)
+										.toUpperCase()}
+								</div>
+								<div>
+									<p className='text-xs font-semibold uppercase tracking-[0.2em] text-[#4F46E5]'>
+										Assessment briefing
+									</p>
+									<h1 className='mt-1 text-2xl font-bold text-slate-900'>
+										Welcome, {candidate.name.split(" ")[0]}
+									</h1>
+									<p className='mt-1 text-sm text-slate-500'>
+										{candidate.role} · {candidate.experience} years experience
+									</p>
+								</div>
+							</div>
+							<div className='rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600'>
+								Your timer starts only after you begin Round 1.
+							</div>
+						</div>
+					</CardContent>
+				</Card>
 
-					<div className='grid gap-4'>
+				<div>
+					<p className='mb-3 text-sm font-semibold text-slate-800'>
+						{isSingleRoundAssessment ? "Your assessment" : "Assessment structure"}
+					</p>
+					<div className={cn("grid gap-4", isSingleRoundAssessment ? "max-w-md" : "md:grid-cols-3")}>
 						{ROUNDS.map((r, i) => (
 							<AssessmentRoundCard
 								key={r.id}
 								round={r}
 								questionCount={roundQuestions[i].length}
 								index={i}
+								compact
 							/>
 						))}
 					</div>
+				</div>
 
-					<div className='space-y-4 rounded-lg bg-amber-50 p-4 border border-amber-200'>
-						<h4 className='text-sm font-semibold flex items-center gap-2 text-amber-800'>
-							<ShieldAlert className='w-4 h-4' /> Important Rules
-						</h4>
-						<ul className='text-xs text-amber-700 space-y-1.5 list-disc pl-4'>
-							<li>Do not switch tabs or windows. All switches are tracked.</li>
-							<li>Right-click and copy/paste are disabled.</li>
-							<li>
-								Rounds are sequential. Once you submit a round, you cannot go
-								back.
-							</li>
-							<li>
-								The test will auto-submit when the timer runs out for each
-								round.
-							</li>
-						</ul>
-					</div>
+				<Card className='border-amber-200 bg-amber-50/50'>
+					<CardContent className='p-5'>
+						<div className='flex items-center gap-2 text-sm font-bold text-amber-900'>
+							<ShieldAlert className='h-4 w-4' /> Assessment rules
+						</div>
+						<div className='mt-4 grid gap-x-8 gap-y-3 text-xs leading-relaxed text-amber-900 sm:grid-cols-2'>
+							{!isSingleRoundAssessment && <p><strong>Sequential rounds:</strong> submit a round to unlock the next one. Completed rounds are locked permanently.</p>}
+							<p><strong>Save and next:</strong> an answer is recorded only when you use Save and next, or submit the round.</p>
+							<p><strong>MCQ review:</strong> you may flag up to 5 MCQs. A flag use is permanent, even if you later unflag the question.</p>
+							{!isSingleRoundAssessment && <p><strong>Forward only:</strong> subjective and coding questions cannot be reopened after Save and next.</p>}
+							<p><strong>Time limits:</strong> each round auto-submits when its individual timer reaches zero.</p>
+							<p><strong>Integrity:</strong> tab switches are logged and deduct 10 marks each. Copy, paste, and right-click are disabled.</p>
+						</div>
+					</CardContent>
+				</Card>
 
-					<Button
-						onClick={startAssessment}
-						className='w-full'
-						size='lg'>
-						I&apos;m ready, start the test
-					</Button>
-				</CardContent>
-			</Card>
+				<Button onClick={startAssessment} className='w-full bg-[#4F46E5] hover:bg-[#4338CA]' size='lg'>
+					I understand the rules — start Round 1
+				</Button>
+			</div>
 		);
 	}
 
@@ -594,7 +658,8 @@ export function CandidateTestScreen({
 									return (
 										<button
 											key={qq.id}
-											onClick={() => setCurrent(idx)}
+											onClick={() => selectQuestion(idx)}
+											disabled={idx !== current && (!isMcqRound || !flagged[qq.id])}
 											className={cn(
 												"aspect-square rounded-md flex items-center justify-center text-[11px] font-medium border transition-all",
 												s === "current" &&
@@ -605,6 +670,7 @@ export function CandidateTestScreen({
 													"bg-emerald-100 border-emerald-300 text-emerald-800",
 												s === "unvisited" &&
 													"bg-muted/50 border-transparent text-muted-foreground hover:bg-muted",
+												idx !== current && (!isMcqRound || !flagged[qq.id]) && "cursor-not-allowed opacity-50",
 											)}>
 											{idx + 1}
 										</button>
@@ -676,20 +742,26 @@ export function CandidateTestScreen({
 									className='text-[10px] font-bold'>
 									{q.marks} MARKS
 								</Badge>
+								{q.type === "mcq_single" || q.type === "output_prediction" ? (
+									<Badge variant='secondary' className='text-[10px] font-bold'>
+										SINGLE CHOICE
+									</Badge>
+								) : q.type === "mcq_multi" ? (
+									<Badge variant='secondary' className='text-[10px] font-bold'>
+										MULTIPLE CHOICE
+									</Badge>
+								) : null}
 							</div>
 							<div className='flex items-center gap-3'>
-								<span className='flex items-center gap-1 text-xs text-muted-foreground'>
-									<Save className='w-3 h-3' />
-									{saveState === "saving" ? "Saving…" : "Saved"}
-								</span>
-								<Button
+								{isMcqRound && <Button
 									variant={flagged[q.id] ? "secondary" : "outline"}
 									size='sm'
 									onClick={toggleFlag}
+									disabled={!canFlagCurrent}
 									className={flagged[q.id] ? "text-amber-700" : ""}>
 									<Flag className='w-3.5 h-3.5 mr-1.5' />
-									{flagged[q.id] ? "Flagged" : "Flag for review"}
-								</Button>
+									{flagged[q.id] ? "Unflag" : `Flag & next (${mcqFlagUses}/5)`}
+								</Button>}
 							</div>
 						</div>
 
@@ -705,7 +777,7 @@ export function CandidateTestScreen({
 							{(q.type === "mcq_single" || q.type === "output_prediction") &&
 								q.options && (
 									<RadioGroup
-										value={(answers[q.id] as string) ?? ""}
+									value={(displayedAnswer as string) ?? ""}
 										onValueChange={(val) => setAnswer(val)}
 										className='grid gap-3'>
 										{q.options.map((opt, i) => (
@@ -714,14 +786,14 @@ export function CandidateTestScreen({
 												onClick={() => setAnswer(opt.id)}
 												className={cn(
 													"flex items-center gap-3 px-4 py-4 rounded-xl border-2 transition-all cursor-pointer group",
-													answers[q.id] === opt.id ?
+													displayedAnswer === opt.id ?
 														"border-primary bg-primary/5 ring-2 ring-primary/10 shadow-sm"
 													:	"hover:bg-muted/50 border-transparent bg-muted/20",
 												)}>
 												<div
 													className={cn(
 														"w-6 h-6 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-colors",
-														answers[q.id] === opt.id ?
+														displayedAnswer === opt.id ?
 															"border-primary bg-primary text-primary-foreground"
 														:	"border-muted-foreground/30 text-muted-foreground group-hover:border-muted-foreground/50",
 													)}>
@@ -737,7 +809,7 @@ export function CandidateTestScreen({
 													className='flex-1 font-medium cursor-pointer text-sm leading-snug'>
 													{opt.text}
 												</Label>
-												{answers[q.id] === opt.id && (
+												{displayedAnswer === opt.id && (
 													<CheckCircle2 className='w-4 h-4 text-primary animate-in zoom-in-50' />
 												)}
 											</div>
@@ -748,7 +820,7 @@ export function CandidateTestScreen({
 							{q.type === "mcq_multi" && q.options && (
 								<div className='grid gap-3'>
 									{q.options.map((opt, i) => {
-										const cur = (answers[q.id] as string[]) || [];
+										const cur = (displayedAnswer as string[]) || [];
 										const selected = cur.includes(opt.id);
 										const toggle = () => {
 											const next =
@@ -811,7 +883,7 @@ export function CandidateTestScreen({
 										</p>
 									)}
 									<CodeEditor
-										value={(answers[q.id] as string) ?? q.starterCode ?? ""}
+										value={(displayedAnswer as string) ?? q.starterCode ?? ""}
 										onChange={(val) => setAnswer(val)}
 										language={q.type}
 										placeholder='Write your solution here...'
@@ -826,7 +898,7 @@ export function CandidateTestScreen({
 							{q.type === "subjective" && (
 								<Textarea
 									placeholder='Type your answer here…'
-									value={(answers[q.id] as string) || ""}
+									value={(displayedAnswer as string) || ""}
 									onChange={(e) => setAnswer(e.target.value)}
 									rows={6}
 								/>
@@ -835,28 +907,22 @@ export function CandidateTestScreen({
 
 						<Separator />
 
-						<div className='flex items-center justify-between px-4 py-2 sm:px-6'>
-							<Button
-								variant='ghost'
-								size='sm'
-								className='h-8 px-2.5 text-xs'
-								disabled={current === 0}
-								onClick={() => setCurrent((c) => c - 1)}>
-								<ChevronLeft className='w-4 h-4 mr-1.5' /> Previous
-							</Button>
-
+						<div className='flex justify-end px-4 py-2 sm:px-6'>
 							{current < activeQuestions.length - 1 ?
 								<Button
 									variant='outline'
 									size='sm'
 									className='h-8 px-2.5 text-xs'
-									onClick={() => setCurrent((c) => c + 1)}>
+									onClick={saveAndNext}>
 									Save and next <ChevronRight className='w-4 h-4 ml-1.5' />
 								</Button>
 							:	<Button
 									size='sm'
 									className='h-8 px-2.5 text-xs'
-									onClick={() => setIsConfirmingSubmit(true)}
+									onClick={() => {
+										saveCurrentAnswer();
+										setIsConfirmingSubmit(true);
+									}}
 									disabled={roundSubmitting || submitting}>
 									<Send className='w-3.5 h-3.5 mr-1.5' />
 									{roundSubmitting ?

@@ -40,5 +40,7 @@ export const ASSESSMENT_ROUNDS: AssessmentRound[] = [
 export function getAssessmentRounds(role: string) {
 	return ASSESSMENT_ROUNDS.filter(
 		(round) => round.audience === "all" || isITRole(role),
+	).map((round) =>
+		round.id === 1 && !isITRole(role) ? { ...round, limit: 50 } : round,
 	);
 }

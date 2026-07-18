@@ -24,6 +24,7 @@ export default function HomePage() {
 			const payload = await response.json();
 			if (!response.ok) throw new Error(payload.error ?? "Could not save candidate information.");
 
+			sessionStorage.removeItem("assessment-attempt");
 			sessionStorage.setItem("candidate", JSON.stringify(payload));
 			router.push("/interview");
 		} catch (error) {
