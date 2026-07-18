@@ -8,12 +8,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { ROLES } from "@/data/roles"
 
 const roles = [
   { value: "all", label: "All Applications" },
-  { value: "SQL Developer", label: "SQL Developer" },
-  { value: "NextJS Developer", label: "NextJS Developer" },
-  { value: "Full Stack Developer", label: "Full Stack Developer" },
+  ...ROLES.map(({ value, label }) => ({ value, label })),
 ]
 
 export function ResultsFilterBar({

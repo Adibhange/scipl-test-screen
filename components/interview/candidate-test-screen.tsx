@@ -35,35 +35,11 @@ import type { Question, AnswerValue, Candidate } from "@/types";
 import { CodeEditor } from "@/components/interview/code-editor";
 import {
 	AssessmentRoundCard,
-	type AssessmentRound,
 } from "@/components/interview/assessment-round-card";
 import { AssessmentStatusBar } from "@/components/interview/assessment-status-bar";
+import { getAssessmentRounds } from "@/data/assessment-rounds";
 
 // ── Round config ──────────────────────────────────────────────
-const ROUNDS: AssessmentRound[] = [
-	{
-		id: 1,
-		label: "MCQ",
-		types: ["mcq_single", "mcq_multi", "output_prediction"],
-		limit: 20,
-		durationSeconds: 1 * 60,
-	},
-	{
-		id: 2,
-		label: "Subjective",
-		types: ["subjective"],
-		limit: 3,
-		durationSeconds: 30 * 60,
-	},
-	{
-		id: 3,
-		label: "Coding",
-		types: ["coding", "sql"],
-		limit: 5,
-		durationSeconds: 60 * 60,
-	},
-];
-
 type Props = {
 	candidate: Candidate;
 	questions: Question[];
@@ -119,6 +95,7 @@ export function CandidateTestScreen({
 	onDone,
 }: Props) {
 	const [savedAttempt] = useState(() => getSavedAttempt(candidate.email));
+	const ROUNDS = getAssessmentRounds(candidate.role ?? "");
 	// Split and shuffle questions into rounds
 	const roundQuestions = useMemo(() => {
 		return ROUNDS.map((r) => {

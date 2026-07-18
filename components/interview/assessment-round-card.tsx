@@ -1,13 +1,8 @@
 import { Clock3, FileText, Code2, LayoutList } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { AssessmentRound } from "@/data/assessment-rounds";
 
-export type AssessmentRound = {
-	id: number;
-	label: string;
-	types: string[];
-	limit: number;
-	durationSeconds: number;
-};
+export type { AssessmentRound } from "@/data/assessment-rounds";
 
 const ROUND_ICONS = [LayoutList, FileText, Code2];
 const ROUND_STYLES = [

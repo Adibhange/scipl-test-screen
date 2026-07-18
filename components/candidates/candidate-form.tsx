@@ -20,45 +20,21 @@ import {
 	Database,
 	Code2,
 	Rocket,
+	BriefcaseBusiness,
 	AlertCircle,
 	ChevronRight,
 } from "lucide-react";
 
 import type { Candidate } from "@/types";
+import { EXPERIENCE_LEVELS } from "@/data/experience";
+import { ROLES } from "@/data/roles";
 
-const ROLES = [
-	{
-		value: "SQL Developer",
-		label: "SQL Developer",
-		track: "Data Track",
-		icon: Database,
-		accent: "#4F46E5",
-		soft: "#EEF2FF",
-	},
-	{
-		value: "NextJS Developer",
-		label: "NextJS Developer",
-		track: "Frontend Track",
-		icon: Code2,
-		accent: "#0F172A",
-		soft: "#F1F5F9",
-	},
-	{
-		value: "Full Stack Developer",
-		label: "Full Stack Developer",
-		track: "Combined Track",
-		icon: Rocket,
-		accent: "#D97706",
-		soft: "#FFFBEB",
-	},
-];
-
-const EXPERIENCE = [
-	{ value: "0-1", label: "0–1 Years", filled: 1 },
-	{ value: "1-3", label: "1–3 Years", filled: 2 },
-	{ value: "3-5", label: "3–5 Years", filled: 3 },
-	{ value: "5+", label: "5+ Years", filled: 4 },
-];
+const ROLE_ICONS = {
+	database: Database,
+	code: Code2,
+	rocket: Rocket,
+	briefcase: BriefcaseBusiness,
+};
 
 function ExperienceDots({ filled }: { filled: number }) {
 	return (
@@ -334,7 +310,7 @@ export function CandidateForm({
 										className='rounded-xl p-2'
 										position='popper'>
 										{ROLES.map((role) => {
-											const Icon = role.icon;
+											const Icon = ROLE_ICONS[role.icon];
 
 											return (
 												<SelectItem
@@ -383,7 +359,7 @@ export function CandidateForm({
 									<SelectContent
 										className='rounded-xl p-2'
 										position='popper'>
-										{EXPERIENCE.map((exp) => (
+										{EXPERIENCE_LEVELS.map((exp) => (
 											<SelectItem
 												key={exp.value}
 												value={exp.value}

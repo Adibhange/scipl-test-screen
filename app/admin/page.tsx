@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getAllResults } from "@/lib/results";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ResultsFilterBar } from "@/components/admin/results-filter-bar";
+import { ROLES } from "@/data/roles";
 import {
 	AlertTriangle,
 	ChevronRight,
@@ -61,18 +62,15 @@ export default async function AdminPage({
 						pending: pendingResults.length,
 						evaluated: evaluatedResults.length,
 					}}
-					roleCounts={{
-						all: statusResults.length,
-						"SQL Developer": statusResults.filter(
-							(result) => result.candidate.role === "SQL Developer",
-						).length,
-						"NextJS Developer": statusResults.filter(
-							(result) => result.candidate.role === "NextJS Developer",
-						).length,
-						"Full Stack Developer": statusResults.filter(
-							(result) => result.candidate.role === "Full Stack Developer",
-						).length,
-					}}
+					roleCounts={Object.fromEntries([
+						["all", statusResults.length],
+						...ROLES.map((role) => [
+							role.value,
+							statusResults.filter(
+								(result) => result.candidate.role === role.value,
+							).length,
+						]),
+					])}
 				/>
 
 				{visibleResults.length === 0 && (

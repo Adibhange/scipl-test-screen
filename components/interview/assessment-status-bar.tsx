@@ -1,6 +1,6 @@
 import { CheckCircle2, CircleDot, Code2, FileText, LayoutList } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { AssessmentRound } from "@/components/interview/assessment-round-card";
+import type { AssessmentRound } from "@/data/assessment-rounds";
 
 const ROUND_ICONS = [LayoutList, FileText, Code2];
 
