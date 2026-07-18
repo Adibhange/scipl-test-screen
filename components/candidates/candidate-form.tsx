@@ -53,8 +53,12 @@ function ExperienceDots({ filled }: { filled: number }) {
 
 export function CandidateForm({
 	onSubmit,
+	isSubmitting = false,
+	submitError = null,
 }: {
-	onSubmit: (candidate: Candidate) => void;
+	onSubmit: (candidate: Candidate) => void | Promise<void>;
+	isSubmitting?: boolean;
+	submitError?: string | null;
 }) {
 	const [form, setForm] = useState<Candidate>({
 		name: "",
@@ -154,7 +158,7 @@ export function CandidateForm({
 
 		if (!isValid) return;
 
-		onSubmit(form);
+		void onSubmit(form);
 	}
 
 	return (
@@ -385,15 +389,16 @@ export function CandidateForm({
 
 							<Button
 								type='submit'
-								disabled={!isValid}
+								disabled={!isValid || isSubmitting}
 								className='h-11 px-7 rounded-xl text-white transition-all duration-300 hover:scale-[1.02]'
 								style={{
 									backgroundColor: isValid ? accent : "#94A3B8",
 								}}>
-								Start Assessment
+								{isSubmitting ? "Saving..." : "Start Assessment"}
 								<ChevronRight className='ml-2 h-4 w-4' />
 							</Button>
 						</div>
+						{submitError && <p className='text-sm text-red-600'>{submitError}</p>}
 					</form>
 				</CardContent>
 			</Card>

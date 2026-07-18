@@ -47,7 +47,16 @@ export const ROLES: RoleConfig[] = [
 		icon: "briefcase",
 		accent: "#10B981",
 		soft: "#EEF2FF",
-	}
+	},
+	{
+		value: "React Native Developer",
+		label: "React Native Developer",
+		track: "Mobile Track",
+		category: "it",
+		icon: "code",
+		accent: "#0F172A",
+		soft: "#F1F5F9",
+	},
 ];
 
 export function getRoleConfig(role: string) {

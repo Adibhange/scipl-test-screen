@@ -17,12 +17,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid grading request" }, { status: 400 })
   }
 
-  const result = getResultById(body.resultId)
+  const result = await getResultById(body.resultId)
   if (!result || !result.answers.some((answer) => answer.questionId === body.questionId)) {
     return NextResponse.json({ error: "Result or question not found" }, { status: 404 })
   }
 
-  const updated = updateResult(body.resultId, (currentResult) => ({
+  const updated = await updateResult(body.resultId, (currentResult) => ({
     ...currentResult,
     answers: currentResult.answers.map((answer) =>
       answer.questionId === body.questionId
@@ -33,5 +33,6 @@ export async function POST(request: NextRequest) {
     totalMarksPossible: undefined,
   }))
 
+  if (!updated) return NextResponse.json({ error: "Result not found" }, { status: 404 })
   return NextResponse.json(updated)
 }

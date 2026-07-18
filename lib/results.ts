@@ -1,54 +1,50 @@
-import fs from "fs"
-import path from "path"
 import type { CandidateResult } from "@/types"
+import { getSupabaseServerClient } from "@/lib/db"
 
-const RESULTS_PATH = path.join(process.cwd(), "data", "results.json")
+type ResultRow = { id: string; payload: CandidateResult }
 
-function ensureFile() {
-  if (!fs.existsSync(RESULTS_PATH)) {
-    fs.writeFileSync(RESULTS_PATH, "[]")
-    return
-  }
-  const content = fs.readFileSync(RESULTS_PATH, "utf-8").trim()
-  if (!content) {
-    fs.writeFileSync(RESULTS_PATH, "[]")
-  }
+export async function getAllResults(): Promise<CandidateResult[]> {
+  const { data, error } = await getSupabaseServerClient()
+    .from("results")
+    .select("id, payload")
+    .order("created_at", { ascending: false })
+
+  if (error) throw new Error(`Could not load results: ${error.message}`)
+  return (data as ResultRow[] | null ?? []).map((row) => row.payload)
 }
 
-export function getAllResults(): CandidateResult[] {
-  ensureFile()
-  const raw = fs.readFileSync(RESULTS_PATH, "utf-8")
-  try {
-    return JSON.parse(raw)
-  } catch {
-    // corrupted file — reset it rather than crash the app
-    fs.writeFileSync(RESULTS_PATH, "[]")
-    return []
-  }
+export async function getResultById(id: string): Promise<CandidateResult | undefined> {
+  const { data, error } = await getSupabaseServerClient()
+    .from("results")
+    .select("id, payload")
+    .eq("id", id)
+    .maybeSingle()
+
+  if (error) throw new Error(`Could not load result: ${error.message}`)
+  return (data as ResultRow | null)?.payload
 }
 
-export function getResultById(id: string): CandidateResult | undefined {
-  return getAllResults().find((r) => r.id === id)
+export async function saveResult(result: CandidateResult): Promise<void> {
+  const { error } = await getSupabaseServerClient().from("results").upsert(
+    {
+      id: result.id,
+      payload: result,
+      created_at: result.submittedAt,
+    },
+    { onConflict: "id" },
+  )
+
+  if (error) throw new Error(`Could not save assessment result: ${error.message}`)
 }
 
-export function saveResult(result: CandidateResult) {
-  const results = getAllResults()
-  results.push(result)
-  fs.writeFileSync(RESULTS_PATH, JSON.stringify(results, null, 2))
-}
-
-export function updateResult(
+export async function updateResult(
   id: string,
   updater: (result: CandidateResult) => CandidateResult,
-): CandidateResult | undefined {
-  const results = getAllResults()
-  const index = results.findIndex((result) => result.id === id)
+): Promise<CandidateResult | undefined> {
+  const existing = await getResultById(id)
+  if (!existing) return undefined
 
-  if (index === -1) return undefined
-
-  const updated = updater(results[index])
-  results[index] = updated
-  fs.writeFileSync(RESULTS_PATH, JSON.stringify(results, null, 2))
-
+  const updated = updater(existing)
+  await saveResult(updated)
   return updated
 }

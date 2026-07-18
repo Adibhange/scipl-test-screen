@@ -9,11 +9,11 @@ export default async function CandidateResultPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const result = getResultById(id)
+  const result = await getResultById(id)
 
   if (!result) notFound()
 
-  const allQuestions = getAllQuestions()
+  const allQuestions = await getAllQuestions()
   const items = result.answers.map((answer) => ({
     answer,
     question: allQuestions.find((q) => q.id === answer.questionId) ?? null,

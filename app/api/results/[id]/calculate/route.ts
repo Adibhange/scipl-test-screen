@@ -7,13 +7,13 @@ export async function POST(
   context: RouteContext<"/api/results/[id]/calculate">,
 ) {
   const { id } = await context.params
-  const result = getResultById(id)
+  const result = await getResultById(id)
 
   if (!result) {
     return NextResponse.json({ error: "Result not found" }, { status: 404 })
   }
 
-  const questions = getAllQuestions()
+  const questions = await getAllQuestions()
   const questionById = new Map(questions.map((question) => [question.id, question]))
 
   const totals = result.answers.reduce(
@@ -70,7 +70,7 @@ export async function POST(
   const tabSwitchDeduction = result.tabSwitches * 10
   const finalScore = Math.max(0, totals.awarded - tabSwitchDeduction)
 
-  const updated = updateResult(id, (currentResult) => ({
+  const updated = await updateResult(id, (currentResult) => ({
     ...currentResult,
     totalMarksAwarded: finalScore,
     totalMarksPossible: totals.possible,

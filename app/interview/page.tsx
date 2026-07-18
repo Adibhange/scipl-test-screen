@@ -79,7 +79,7 @@ export default function InterviewPage() {
       }
     })
 
-    await fetch("/api/results", {
+    const response = await fetch("/api/results", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -89,6 +89,11 @@ export default function InterviewPage() {
         secondsUsed: payload.secondsUsed,
       }),
     })
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null)
+      throw new Error(payload?.error ?? "Could not submit the assessment. Please try again.")
+    }
   }
 
   function handleDone() {

@@ -688,6 +688,876 @@
     "experience": "1-3",
     "difficulty": "hard",
     "stem": "Implement login functionality using NextAuth and protected dashboard access."
+  },
+  {
+    "id": "pm1",
+    "type": "mcq_single",
+    "topic": "Project Management Fundamentals",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "easy",
+    "stem": "What is the primary goal of project management?",
+    "options": [
+      { "id": "a", "text": "Reduce Team Size" },
+      { "id": "b", "text": "Meet Project Objectives within Constraints" },
+      { "id": "c", "text": "Increase Documentation" },
+      { "id": "d", "text": "Eliminate Risks" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "pm2",
+    "type": "mcq_single",
+    "topic": "Project Lifecycle",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "easy",
+    "stem": "Which phase formally authorizes a project?",
+    "options": [
+      { "id": "a", "text": "Execution" },
+      { "id": "b", "text": "Planning" },
+      { "id": "c", "text": "Initiation" },
+      { "id": "d", "text": "Closure" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "pm3",
+    "type": "mcq_single",
+    "topic": "Stakeholders",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "easy",
+    "stem": "Who is a stakeholder in a project?",
+    "options": [
+      { "id": "a", "text": "Only Customers" },
+      { "id": "b", "text": "Only Team Members" },
+      { "id": "c", "text": "Anyone Impacted by the Project" },
+      { "id": "d", "text": "Only Project Sponsors" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "pm4",
+    "type": "mcq_single",
+    "topic": "Scope Management",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "easy",
+    "stem": "Scope creep refers to:",
+    "options": [
+      { "id": "a", "text": "Controlled Scope Change" },
+      { "id": "b", "text": "Uncontrolled Expansion of Scope" },
+      { "id": "c", "text": "Budget Increase" },
+      { "id": "d", "text": "Resource Allocation" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "pm5",
+    "type": "mcq_single",
+    "topic": "Project Scheduling",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "easy",
+    "stem": "Which tool is commonly used to visualize project schedules?",
+    "options": [
+      { "id": "a", "text": "Mind Map" },
+      { "id": "b", "text": "Gantt Chart" },
+      { "id": "c", "text": "ER Diagram" },
+      { "id": "d", "text": "Pie Chart" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "pm6",
+    "type": "mcq_single",
+    "topic": "Risk Management",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "medium",
+    "stem": "What is the first step in risk management?",
+    "options": [
+      { "id": "a", "text": "Risk Mitigation" },
+      { "id": "b", "text": "Risk Identification" },
+      { "id": "c", "text": "Risk Monitoring" },
+      { "id": "d", "text": "Risk Reporting" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "pm7",
+    "type": "mcq_single",
+    "topic": "Agile",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "medium",
+    "stem": "In Agile methodology, work is completed in:",
+    "options": [
+      { "id": "a", "text": "Milestones" },
+      { "id": "b", "text": "Phases" },
+      { "id": "c", "text": "Sprints" },
+      { "id": "d", "text": "Programs" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "pm8",
+    "type": "mcq_single",
+    "topic": "Scrum",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "medium",
+    "stem": "Who owns and prioritizes the Product Backlog?",
+    "options": [
+      { "id": "a", "text": "Project Manager" },
+      { "id": "b", "text": "Developer" },
+      { "id": "c", "text": "Scrum Master" },
+      { "id": "d", "text": "Product Owner" }
+    ],
+    "correctOptionId": "d"
+  },
+  {
+    "id": "pm9",
+    "type": "mcq_single",
+    "topic": "Communication Management",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "easy",
+    "stem": "Which skill is most important for a Project Manager?",
+    "options": [
+      { "id": "a", "text": "Programming" },
+      { "id": "b", "text": "Communication" },
+      { "id": "c", "text": "Graphic Design" },
+      { "id": "d", "text": "Video Editing" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "pm10",
+    "type": "mcq_single",
+    "topic": "Budget Management",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "easy",
+    "stem": "Which document outlines estimated project costs?",
+    "options": [
+      { "id": "a", "text": "Risk Register" },
+      { "id": "b", "text": "Budget" },
+      { "id": "c", "text": "Issue Log" },
+      { "id": "d", "text": "Scope Statement" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "pm11",
+    "type": "mcq_single",
+    "topic": "Quality Management",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "medium",
+    "stem": "Quality Assurance focuses on:",
+    "options": [
+      { "id": "a", "text": "Preventing Defects" },
+      { "id": "b", "text": "Finding Defects Only" },
+      { "id": "c", "text": "Hiring Resources" },
+      { "id": "d", "text": "Increasing Budget" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "pm12",
+    "type": "mcq_single",
+    "topic": "Project Charter",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "medium",
+    "stem": "What is the purpose of a Project Charter?",
+    "options": [
+      { "id": "a", "text": "Close a Project" },
+      { "id": "b", "text": "Authorize a Project" },
+      { "id": "c", "text": "Track Risks" },
+      { "id": "d", "text": "Manage Payroll" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "pm13",
+    "type": "mcq_single",
+    "topic": "Resource Management",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "medium",
+    "stem": "Resource allocation means:",
+    "options": [
+      { "id": "a", "text": "Assigning Resources to Tasks" },
+      { "id": "b", "text": "Hiring Employees" },
+      { "id": "c", "text": "Reducing Budget" },
+      { "id": "d", "text": "Closing Projects" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "pm14",
+    "type": "mcq_single",
+    "topic": "Monitoring and Control",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "medium",
+    "stem": "A milestone is best described as:",
+    "options": [
+      { "id": "a", "text": "A Budget" },
+      { "id": "b", "text": "A Significant Event or Achievement" },
+      { "id": "c", "text": "A Team Member" },
+      { "id": "d", "text": "A Risk" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "pm15",
+    "type": "mcq_single",
+    "topic": "Agile Metrics",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "medium",
+    "stem": "Velocity in Agile measures:",
+    "options": [
+      { "id": "a", "text": "Budget Performance" },
+      { "id": "b", "text": "Work Completed in a Sprint" },
+      { "id": "c", "text": "Defect Rate" },
+      { "id": "d", "text": "Resource Usage" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "pm16",
+    "type": "mcq_single",
+    "topic": "Issue Management",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "medium",
+    "stem": "An issue log is used to track:",
+    "options": [
+      { "id": "a", "text": "Known Problems" },
+      { "id": "b", "text": "Requirements" },
+      { "id": "c", "text": "Resources" },
+      { "id": "d", "text": "Budgets" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "pm17",
+    "type": "mcq_single",
+    "topic": "Leadership",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "medium",
+    "stem": "A Project Manager should primarily act as:",
+    "options": [
+      { "id": "a", "text": "Supervisor Only" },
+      { "id": "b", "text": "Leader and Facilitator" },
+      { "id": "c", "text": "Developer" },
+      { "id": "d", "text": "Tester" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "pm18",
+    "type": "mcq_single",
+    "topic": "Change Management",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "medium",
+    "stem": "What should happen before implementing a major scope change?",
+    "options": [
+      { "id": "a", "text": "Immediate Implementation" },
+      { "id": "b", "text": "Formal Change Approval" },
+      { "id": "c", "text": "Project Closure" },
+      { "id": "d", "text": "Resource Removal" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "pm19",
+    "type": "mcq_single",
+    "topic": "Project Constraints",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "hard",
+    "stem": "The triple constraint of project management consists of:",
+    "options": [
+      { "id": "a", "text": "Scope, Time, Cost" },
+      { "id": "b", "text": "Risk, Quality, Cost" },
+      { "id": "c", "text": "Team, Budget, Client" },
+      { "id": "d", "text": "Resources, Scope, Profit" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "pm20",
+    "type": "mcq_single",
+    "topic": "Project Closure",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "medium",
+    "stem": "Which activity is commonly performed during project closure?",
+    "options": [
+      { "id": "a", "text": "Requirements Gathering" },
+      { "id": "b", "text": "Sprint Planning" },
+      { "id": "c", "text": "Lessons Learned Documentation" },
+      { "id": "d", "text": "Risk Identification" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "pm21",
+    "type": "mcq_single",
+    "topic": "Team Management",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "medium",
+    "stem": "Conflict within a project team should ideally be resolved through:",
+    "options": [
+      { "id": "a", "text": "Ignoring It" },
+      { "id": "b", "text": "Collaboration and Communication" },
+      { "id": "c", "text": "Escalation Only" },
+      { "id": "d", "text": "Replacing Team Members" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "pm22",
+    "type": "mcq_single",
+    "topic": "Earned Value Management",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "hard",
+    "stem": "What does CPI stand for in Earned Value Management?",
+    "options": [
+      { "id": "a", "text": "Cost Performance Index" },
+      { "id": "b", "text": "Customer Performance Indicator" },
+      { "id": "c", "text": "Critical Process Index" },
+      { "id": "d", "text": "Control Performance Indicator" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "pm23",
+    "type": "mcq_single",
+    "topic": "Procurement Management",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "medium",
+    "stem": "Procurement management involves:",
+    "options": [
+      { "id": "a", "text": "Managing External Vendors and Contracts" },
+      { "id": "b", "text": "Managing Code Reviews" },
+      { "id": "c", "text": "Managing Payroll" },
+      { "id": "d", "text": "Managing Databases" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "pm24",
+    "type": "mcq_single",
+    "topic": "Project Planning",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "medium",
+    "stem": "A Work Breakdown Structure (WBS) is used to:",
+    "options": [
+      { "id": "a", "text": "Break Project Scope into Smaller Deliverables" },
+      { "id": "b", "text": "Track Employee Attendance" },
+      { "id": "c", "text": "Calculate Taxes" },
+      { "id": "d", "text": "Manage Vendors" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "pm25",
+    "type": "mcq_single",
+    "topic": "Project Success",
+    "marks": 2,
+    "role": "Project Manager",
+    "experience": "2-3",
+    "difficulty": "hard",
+    "stem": "A project is generally considered successful when:",
+    "options": [
+      { "id": "a", "text": "It Finishes Early Only" },
+      { "id": "b", "text": "It Meets Scope, Schedule, Cost, and Quality Objectives" },
+      { "id": "c", "text": "The Budget Is Increased" },
+      { "id": "d", "text": "The Team Size Grows" }
+    ],
+    "correctOptionId": "b"
+  },
+
+  {
+    "id": "rn1",
+    "type": "mcq_single",
+    "topic": "React Native Basics",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "What is React Native primarily used for?",
+    "options": [
+      { "id": "a", "text": "Web Development" },
+      { "id": "b", "text": "Mobile Application Development" },
+      { "id": "c", "text": "Database Management" },
+      { "id": "d", "text": "Cloud Computing" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "rn2",
+    "type": "mcq_single",
+    "topic": "Components",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which component is equivalent to a div in React Native?",
+    "options": [
+      { "id": "a", "text": "Container" },
+      { "id": "b", "text": "View" },
+      { "id": "c", "text": "Section" },
+      { "id": "d", "text": "Box" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "rn3",
+    "type": "mcq_single",
+    "topic": "Text Component",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which component is used to display text in React Native?",
+    "options": [
+      { "id": "a", "text": "Label" },
+      { "id": "b", "text": "Text" },
+      { "id": "c", "text": "Typography" },
+      { "id": "d", "text": "Paragraph" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "rn4",
+    "type": "mcq_single",
+    "topic": "Hooks",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which Hook is used to manage component state?",
+    "options": [
+      { "id": "a", "text": "useEffect" },
+      { "id": "b", "text": "useState" },
+      { "id": "c", "text": "useContext" },
+      { "id": "d", "text": "useMemo" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "rn5",
+    "type": "mcq_single",
+    "topic": "Hooks",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which Hook is commonly used for API calls?",
+    "options": [
+      { "id": "a", "text": "useMemo" },
+      { "id": "b", "text": "useRef" },
+      { "id": "c", "text": "useEffect" },
+      { "id": "d", "text": "useCallback" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "rn6",
+    "type": "mcq_single",
+    "topic": "Styling",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which API is used to create styles in React Native?",
+    "options": [
+      { "id": "a", "text": "CSS" },
+      { "id": "b", "text": "Bootstrap" },
+      { "id": "c", "text": "StyleSheet" },
+      { "id": "d", "text": "Tailwind" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "rn7",
+    "type": "mcq_single",
+    "topic": "Navigation",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which library is commonly used for navigation in React Native?",
+    "options": [
+      { "id": "a", "text": "Redux" },
+      { "id": "b", "text": "Axios" },
+      { "id": "c", "text": "React Navigation" },
+      { "id": "d", "text": "Jest" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "rn8",
+    "type": "mcq_single",
+    "topic": "Lists",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which component is optimized for rendering large lists?",
+    "options": [
+      { "id": "a", "text": "FlatList" },
+      { "id": "b", "text": "View" },
+      { "id": "c", "text": "Scroll" },
+      { "id": "d", "text": "ListView" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "rn9",
+    "type": "mcq_single",
+    "topic": "Storage",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which package is commonly used for local key-value storage?",
+    "options": [
+      { "id": "a", "text": "AsyncStorage" },
+      { "id": "b", "text": "MongoDB" },
+      { "id": "c", "text": "MySQL" },
+      { "id": "d", "text": "PostgreSQL" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "rn10",
+    "type": "mcq_single",
+    "topic": "Network Requests",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which function can be used to make HTTP requests?",
+    "options": [
+      { "id": "a", "text": "fetch()" },
+      { "id": "b", "text": "connect()" },
+      { "id": "c", "text": "send()" },
+      { "id": "d", "text": "post()" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "rn11",
+    "type": "mcq_single",
+    "topic": "Images",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "easy",
+    "stem": "Which component is used to display images?",
+    "options": [
+      { "id": "a", "text": "Img" },
+      { "id": "b", "text": "Image" },
+      { "id": "c", "text": "Picture" },
+      { "id": "d", "text": "Photo" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "rn12",
+    "type": "mcq_single",
+    "topic": "Touch Events",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which component provides opacity feedback when pressed?",
+    "options": [
+      { "id": "a", "text": "Button" },
+      { "id": "b", "text": "TouchableOpacity" },
+      { "id": "c", "text": "View" },
+      { "id": "d", "text": "Text" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "rn13",
+    "type": "mcq_single",
+    "topic": "Layout",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "React Native uses which layout system by default?",
+    "options": [
+      { "id": "a", "text": "Grid" },
+      { "id": "b", "text": "Table" },
+      { "id": "c", "text": "Flexbox" },
+      { "id": "d", "text": "Bootstrap" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "rn14",
+    "type": "mcq_single",
+    "topic": "Platform API",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which API is used to detect Android or iOS platform?",
+    "options": [
+      { "id": "a", "text": "Environment" },
+      { "id": "b", "text": "DeviceInfo" },
+      { "id": "c", "text": "Platform" },
+      { "id": "d", "text": "Navigator" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "rn15",
+    "type": "mcq_single",
+    "topic": "State Management",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which library is widely used for global state management?",
+    "options": [
+      { "id": "a", "text": "Redux" },
+      { "id": "b", "text": "Axios" },
+      { "id": "c", "text": "Jest" },
+      { "id": "d", "text": "Expo" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "rn16",
+    "type": "mcq_single",
+    "topic": "Expo",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "What is Expo?",
+    "options": [
+      { "id": "a", "text": "Database Service" },
+      { "id": "b", "text": "React Native Framework and Toolchain" },
+      { "id": "c", "text": "Testing Tool" },
+      { "id": "d", "text": "CSS Library" }
+    ],
+    "correctOptionId": "b"
+  },
+  {
+    "id": "rn17",
+    "type": "mcq_single",
+    "topic": "Debugging",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which method is commonly used for debugging?",
+    "options": [
+      { "id": "a", "text": "console.log()" },
+      { "id": "b", "text": "debug()" },
+      { "id": "c", "text": "echo()" },
+      { "id": "d", "text": "trace()" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "rn18",
+    "type": "mcq_single",
+    "topic": "Safe Area",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which component helps render content within device safe boundaries?",
+    "options": [
+      { "id": "a", "text": "SafeAreaView" },
+      { "id": "b", "text": "View" },
+      { "id": "c", "text": "Container" },
+      { "id": "d", "text": "BoundaryView" }
+    ],
+    "correctOptionId": "a"
+  },
+  {
+    "id": "rn19",
+    "type": "mcq_single",
+    "topic": "Performance",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which component is preferred over ScrollView for very large datasets?",
+    "options": [
+      { "id": "a", "text": "View" },
+      { "id": "b", "text": "Image" },
+      { "id": "c", "text": "FlatList" },
+      { "id": "d", "text": "Text" }
+    ],
+    "correctOptionId": "c"
+  },
+  {
+    "id": "rn20",
+    "type": "mcq_single",
+    "topic": "Lifecycle",
+    "marks": 1,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Which Hook can replicate componentDidMount behavior?",
+    "options": [
+      { "id": "a", "text": "useState" },
+      { "id": "b", "text": "useMemo" },
+      { "id": "c", "text": "useEffect(() => {}, [])" },
+      { "id": "d", "text": "useRef" }
+    ],
+    "correctOptionId": "c"
+  },
+ 
+  {
+    "id": "rn_coding1",
+    "type": "coding",
+    "topic": "State Management",
+    "marks": 10,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Create a React Native Counter application using useState Hook with Increment, Decrement, and Reset functionality."
+  },
+  {
+    "id": "rn_coding2",
+    "type": "coding",
+    "topic": "API Integration",
+    "marks": 10,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "hard",
+    "stem": "Build a React Native screen that fetches user data from a REST API using useEffect and displays the records using FlatList with loading and error handling."
+  },
+  {
+    "id": "rn_coding3",
+    "type": "coding",
+    "topic": "Forms",
+    "marks": 10,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "hard",
+    "stem": "Develop a Login and Registration screen using controlled components with form validation for email and password fields."
+  },
+ 
+  {
+    "id": "rn_theory1",
+    "type": "theory",
+    "topic": "React Native Architecture",
+    "marks": 10,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Explain the architecture of React Native, including JavaScript thread, native thread, bridge, and native modules."
+  },
+  {
+    "id": "rn_theory2",
+    "type": "theory",
+    "topic": "Navigation",
+    "marks": 10,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Compare Stack Navigation, Bottom Tab Navigation, and Drawer Navigation with suitable use cases."
+  },
+  {
+    "id": "rn_theory3",
+    "type": "theory",
+    "topic": "Performance Optimization",
+    "marks": 10,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "hard",
+    "stem": "Describe techniques to optimize React Native applications including FlatList optimization, memoization, lazy loading, and reducing unnecessary re-renders."
+  },
+ 
+  {
+    "id": "rn_subjective1",
+    "type": "subjective",
+    "topic": "Expo",
+    "marks": 5,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "What are the advantages and limitations of using Expo in React Native projects?"
+  },
+  {
+    "id": "rn_subjective2",
+    "type": "subjective",
+    "topic": "State Management",
+    "marks": 5,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Differentiate between local component state, Context API, and Redux."
+  },
+  {
+    "id": "rn_subjective3",
+    "type": "subjective",
+    "topic": "Hooks",
+    "marks": 5,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "Explain the purpose of useEffect and provide practical scenarios where it is commonly used."
+  },
+  {
+    "id": "rn_subjective4",
+    "type": "subjective",
+    "topic": "Mobile Development",
+    "marks": 5,
+    "role": "React Native Developer",
+    "experience": "1-3",
+    "difficulty": "medium",
+    "stem": "What challenges do developers face when creating cross-platform mobile applications and how does React Native address them?"
   }
 ]
+
  

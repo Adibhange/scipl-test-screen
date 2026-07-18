@@ -17,7 +17,7 @@ export default async function AdminPage({
 }: {
 	searchParams: Promise<{ status?: string; role?: string }>;
 }) {
-	const results = getAllResults().reverse();
+	const results = (await getAllResults()).reverse();
 	const { status = "completed", role = "all" } = await searchParams;
 	const pendingResults = results.filter(
 		(result) => result.totalMarksAwarded === undefined,

@@ -1,18 +1,30 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/db"
+import { createCandidate } from "@/lib/db"
+
+const requiredFields = ["name", "mobile", "email", "role", "experience"] as const
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
+  try {
+    const body = await req.json()
 
-  const candidate = await db.candidate.create({
-    data: {
-      name: body.name,
-      mobile: body.mobile,
-      email: body.email,
-      role: body.role,
-      experience: body.experience,
-    },
-  })
+    if (
+      !body ||
+      requiredFields.some((field) => typeof body[field] !== "string" || !body[field].trim())
+    ) {
+      return NextResponse.json({ error: "All candidate fields are required." }, { status: 400 })
+    }
 
-  return NextResponse.json(candidate, { status: 201 })
+    const candidate = await createCandidate({
+      name: body.name.trim(),
+      mobile: body.mobile.trim(),
+      email: body.email.trim().toLowerCase(),
+      role: body.role.trim(),
+      experience: body.experience.trim(),
+    })
+
+    return NextResponse.json(candidate, { status: 201 })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to create candidate"
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }

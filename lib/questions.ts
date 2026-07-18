@@ -1,31 +1,32 @@
-import fs from "fs"
-import path from "path"
 import { getAssessmentRounds } from "@/data/assessment-rounds"
 import type { Question } from "@/types"
+import { getSupabaseServerClient } from "@/lib/db"
 
-const QUESTIONS_PATH = path.join(process.cwd(), "data", "questions.json")
+export async function getAllQuestions(): Promise<Question[]> {
+  const { data, error } = await getSupabaseServerClient().from("question_documents").select("payload")
 
-export function getAllQuestions(): Question[] {
-  if (!fs.existsSync(QUESTIONS_PATH)) return []
-  const raw = fs.readFileSync(QUESTIONS_PATH, "utf-8").trim()
-  if (!raw) return []
-  try {
-    return JSON.parse(raw)
-  } catch {
-    return []
+  if (error) {
+    throw new Error(`Could not load questions: ${error.message}`)
   }
+
+  return (
+    (data ?? [])
+      .map((row) => row.payload)
+      .filter(Boolean)
+      .map((payload) => payload as Question)
+  )
 }
 
-export function getQuestionsByRoleAndExperience(
+export async function getQuestionsByRoleAndExperience(
   role: string,
   experience: string
-): Question[] {
-  const all = getAllQuestions()
+): Promise<Question[]> {
+  const all = await getAllQuestions()
   return all.filter((q) => q.role === role && q.experience === experience)
 }
 
-export function getAssessmentQuestions(role: string, experience: string): Question[] {
-  const questions = getQuestionsByRoleAndExperience(role, experience)
+export async function getAssessmentQuestions(role: string, experience: string): Promise<Question[]> {
+  const questions = await getQuestionsByRoleAndExperience(role, experience)
   return getAssessmentRounds(role).flatMap((round) =>
     questions.filter((question) => round.types.includes(question.type)).slice(0, round.limit),
   )

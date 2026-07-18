@@ -1,5 +1,7 @@
 export type Candidate = {
-  name: string
+	/** Assigned by Supabase when the candidate intake is saved. */
+	id?: string
+	name: string
   mobile: string
   email: string
   role: string

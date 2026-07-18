@@ -965,5 +965,213 @@
     "tabSwitches": 1,
     "secondsUsed": 6599,
     "submittedAt": "2026-07-17T20:48:07.793Z"
+  },
+  {
+    "id": "33cb3124-e4a9-4bfc-bfc1-214fa77272f9",
+    "candidate": {
+      "name": "gdfgdf fdgdfgdfg",
+      "mobile": "9897897897",
+      "email": "fgdfgdfg@ghgfh.hfghfg",
+      "role": "NextJS Developer",
+      "experience": "0-1"
+    },
+    "answers": [],
+    "tabSwitches": 0,
+    "secondsUsed": 3000,
+    "submittedAt": "2026-07-18T06:45:42.456Z"
+  },
+  {
+    "id": "d3cb1bc8-922e-4aeb-8597-196e26131c42",
+    "candidate": {
+      "name": "hfghfgh gfhfgh",
+      "mobile": "8978978978",
+      "email": "bcvbcvb@fgdfg.hjhj",
+      "role": "SQL Developer",
+      "experience": "0-1"
+    },
+    "answers": [],
+    "tabSwitches": 0,
+    "secondsUsed": 3000,
+    "submittedAt": "2026-07-18T07:26:34.005Z"
+  },
+  {
+    "id": "877a6f0a-e14c-49c3-9d50-bb63e2ec9215",
+    "candidate": {
+      "name": "retretert rtertertret",
+      "mobile": "8978978978",
+      "email": "dsgsdgsgs@hfghf.ghgf",
+      "role": "SQL Developer",
+      "experience": "1-3"
+    },
+    "answers": [
+      {
+        "questionId": "sql1",
+        "questionTopic": "SQL Basics",
+        "questionType": "mcq_single",
+        "answerValue": "",
+        "isCorrect": false
+      },
+      {
+        "questionId": "sql2",
+        "questionTopic": "Filtering",
+        "questionType": "mcq_single",
+        "answerValue": "",
+        "isCorrect": false
+      },
+      {
+        "questionId": "sql3",
+        "questionTopic": "Joins",
+        "questionType": "mcq_multi",
+        "answerValue": [],
+        "isCorrect": false
+      },
+      {
+        "questionId": "sql4",
+        "questionTopic": "Aggregation",
+        "questionType": "mcq_single",
+        "answerValue": "",
+        "isCorrect": false
+      },
+      {
+        "questionId": "sql5",
+        "questionTopic": "Constraints",
+        "questionType": "mcq_single",
+        "answerValue": "",
+        "isCorrect": false
+      },
+      {
+        "questionId": "sql6",
+        "questionTopic": "Normalization",
+        "questionType": "mcq_multi",
+        "answerValue": [],
+        "isCorrect": false
+      },
+      {
+        "questionId": "sql7",
+        "questionTopic": "Indexing",
+        "questionType": "mcq_single",
+        "answerValue": "",
+        "isCorrect": false
+      },
+      {
+        "questionId": "sql8",
+        "questionTopic": "Transactions",
+        "questionType": "mcq_single",
+        "answerValue": "",
+        "isCorrect": false
+      },
+      {
+        "questionId": "sql9",
+        "questionTopic": "ACID",
+        "questionType": "mcq_multi",
+        "answerValue": [],
+        "isCorrect": false
+      },
+      {
+        "questionId": "sql10",
+        "questionTopic": "Subqueries",
+        "questionType": "mcq_single",
+        "answerValue": "",
+        "isCorrect": false
+      },
+      {
+        "questionId": "sql11",
+        "questionTopic": "Joins",
+        "questionType": "coding",
+        "answerValue": ""
+      },
+      {
+        "questionId": "sql12",
+        "questionTopic": "Aggregation",
+        "questionType": "coding",
+        "answerValue": ""
+      },
+      {
+        "questionId": "sql13",
+        "questionTopic": "Window Functions",
+        "questionType": "coding",
+        "answerValue": ""
+      },
+      {
+        "questionId": "sql14",
+        "questionTopic": "Indexing",
+        "questionType": "subjective",
+        "answerValue": ""
+      },
+      {
+        "questionId": "sql15",
+        "questionTopic": "Transactions",
+        "questionType": "subjective",
+        "answerValue": ""
+      },
+      {
+        "questionId": "sql16",
+        "questionTopic": "Stored Procedures",
+        "questionType": "mcq_single",
+        "answerValue": "",
+        "isCorrect": false
+      },
+      {
+        "questionId": "sql17",
+        "questionTopic": "Views",
+        "questionType": "mcq_single",
+        "answerValue": "",
+        "isCorrect": false
+      },
+      {
+        "questionId": "sql18",
+        "questionTopic": "Functions",
+        "questionType": "mcq_multi",
+        "answerValue": [],
+        "isCorrect": false
+      },
+      {
+        "questionId": "sql19",
+        "questionTopic": "CTE",
+        "questionType": "coding",
+        "answerValue": ""
+      },
+      {
+        "questionId": "sql20",
+        "questionTopic": "Optimization",
+        "questionType": "subjective",
+        "answerValue": ""
+      },
+      {
+        "questionId": "sql21",
+        "questionTopic": "Constraints",
+        "questionType": "mcq_single",
+        "answerValue": "",
+        "isCorrect": false
+      },
+      {
+        "questionId": "sql22",
+        "questionTopic": "DDL",
+        "questionType": "mcq_single",
+        "answerValue": "",
+        "isCorrect": false
+      },
+      {
+        "questionId": "sql23",
+        "questionTopic": "SQL Queries",
+        "questionType": "coding",
+        "answerValue": ""
+      },
+      {
+        "questionId": "sql24",
+        "questionTopic": "Database Design",
+        "questionType": "subjective",
+        "answerValue": ""
+      },
+      {
+        "questionId": "sql25",
+        "questionTopic": "Window Functions",
+        "questionType": "coding",
+        "answerValue": ""
+      }
+    ],
+    "tabSwitches": 1,
+    "secondsUsed": 3002,
+    "submittedAt": "2026-07-18T07:36:21.204Z"
   }
 ]
