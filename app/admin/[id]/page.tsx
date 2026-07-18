@@ -3,6 +3,9 @@ import { getResultById } from "@/lib/results"
 import { getAllQuestions } from "@/lib/questions"
 import { AdminQuestionReview } from "@/components/admin/admin-question-review"
 
+// This page reads a Supabase result for the requested candidate.
+export const dynamic = "force-dynamic"
+
 export default async function CandidateResultPage({
   params,
 }: {

@@ -12,6 +12,9 @@ import {
 	CalendarDays,
 } from "lucide-react";
 
+// Results are read from Supabase and must be fetched at request time.
+export const dynamic = "force-dynamic";
+
 export default async function AdminPage({
 	searchParams,
 }: {
