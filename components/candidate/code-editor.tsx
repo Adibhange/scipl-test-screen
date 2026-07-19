@@ -8,9 +8,10 @@ type Props = {
   onChange: (value: string) => void
   language?: string
   placeholder?: string
+  readOnly?: boolean
 }
 
-export function CodeEditor({ value, onChange, language = "javascript", placeholder }: Props) {
+export function CodeEditor({ value, onChange, language = "javascript", placeholder, readOnly = false }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const gutterRef = useRef<HTMLDivElement>(null)
   const [lineCount, setLineCount] = useState(Math.max(value.split("\n").length, 1))
@@ -22,12 +23,14 @@ export function CodeEditor({ value, onChange, language = "javascript", placehold
   }
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    if (readOnly) return
     onChange(e.target.value)
     setLineCount(Math.max(e.target.value.split("\n").length, 1))
   }
 
   // Tab key inserts spaces instead of moving focus
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (readOnly) return
     if (e.key === "Tab") {
       e.preventDefault()
       const el = textareaRef.current
@@ -73,9 +76,11 @@ export function CodeEditor({ value, onChange, language = "javascript", placehold
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           spellCheck={false}
+          readOnly={readOnly}
           className={cn(
             "flex-1 bg-[#1e1e1e] text-[#d4d4d4] py-3 pr-4 outline-none resize-none",
-            "h-64 leading-6"
+            "h-64 leading-6",
+            readOnly && "cursor-not-allowed opacity-60"
           )}
           style={{ tabSize: 2 }}
         />

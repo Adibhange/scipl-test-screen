@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import type { AdminGrade } from "@/types"
 
 const gradeOptions = [
@@ -24,16 +25,19 @@ export function CodingGradeToggle({
   questionId,
   initialGrade,
   onGradeChange,
+  disabled = false,
 }: {
   resultId: string
   questionId: string
   initialGrade?: AdminGrade
   onGradeChange?: (grade: AdminGrade) => void
+  disabled?: boolean
 }) {
   const [grade, setGrade] = useState(initialGrade ?? "")
   const [saving, setSaving] = useState(false)
 
   async function updateGrade(value: string) {
+    if (disabled) return
     setSaving(true)
 
     try {
@@ -74,13 +78,14 @@ export function CodingGradeToggle({
           key={item.value}
           size="sm"
           variant="outline"
-          disabled={saving}
+          disabled={saving || disabled}
           onClick={() => updateGrade(item.value)}
-          className={
+          className={cn(
             grade === item.value
-              ? "bg-primary text-primary-foreground"
-              : ""
-          }
+              ? "bg-primary text-primary-foreground hover:bg-primary/90"
+              : "hover:bg-slate-100",
+            disabled && "cursor-not-allowed opacity-50 bg-slate-50 text-slate-400 border-slate-200"
+          )}
         >
           {item.label}
         </Button>

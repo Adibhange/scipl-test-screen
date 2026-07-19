@@ -59,10 +59,31 @@ export const ROLES: RoleConfig[] = [
 	},
 ];
 
+function normalizeRoleString(r: string): string {
+	return (r || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 export function getRoleConfig(role: string) {
-	return ROLES.find((item) => item.value === role);
+	const norm = normalizeRoleString(role);
+	return ROLES.find(
+		(item) =>
+			normalizeRoleString(item.value) === norm ||
+			normalizeRoleString(item.label) === norm,
+	);
 }
 
 export function isITRole(role: string) {
-	return getRoleConfig(role)?.category === "it";
+	const config = getRoleConfig(role);
+	if (config) {
+		return config.category === "it";
+	}
+
+	const lowercaseRole = role.toLowerCase();
+	const itKeywords = [
+		"developer", "engineer", "programmer", "tester", "qa", 
+		"tech", "react", "node", "sql", "next", "js", "java", 
+		"python", "coder", "admin", "dev", "fullstack", "frontend", "backend"
+	];
+
+	return itKeywords.some((keyword) => lowercaseRole.includes(keyword));
 }

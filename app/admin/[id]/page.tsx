@@ -1,26 +1,34 @@
-import { notFound } from "next/navigation"
-import { getResultById } from "@/lib/results"
-import { getAllQuestions } from "@/lib/questions"
-import { AdminQuestionReview } from "@/components/admin/admin-question-review"
+import { notFound } from "next/navigation";
+import { getResultById } from "@/lib/results";
+import { getAllQuestions } from "@/lib/questions";
+import { CandidateDetailWrapper } from "@/components/admin/candidate-detail-wrapper";
+import { getCurrentAdmin } from "@/lib/admin-auth";
+import { AdminShell } from "@/components/layout/admin-shell";
 
-// This page reads a Supabase result for the requested candidate.
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
 
 export default async function CandidateResultPage({
-  params,
+	params,
 }: {
-  params: Promise<{ id: string }>
+	params: Promise<{ id: string }>;
 }) {
-  const { id } = await params
-  const result = await getResultById(id)
+	const { id } = await params;
+	const result = await getResultById(id);
 
-  if (!result) notFound()
+	if (!result) notFound();
+	const admin = await getCurrentAdmin();
+	if (!admin) notFound();
 
-  const allQuestions = await getAllQuestions()
-  const items = result.answers.map((answer) => ({
-    answer,
-    question: allQuestions.find((q) => q.id === answer.questionId) ?? null,
-  }))
+	const allQuestions = await getAllQuestions();
+	const items = result.answers.map((answer) => ({
+		answer,
+		question: allQuestions.find((q) => q.id === answer.questionId) ?? null,
+	}));
 
-  return <AdminQuestionReview result={result} items={items} />
+	return (
+		<AdminShell admin={admin}>
+			<CandidateDetailWrapper result={result} items={items} admin={admin} />
+		</AdminShell>
+	);
 }
+

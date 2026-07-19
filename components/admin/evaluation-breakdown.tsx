@@ -3,9 +3,9 @@ import { Badge } from "@/components/ui/badge"
 
 const categories = [
   ["MCQ", "mcq"],
-  ["Coding", "coding"],
+  ["CODING", "coding"],
   ["SQL", "sql"],
-  ["Subjective", "subjective"],
+  ["SUBJECTIVE", "subjective"],
 ] as const
 
 export function EvaluationBreakdown({
