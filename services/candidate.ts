@@ -1,10 +1,8 @@
-import type { Candidate } from "@/types/candidate";
-
 /**
  * Client service handler for Candidate-centric API requests.
  */
 
-export async function registerCandidate(candidate: Candidate) {
+export async function registerCandidate(candidate: any) {
 	const response = await fetch("/api/candidates", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },

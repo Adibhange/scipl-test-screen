@@ -1,32 +1,33 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getCurrentAdmin } from "@/lib/admin-auth"
 import { getSupabaseServerClient } from "@/lib/db"
+import { getCurrentAdmin } from "@/lib/admin-auth"
 
-export const dynamic = "force-dynamic"
-
-// Helper to check HR permissions
 async function checkHRPermission() {
   const admin = await getCurrentAdmin()
   if (!admin || admin.role !== "hr") {
-    return { authorized: false, errorResponse: NextResponse.json({ error: "HR access required" }, { status: 403 }) }
+    return {
+      authorized: false,
+      errorResponse: NextResponse.json({ error: "HR access required" }, { status: 403 })
+    }
   }
   return { authorized: true }
 }
+
+export const dynamic = "force-dynamic"
 
 export async function GET() {
   const auth = await checkHRPermission()
   if (!auth.authorized) return auth.errorResponse!
 
   try {
-    const client = getSupabaseServerClient();
+    const client = getSupabaseServerClient()
 
-    // 1. Fetch master configurations from separate tables
-    const { data: roles } = await client.from("master_roles").select("*").order("created_at", { ascending: true })
-    const { data: experiences } = await client.from("master_experiences").select("*").order("created_at", { ascending: true })
-    const { data: hiring } = await client.from("master_hiring_locations").select("*").order("created_at", { ascending: true })
-    const { data: test } = await client.from("master_test_locations").select("*").order("created_at", { ascending: true })
+    // 1. Fetch configs
+    const { data: roles } = await client.from("master_roles").select("*")
+    const { data: experiences } = await client.from("master_experiences").select("*")
+    const { data: hiring } = await client.from("master_hiring_locations").select("*")
+    const { data: test } = await client.from("master_test_locations").select("*")
 
-    // Map separate tables to configs response structure
     const configItems = [
       ...(roles || []).map(r => ({ id: r.id, type: "role", value: r.value, label: r.label, is_active: r.is_active, metadata: {} })),
       ...(experiences || []).map(e => ({ id: e.id, type: "experience", value: e.value, label: e.label, is_active: e.is_active, metadata: { filled: e.filled_dots } })),
@@ -34,10 +35,15 @@ export async function GET() {
       ...(test || []).map(t => ({ id: t.id, type: "test_location", value: t.value, label: t.label, is_active: t.is_active, metadata: {} }))
     ]
 
-    // 2. Fetch vacancies
+    // 2. Fetch vacancies with joins to retrieve master configuration values
     const { data: vacancies, error: vacancyError } = await client
       .from("job_vacancies")
-      .select("*")
+      .select(`
+        id, test_locations, openings, is_active, created_at,
+        roleObj:master_roles(value),
+        experienceObj:master_experiences(value),
+        hiringLocObj:master_hiring_locations(value)
+      `)
       .order("created_at", { ascending: true })
 
     if (vacancyError) {
@@ -47,21 +53,35 @@ export async function GET() {
     // 3. Fetch candidate applications to count active applicants per role+experience combination
     const { data: candidates } = await client
       .from("candidates")
-      .select("role, experience")
+      .select(`
+        roleObj:master_roles(value),
+        experienceObj:master_experiences(value)
+      `)
 
     const applicantCounts: Record<string, number> = {}
     if (candidates && candidates.length > 0) {
       candidates.forEach((candidate) => {
-        const key = `${candidate.role || ""}_${candidate.experience || ""}`.toLowerCase();
+        const rVal = (candidate as any).roleObj?.value || "";
+        const eVal = (candidate as any).experienceObj?.value || "";
+        const key = `${rVal}_${eVal}`.toLowerCase();
         applicantCounts[key] = (applicantCounts[key] || 0) + 1;
       });
     }
 
     // Map applicant counts into the vacancies array
     const mappedVacancies = (vacancies || []).map((vacancy) => {
-      const key = `${vacancy.role || ""}_${vacancy.experience || ""}`.toLowerCase();
+      const rVal = (vacancy as any).roleObj?.value || "";
+      const eVal = (vacancy as any).experienceObj?.value || "";
+      const key = `${rVal}_${eVal}`.toLowerCase();
       return {
-        ...vacancy,
+        id: vacancy.id,
+        role: rVal,
+        experience: eVal,
+        hiring_location: (vacancy as any).hiringLocObj?.value || "",
+        test_locations: vacancy.test_locations,
+        openings: vacancy.openings,
+        is_active: vacancy.is_active,
+        created_at: vacancy.created_at,
         applicantCount: applicantCounts[key] ?? 0
       };
     });
@@ -89,12 +109,21 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "role, experience, hiring_location and test_locations (array) are required for vacancies" }, { status: 400 })
       }
 
+      // Resolve text choice inputs to master table UUID keys
+      const { data: roleData } = await client.from("master_roles").select("id").eq("value", body.role.trim()).maybeSingle();
+      const { data: expData } = await client.from("master_experiences").select("id").eq("value", body.experience.trim()).maybeSingle();
+      const { data: hiringData } = await client.from("master_hiring_locations").select("id").eq("value", body.hiring_location.trim()).maybeSingle();
+
+      if (!roleData || !expData || !hiringData) {
+        return NextResponse.json({ error: "Invalid role, experience, or hiring location configuration choices" }, { status: 400 });
+      }
+
       const { data, error } = await client
         .from("job_vacancies")
         .insert({
-          role: body.role.trim(),
-          experience: body.experience.trim(),
-          hiring_location: body.hiring_location.trim(),
+          role: roleData.id,
+          experience: expData.id,
+          hiring_location: hiringData.id,
           test_locations: body.test_locations,
           openings: Number(body.openings || 1),
           is_active: body.is_active !== false
@@ -106,7 +135,16 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 400 })
       }
 
-      return NextResponse.json(data, { status: 201 })
+      return NextResponse.json({
+        id: data.id,
+        role: body.role.trim(),
+        experience: body.experience.trim(),
+        hiring_location: body.hiring_location.trim(),
+        test_locations: data.test_locations,
+        openings: data.openings,
+        is_active: data.is_active,
+        created_at: data.created_at
+      }, { status: 201 })
     } else {
       if (!body.type || !body.value || !body.label) {
         return NextResponse.json({ error: "type, value and label are required" }, { status: 400 })
@@ -114,7 +152,7 @@ export async function POST(request: NextRequest) {
 
       const type = body.type
       let targetTable = ""
-      let insertData: Record<string, unknown> = {
+      const insertObj: Record<string, unknown> = {
         value: body.value.trim(),
         label: body.label.trim(),
         is_active: body.is_active !== false
@@ -124,18 +162,18 @@ export async function POST(request: NextRequest) {
         targetTable = "master_roles"
       } else if (type === "experience") {
         targetTable = "master_experiences"
-        insertData.filled_dots = Number(body.metadata?.filled ?? 1)
+        insertObj.filled_dots = Number(body.metadata?.filled || 1)
       } else if (type === "hiring_location") {
         targetTable = "master_hiring_locations"
       } else if (type === "test_location") {
         targetTable = "master_test_locations"
       } else {
-        return NextResponse.json({ error: `Unknown configuration type: ${type}` }, { status: 400 })
+        return NextResponse.json({ error: `Unknown type: ${type}` }, { status: 400 })
       }
 
       const { data, error } = await client
         .from(targetTable)
-        .insert(insertData)
+        .insert(insertObj)
         .select()
         .single()
 
@@ -160,7 +198,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function PATCH(request: NextRequest) {
+export async function PUT(request: NextRequest) {
   const auth = await checkHRPermission()
   if (!auth.authorized) return auth.errorResponse!
 
@@ -176,10 +214,23 @@ export async function PATCH(request: NextRequest) {
       const updates: Record<string, unknown> = {}
       if (body.is_active !== undefined) updates.is_active = body.is_active
       if (body.openings !== undefined) updates.openings = Number(body.openings)
-      if (body.role !== undefined) updates.role = body.role.trim()
-      if (body.experience !== undefined) updates.experience = body.experience.trim()
-      if (body.hiring_location !== undefined) updates.hiring_location = body.hiring_location.trim()
       if (body.test_locations !== undefined) updates.test_locations = body.test_locations
+
+      if (body.role !== undefined) {
+        const { data: rd } = await client.from("master_roles").select("id").eq("value", body.role.trim()).maybeSingle();
+        if (!rd) return NextResponse.json({ error: "Invalid role configuration choices" }, { status: 400 });
+        updates.role = rd.id;
+      }
+      if (body.experience !== undefined) {
+        const { data: ed } = await client.from("master_experiences").select("id").eq("value", body.experience.trim()).maybeSingle();
+        if (!ed) return NextResponse.json({ error: "Invalid experience configuration choices" }, { status: 400 });
+        updates.experience = ed.id;
+      }
+      if (body.hiring_location !== undefined) {
+        const { data: hd } = await client.from("master_hiring_locations").select("id").eq("value", body.hiring_location.trim()).maybeSingle();
+        if (!hd) return NextResponse.json({ error: "Invalid hiring location configuration choices" }, { status: 400 });
+        updates.hiring_location = hd.id;
+      }
 
       const { data, error } = await client
         .from("job_vacancies")
@@ -192,7 +243,16 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 400 })
       }
 
-      return NextResponse.json(data)
+      return NextResponse.json({
+        id: data.id,
+        role: body.role || "",
+        experience: body.experience || "",
+        hiring_location: body.hiring_location || "",
+        test_locations: data.test_locations,
+        openings: data.openings,
+        is_active: data.is_active,
+        created_at: data.created_at
+      })
     } else {
       if (!body.type) {
         return NextResponse.json({ error: "type is required to identify target master table" }, { status: 400 })
@@ -281,11 +341,17 @@ export async function DELETE(request: NextRequest) {
       }
 
       let targetTable = ""
-      if (type === "role") targetTable = "master_roles"
-      else if (type === "experience") targetTable = "master_experiences"
-      else if (type === "hiring_location") targetTable = "master_hiring_locations"
-      else if (type === "test_location") targetTable = "master_test_locations"
-      else return NextResponse.json({ error: `Unknown type: ${type}` }, { status: 400 })
+      if (type === "role") {
+        targetTable = "master_roles"
+      } else if (type === "experience") {
+        targetTable = "master_experiences"
+      } else if (type === "hiring_location") {
+        targetTable = "master_hiring_locations"
+      } else if (type === "test_location") {
+        targetTable = "master_test_locations"
+      } else {
+        return NextResponse.json({ error: `Unknown type: ${type}` }, { status: 400 })
+      }
 
       const { error } = await client
         .from(targetTable)

@@ -14,6 +14,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(questions)
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not load questions"
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json({ error: message }, { status: 400 })
   }
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, LogOut, UsersRound, Settings } from "lucide-react";
+import { LayoutDashboard, LogOut, UsersRound, Settings, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AdminRole } from "@/types";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -29,6 +29,7 @@ export function AdminShell({
 	const [showSessionModal, setShowSessionModal] = useState(false);
 	const [sessionWarning, setSessionWarning] = useState(false);
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
 	const navItems = [
 		{ href: "/admin", label: "Candidate Pipeline", icon: LayoutDashboard },
@@ -74,6 +75,7 @@ export function AdminShell({
 
 	return (
 		<div className='min-h-screen bg-slate-50 text-slate-900'>
+			{/* Desktop Sidebar */}
 			<aside className='fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200 bg-white lg:flex'>
 				<div className='flex h-20 items-center gap-3 border-b border-slate-100 px-6'>
 					<div className='flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-indigo-600 to-violet-600 text-base font-bold text-white shadow-lg shadow-indigo-200'>
@@ -108,15 +110,70 @@ export function AdminShell({
 					})}
 				</nav>
 			</aside>
+
+			{/* Mobile Drawer Navigation */}
+			{isMobileMenuOpen && (
+				<div className='fixed inset-0 z-40 lg:hidden'>
+					<div
+						className='fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity'
+						onClick={() => setIsMobileMenuOpen(false)}
+					/>
+					<aside className='fixed inset-y-0 left-0 z-50 w-64 flex flex-col border-r border-slate-200 bg-white animate-in slide-in-from-left duration-200'>
+						<div className='flex h-20 items-center gap-3 border-b border-slate-100 px-6'>
+							<div className='flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-indigo-600 to-violet-600 text-base font-bold text-white shadow-lg shadow-indigo-200'>
+								S
+							</div>
+							<div>
+								<p className='text-sm font-bold tracking-tight'>SCIPL</p>
+								<p className='text-[11px] text-slate-500'>Interview Portal</p>
+							</div>
+						</div>
+						<nav className='flex-1 space-y-1 p-4'>
+							{navItems.map((item) => {
+								const active =
+									item.href === "/admin" ?
+										pathname === "/admin"
+									:	pathname.startsWith(item.href);
+								const Icon = item.icon;
+								return (
+									<Link
+										key={item.href}
+										href={item.href}
+										onClick={() => setIsMobileMenuOpen(false)}
+										className={cn(
+											"flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+											active ?
+												"bg-indigo-50 text-indigo-700"
+											:	"text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+										)}>
+										<Icon className='h-4 w-4' />
+										{item.label}
+									</Link>
+								);
+							})}
+						</nav>
+					</aside>
+				</div>
+			)}
+
 			<div className='lg:pl-64'>
 				<header className='sticky top-0 z-20 flex h-20 items-center justify-between border-b border-slate-200 bg-white/90 px-5 backdrop-blur lg:px-8'>
-					<div>
-						<h1 className='text-sm font-bold tracking-tight text-slate-900'>
-							SCIPL Interview Question Portal
-						</h1>
-						<div className='mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700'>
-							<span className='h-1.5 w-1.5 rounded-full bg-emerald-500' />
-							Assessment System Online
+					<div className='flex items-center gap-3'>
+						<button
+							type='button'
+							onClick={() => setIsMobileMenuOpen(true)}
+							className='flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors lg:hidden cursor-pointer'
+						>
+							<Menu className='h-5 w-5' />
+						</button>
+						<div>
+							<h1 className='text-sm font-bold tracking-tight text-slate-900'>
+								SCIPL Interview Question Portal
+							</h1>
+							<div className='mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700'>
+								<span className='h-1.5 w-1.5 rounded-full bg-emerald-500' />
+								Assessment System Online
+							</div>
 						</div>
 					</div>
 					<div className='relative flex items-center gap-3'>

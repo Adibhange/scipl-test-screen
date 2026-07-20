@@ -20,14 +20,14 @@ export async function getExamSession(candidateId: string) {
 	}
 	if (!data) return null;
 
-	// Auto-expiry check if exam is started but not submitted
-	if (data.is_exam_started === 1 && data.is_exam_submitted === 0 && data.expires_at) {
+	// Auto-expiry check if exam is started but not submitted (using native boolean check)
+	if (data.is_exam_started === true && data.is_exam_submitted === false && data.expires_at) {
 		const expiresAt = new Date(data.expires_at).getTime();
 		if (Date.now() >= expiresAt) {
 			const { data: updated, error: updateError } = await supabase
 				.from("exam_sessions")
 				.update({
-					is_exam_submitted: 1,
+					is_exam_submitted: true,
 					submitted_at: new Date().toISOString(),
 				})
 				.eq("candidate_id", candidateId)
@@ -47,7 +47,7 @@ export async function getExamSession(candidateId: string) {
 
 export function buildExamSessionResponse(session: any) {
 	let remainingSeconds = 0;
-	if (session.is_exam_started === 1 && session.expires_at) {
+	if (session.is_exam_started === true && session.expires_at) {
 		const expiresAt = new Date(session.expires_at).getTime();
 		remainingSeconds = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
 	} else {
@@ -56,9 +56,9 @@ export function buildExamSessionResponse(session: any) {
 
 	return {
 		status:
-			session.is_exam_submitted === 1 ? "submitted"
-			: (session.is_exam_started === 1 && remainingSeconds <= 0) ? "expired"
-			: session.is_exam_started === 1 ? "active"
+			session.is_exam_submitted === true ? "submitted"
+			: (session.is_exam_started === true && remainingSeconds <= 0) ? "expired"
+			: session.is_exam_started === true ? "active"
 			: "idle",
 		sessionToken: session.active_session_token,
 		startedAt: session.started_at,
@@ -88,7 +88,7 @@ export async function startExamSession({
 	const newToken = `${candidateId}-${Date.now()}`;
 
 	if (existing) {
-		if (existing.is_exam_submitted === 1) {
+		if (existing.is_exam_submitted === true) {
 			return { session: existing, conflict: false };
 		}
 
@@ -106,15 +106,15 @@ export async function startExamSession({
 		return { session: updated, conflict: false };
 	}
 
-	// Create new session. Timer parameters are initialized on action: "start"
+	// Create new session (using native boolean check)
 	const { data: created, error } = await supabase
 		.from("exam_sessions")
 		.insert({
 			candidate_id: candidateId,
 			role,
 			experience,
-			is_exam_started: 0,
-			is_exam_submitted: 0,
+			is_exam_started: false,
+			is_exam_submitted: false,
 			active_session_token: newToken,
 			seconds_used: 0,
 		})
@@ -149,13 +149,13 @@ export async function updateExamSession(
 		const startedAt = new Date();
 		const expiresAt = new Date(startedAt.getTime() + durationSeconds * 1000);
 
-		updates.is_exam_started = 1;
+		updates.is_exam_started = true;
 		updates.started_at = startedAt.toISOString();
 		updates.expires_at = expiresAt.toISOString();
 	}
 
-	if (body.action === "submit" || session.is_exam_submitted === 1) {
-		updates.is_exam_submitted = 1;
+	if (body.action === "submit" || session.is_exam_submitted === true) {
+		updates.is_exam_submitted = true;
 		updates.submitted_at = new Date().toISOString();
 	}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,31 +31,54 @@ export function AddCandidateDialog({
 	experienceList?: Array<{ value: string; label: string }>;
 }) {
 	const [open, setOpen] = useState(false);
-	const [name, setName] = useState("");
+	const [firstName, setFirstName] = useState("");
+	const [lastName, setLastName] = useState("");
 	const [mobile, setMobile] = useState("");
 	const [email, setEmail] = useState("");
-	const [role, setRole] = useState("");
-	const [experience, setExperience] = useState("");
 	const [testLocation, setTestLocation] = useState("home");
+	const [vacancyId, setVacancyId] = useState("");
+	const [vacanciesList, setVacanciesList] = useState<any[]>([]);
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
+	useEffect(() => {
+		if (open) {
+			fetch("/api/candidates/metadata")
+				.then((res) => (res.ok ? res.json() : {}))
+				.then((data: any) => {
+					if (data.vacancies && Array.isArray(data.vacancies)) {
+						setVacanciesList(data.vacancies);
+					}
+				})
+				.catch((err) => console.warn("Failed to fetch vacancies:", err));
+		}
+	}, [open]);
+
 	async function handleAdd(e: React.FormEvent) {
 		e.preventDefault();
+		if (!vacancyId) {
+			setError("Please select a Job Vacancy");
+			return;
+		}
+
 		setSubmitting(true);
 		setError(null);
+
+		const selectedVac = vacanciesList.find((v) => v.id === vacancyId);
 
 		try {
 			const response = await fetch("/api/admin/candidates", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					name,
+					firstName,
+					lastName,
 					mobile,
 					email,
-					role,
-					experience,
+					role: selectedVac?.role,
+					experience: selectedVac?.experience,
 					testLocation,
+					vacancyId,
 				}),
 			});
 
@@ -84,21 +107,33 @@ export function AddCandidateDialog({
 			<DialogContent className='rounded-2xl border-slate-200 shadow-xl max-w-2xl bg-white p-8'>
 				<DialogHeader>
 					<DialogTitle className='flex items-center gap-2 text-slate-900 font-extrabold text-lg'>
-						<Sparkles className='h-5 w-5 text-indigo-605' />
+						<Sparkles className='h-5 w-5 text-indigo-600' />
 						Add Candidate Details
 					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={handleAdd} className='space-y-4 pt-2'>
 					{error && <p className='text-xs text-red-500 font-bold'>{error}</p>}
-					<div className='space-y-1.5'>
-						<Label className='text-xs font-bold text-slate-650'>Full Name</Label>
-						<Input
-							required
-							value={name}
-							onChange={(e) => setName(e.target.value)}
-							placeholder='John Doe'
-							className='h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold'
-						/>
+					<div className='grid grid-cols-2 gap-4'>
+						<div className='space-y-1.5'>
+							<Label className='text-xs font-bold text-slate-600'>First Name</Label>
+							<Input
+								required
+								value={firstName}
+								onChange={(e) => setFirstName(e.target.value)}
+								placeholder='John'
+								className='h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold'
+							/>
+						</div>
+						<div className='space-y-1.5'>
+							<Label className='text-xs font-bold text-slate-600'>Last Name / Surname</Label>
+							<Input
+								required
+								value={lastName}
+								onChange={(e) => setLastName(e.target.value)}
+								placeholder='Doe'
+								className='h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold'
+							/>
+						</div>
 					</div>
 					<div className='space-y-1.5'>
 						<Label className='text-xs font-bold text-slate-650'>
@@ -126,55 +161,46 @@ export function AddCandidateDialog({
 							className='h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold'
 						/>
 					</div>
-					<div className='grid grid-cols-2 gap-4'>
-						<div className='space-y-1.5'>
-							<Label className='text-xs font-bold text-slate-655'>Role</Label>
-							<Select value={role} onValueChange={setRole}>
-								<SelectTrigger className='h-10 rounded-xl border-slate-200 bg-white w-full text-xs font-semibold text-slate-700'>
-									<SelectValue placeholder='Select role' />
-								</SelectTrigger>
-								<SelectContent className='rounded-2xl border-slate-200 bg-white shadow-xl p-1'>
-									{rolesList.map((r) => (
-										<SelectItem
-											key={r.value}
-											value={r.value}
-											className='rounded-xl py-2 px-3 cursor-pointer text-xs font-semibold text-slate-700'>
-											{r.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-						<div className='space-y-1.5'>
-							<Label className='text-xs font-bold text-slate-655'>
-								Experience
-							</Label>
-							<Select value={experience} onValueChange={setExperience}>
-								<SelectTrigger className='h-10 rounded-xl border-slate-200 bg-white w-full text-xs font-semibold text-slate-700'>
-									<SelectValue placeholder='Select experience' />
-								</SelectTrigger>
-								<SelectContent className='rounded-2xl border-slate-200 bg-white shadow-xl p-1'>
-									{experienceList.map((el) => (
-										<SelectItem
-											key={el.value}
-											value={el.value}
-											className='rounded-xl py-2 px-3 cursor-pointer text-xs font-semibold text-slate-700'>
-											{el.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-					</div>
+					
+					{/* Job Vacancy dropdown with explicit label and absolute popover portal */}
 					<div className='space-y-1.5'>
-						<Label className='text-xs font-bold text-slate-655'>
+						<Label htmlFor='vacancy-select' className='text-xs font-bold text-slate-655'>
+							Job Vacancy
+						</Label>
+						<Select
+							value={vacancyId}
+							onValueChange={setVacancyId}
+						>
+							<SelectTrigger id='vacancy-select' className='h-10 rounded-xl border-slate-200 bg-white w-full text-xs font-semibold text-slate-700'>
+								<SelectValue placeholder='Select active vacancy' />
+							</SelectTrigger>
+							<SelectContent className='rounded-2xl border-slate-200 bg-white shadow-xl p-1 bg-white' position='popper' sideOffset={6}>
+								{vacanciesList.map((v) => {
+									const rObj = rolesList.find(r => r.value === v.role);
+									const eObj = experienceList.find(e => e.value === v.experience);
+									return (
+										<SelectItem
+											key={v.id}
+											value={v.id}
+											className='rounded-xl py-2 px-3 cursor-pointer text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 focus:bg-indigo-50 focus:text-indigo-700 data-[state=checked]:bg-indigo-50 data-[state=checked]:text-indigo-700'>
+											{rObj?.label || v.role} · {eObj?.label || v.experience} yrs ({v.openings} open)
+										</SelectItem>
+									);
+								})}
+							</SelectContent>
+						</Select>
+					</div>
+
+					{/* Test Location dropdown with absolute popover portal */}
+					<div className='space-y-1.5'>
+						<Label htmlFor='test-location-select' className='text-xs font-bold text-slate-655'>
 							Test Location
 						</Label>
 						<Select value={testLocation} onValueChange={setTestLocation}>
-							<SelectTrigger className='h-10 rounded-xl border-slate-200 bg-white w-full text-xs font-semibold text-slate-700'>
+							<SelectTrigger id='test-location-select' className='h-10 rounded-xl border-slate-200 bg-white w-full text-xs font-semibold text-slate-700'>
 								<SelectValue placeholder='Select location' />
 							</SelectTrigger>
-							<SelectContent className='rounded-2xl border-slate-200 bg-white shadow-xl p-1'>
+							<SelectContent className='rounded-2xl border-slate-200 bg-white shadow-xl p-1 bg-white' position='popper' sideOffset={6}>
 								{testLocationsList.map((l) => (
 									<SelectItem
 										key={l.value}

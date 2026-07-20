@@ -16,10 +16,12 @@ export function CalculateResultsButton({
 	resultId,
 	tabSwitches,
 	disabled = false,
+	onCalculate,
 }: {
 	resultId: string;
 	tabSwitches: number;
 	disabled?: boolean;
+	onCalculate?: (updatedResult: any) => void;
 }) {
 	const [calculating, setCalculating] = useState(false);
 	const [open, setOpen] = useState(false);
@@ -34,7 +36,12 @@ export function CalculateResultsButton({
 			});
 			if (!response.ok) throw new Error("Unable to calculate results");
 			setOpen(false);
-			router.push("/admin");
+			if (onCalculate) {
+				const updatedResult = await response.json();
+				onCalculate(updatedResult);
+			} else {
+				router.push("/admin");
+			}
 		} finally {
 			setCalculating(false);
 		}

@@ -69,16 +69,54 @@ export async function PATCH(request: NextRequest) {
     body.offerSalary !== undefined || 
     body.hrNotes !== undefined
   )) {
-    await getSupabaseServerClient().from("candidates").update({
-      ...(body.role !== undefined ? { role: body.role } : {}),
-      ...(body.experience !== undefined ? { experience: body.experience } : {}),
-      ...(body.testLocation !== undefined ? { test_location: body.testLocation } : {}),
-      ...(body.hiringLocation !== undefined ? { hiring_location: body.hiringLocation || null } : {}),
-      ...(body.hiringStatus !== undefined ? { hiring_status: body.hiringStatus } : {}),
-      ...(body.expectedSalary !== undefined ? { expected_salary: body.expectedSalary } : {}),
-      ...(body.offerSalary !== undefined ? { offer_salary: body.offerSalary } : {}),
-      ...(body.hrNotes !== undefined ? { hr_notes: body.hrNotes } : {}),
-    }).eq("id", result.candidate.id)
+    const supabase = getSupabaseServerClient();
+    const candidateUpdates: any = {};
+
+    if (body.role !== undefined) {
+      const { data: rd } = await supabase.from("master_roles").select("id").eq("value", body.role.trim()).maybeSingle();
+      if (rd) candidateUpdates.role = rd.id;
+    }
+    if (body.experience !== undefined) {
+      const { data: ed } = await supabase.from("master_experiences").select("id").eq("value", body.experience.trim()).maybeSingle();
+      if (ed) candidateUpdates.experience = ed.id;
+    }
+    if (body.testLocation !== undefined) {
+      const { data: td } = await supabase.from("master_test_locations").select("id").eq("value", body.testLocation.trim()).maybeSingle();
+      if (td) candidateUpdates.test_location = td.id;
+    }
+    if (body.hiringLocation !== undefined) {
+      if (body.hiringLocation) {
+        const { data: hd } = await supabase.from("master_hiring_locations").select("id").eq("value", body.hiringLocation.trim()).maybeSingle();
+        candidateUpdates.hiring_location = hd?.id || body.hiringLocation;
+      } else {
+        candidateUpdates.hiring_location = null;
+      }
+    }
+    if (body.hiringStatus !== undefined) candidateUpdates.hiring_status = body.hiringStatus;
+    if (body.expectedSalary !== undefined) candidateUpdates.expected_salary = body.expectedSalary;
+    if (body.offerSalary !== undefined) candidateUpdates.offer_salary = body.offerSalary;
+    if (body.hrNotes !== undefined) candidateUpdates.hr_notes = body.hrNotes;
+
+    const { error: candidateError } = await supabase
+      .from("candidates")
+      .update(candidateUpdates)
+      .eq("id", result.candidate.id);
+
+    if (candidateError) {
+      return NextResponse.json({ error: `Could not save candidate table changes: ${candidateError.message}` }, { status: 400 })
+    }
+
+    // Sync exam_sessions configuration values as well
+    if (candidateUpdates.role || candidateUpdates.experience) {
+      const sessionUpdates: any = {};
+      if (candidateUpdates.role) sessionUpdates.role = candidateUpdates.role;
+      if (candidateUpdates.experience) sessionUpdates.experience = candidateUpdates.experience;
+
+      await supabase
+        .from("exam_sessions")
+        .update(sessionUpdates)
+        .eq("candidate_id", result.candidate.id);
+    }
   }
   return NextResponse.json(updated)
 }

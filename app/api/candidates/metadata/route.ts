@@ -13,10 +13,15 @@ export async function GET() {
     const { data: masterHiring } = await supabase.from("master_hiring_locations").select("value, label").eq("is_active", true);
     const { data: masterTest } = await supabase.from("master_test_locations").select("value, label").eq("is_active", true);
 
-    // Fetch active vacancies from job_vacancies table
+    // Fetch active vacancies from job_vacancies table joining master configurations
     const { data: vacancies } = await supabase
       .from("job_vacancies")
-      .select("*")
+      .select(`
+        id, openings, is_active, test_locations,
+        roleObj:master_roles(value, label),
+        experienceObj:master_experiences(value, label),
+        hiringLocObj:master_hiring_locations(value, label)
+      `)
       .eq("is_active", true);
 
     // Fetch from assessment_metadata table (which is used in admin panel config/add candidate dialogs)
@@ -54,12 +59,22 @@ export async function GET() {
     const testLocations = mTest.map(item => ({ value: item.value, label: item.label }));
     const hiringLocations = mHiring.map(item => ({ value: item.value, label: item.label }));
 
+    const vacanciesMapped = (vacancies || []).map(v => ({
+      id: v.id,
+      role: (v as any).roleObj?.value || "",
+      experience: (v as any).experienceObj?.value || "",
+      hiring_location: (v as any).hiringLocObj?.value || "",
+      test_locations: v.test_locations,
+      openings: v.openings,
+      is_active: v.is_active
+    }));
+
     return NextResponse.json({
       roles,
       experience,
       testLocations,
       hiringLocations,
-      vacancies: vacancies || []
+      vacancies: vacanciesMapped
     })
   } catch (err) {
     console.error("Metadata API error:", err)

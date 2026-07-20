@@ -34,45 +34,12 @@ export function useExamTimer({
 	setCompletedRounds: React.Dispatch<React.SetStateAction<number[]>>;
 	setShowRoundGate: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-	const savedRoundIndex = savedAttempt ? savedAttempt.roundIdx : 0;
-
-	// Initialize remaining seconds with self-healing cap
-	const [secondsLeft, setSecondsLeft] = useState(() => {
-		let initialVal = ROUNDS[0].durationSeconds;
+	// 1. Single Source of Truth for Elapsed Time
+	const [totalSecondsUsed, setTotalSecondsUsed] = useState<number>(() => {
 		if (savedAttempt) {
 			if (savedAttempt.showRoundGate || !savedAttempt.hasStarted) {
-				initialVal = savedAttempt.secondsLeft;
-			} else {
-				initialVal = Math.max(
-					0,
-					savedAttempt.secondsLeft -
-						Math.floor((Date.now() - savedAttempt.savedAt) / 1000),
-				);
-			}
-		} else {
-			let elapsed = serverSecondsUsed ?? 0;
-			let found = false;
-			for (let i = 0; i < ROUNDS.length; i++) {
-				if (elapsed < ROUNDS[i].durationSeconds) {
-					initialVal = ROUNDS[i].durationSeconds - elapsed;
-					found = true;
-					break;
-				}
-				elapsed -= ROUNDS[i].durationSeconds;
-			}
-			if (!found) initialVal = 0;
-		}
-
-		const activeRoundIndex = savedAttempt ? savedAttempt.roundIdx : savedRoundIndex;
-		const activeRoundDuration = ROUNDS[activeRoundIndex]?.durationSeconds ?? ROUNDS[0].durationSeconds;
-		return Math.min(initialVal, activeRoundDuration);
-	});
-
-	// Initialize running elapsed seconds
-	const [secondsUsed, setSecondsUsed] = useState(() => {
-		if (savedAttempt) {
-			if (savedAttempt.showRoundGate || !savedAttempt.hasStarted)
 				return savedAttempt.secondsUsed;
+			}
 			return (
 				savedAttempt.secondsUsed +
 				Math.floor((Date.now() - savedAttempt.savedAt) / 1000)
@@ -81,65 +48,142 @@ export function useExamTimer({
 		return serverSecondsUsed ?? 0;
 	});
 
+	// 2. Derivation of Round Progress
+	const precedingDuration = ROUNDS.slice(0, roundIdx).reduce((acc, r) => acc + r.durationSeconds, 0);
+	const activeDuration = activeRound.durationSeconds;
+	const secondsLeft = Math.max(0, precedingDuration + activeDuration - totalSecondsUsed);
 	const isExamTimeUp = secondsLeft <= 0;
 
-	// Local clock interval (ticks once per second, drift-free)
-	useEffect(() => {
-		if (allSubmitted || showRoundGate || !hasStarted || isExamTimeUp) return;
-
-		const t = setInterval(() => {
-			setSecondsUsed((s) => s + 1);
-			setSecondsLeft((s) => {
-				if (s <= 1) {
-					clearInterval(t);
-					// Transition round or submit assessment on timer expiration
-					if (roundIdx < ROUNDS.length - 1) {
-						setCompletedRounds((prev) => [
-							...new Set([...prev, activeRound.id]),
-						]);
-						setShowRoundGate(true);
-					} else {
-						onSubmitAll();
-					}
-					return 0;
-				}
-				return s - 1;
-			});
-		}, 1000);
-
-		return () => clearInterval(t);
-	}, [
-		allSubmitted,
+	// 3. Stale Dependency Defense: keep state values inside useRef capsule
+	const stateRef = useRef({
 		hasStarted,
+		allSubmitted,
 		showRoundGate,
-		isExamTimeUp,
+		totalSecondsUsed,
 		roundIdx,
 		ROUNDS,
 		activeRound,
-		onSubmitAll,
-		setCompletedRounds,
-		setShowRoundGate,
-	]);
+		secondsLeft,
+	});
 
-	// Keep references fresh inside side-effects
-	const secondsUsedRef = useRef(secondsUsed);
 	useEffect(() => {
-		secondsUsedRef.current = secondsUsed;
-	}, [secondsUsed]);
+		stateRef.current = {
+			hasStarted,
+			allSubmitted,
+			showRoundGate,
+			totalSecondsUsed,
+			roundIdx,
+			ROUNDS,
+			activeRound,
+			secondsLeft,
+		};
+	});
+
+	// 4. Fresh Round Index Transitions: skip first mount to protect savedAttempt reloading
+	const isMountedRef = useRef(false);
+	useEffect(() => {
+		if (!isMountedRef.current) {
+			isMountedRef.current = true;
+			return;
+		}
+		const prec = ROUNDS.slice(0, roundIdx).reduce((acc, r) => acc + r.durationSeconds, 0);
+		setTotalSecondsUsed(prec);
+	}, [roundIdx, ROUNDS]);
+
+	// 5. Drift-Free Timer Interval
+	useEffect(() => {
+		const t = setInterval(() => {
+			const {
+				hasStarted: currHasStarted,
+				allSubmitted: currAllSubmitted,
+				showRoundGate: currShowRoundGate,
+				totalSecondsUsed: currTotalSecondsUsed,
+				roundIdx: currRoundIdx,
+				ROUNDS: currROUNDS,
+				activeRound: currActiveRound,
+				secondsLeft: currSecondsLeft,
+			} = stateRef.current;
+
+			if (currAllSubmitted || currShowRoundGate || !currHasStarted || currSecondsLeft <= 0) {
+				return;
+			}
+
+			const nextSecondsUsed = currTotalSecondsUsed + 1;
+			setTotalSecondsUsed(nextSecondsUsed);
+
+			// Check if new seconds left would trigger a transition
+			const prec = currROUNDS.slice(0, currRoundIdx).reduce((acc, r) => acc + r.durationSeconds, 0);
+			const act = currActiveRound.durationSeconds;
+			const nextSecondsLeft = Math.max(0, prec + act - nextSecondsUsed);
+
+			if (nextSecondsLeft <= 0) {
+				// Safe Action Execution Split: Enforce a tiny asynchronous delay to clear layout collision execution flags
+				setTimeout(() => {
+					if (currRoundIdx < currROUNDS.length - 1) {
+						setCompletedRounds((prev) => [...new Set([...prev, currActiveRound.id])]);
+						setShowRoundGate(true);
+					} else {
+						void onSubmitAll();
+					}
+				}, 0);
+			}
+		}, 1000);
+
+		return () => clearInterval(t);
+	}, [onSubmitAll, setCompletedRounds, setShowRoundGate]);
 
 	// Heartbeats trigger exactly every 10 seconds
+	const onHeartbeatRef = useRef(onHeartbeat);
 	useEffect(() => {
-		if (allSubmitted || !hasStarted || showRoundGate || isExamTimeUp) return;
+		onHeartbeatRef.current = onHeartbeat;
+	}, [onHeartbeat]);
+
+	useEffect(() => {
 		const h = setInterval(() => {
-			onHeartbeat(secondsUsedRef.current);
+			const {
+				allSubmitted: currAllSubmitted,
+				hasStarted: currHasStarted,
+				showRoundGate: currShowRoundGate,
+				secondsLeft: currSecondsLeft,
+				totalSecondsUsed: currTotalSecondsUsed,
+			} = stateRef.current;
+
+			if (currAllSubmitted || !currHasStarted || currShowRoundGate || currSecondsLeft <= 0) {
+				return;
+			}
+			onHeartbeatRef.current(currTotalSecondsUsed);
 		}, 10000);
+
 		return () => clearInterval(h);
-	}, [allSubmitted, hasStarted, showRoundGate, isExamTimeUp, onHeartbeat]);
+	}, []);
+
+	// Compatibility setters mapping back to single source of truth totalSecondsUsed
+	const setSecondsLeft = (value: number | ((prev: number) => number)) => {
+		const prec = ROUNDS.slice(0, roundIdx).reduce((acc, r) => acc + r.durationSeconds, 0);
+		const act = activeRound.durationSeconds;
+		if (typeof value === "function") {
+			setTotalSecondsUsed((prevTotal) => {
+				const currLeft = Math.max(0, prec + act - prevTotal);
+				const nextLeft = value(currLeft);
+				return prec + act - nextLeft;
+			});
+		} else {
+			setTotalSecondsUsed(prec + act - value);
+		}
+	};
+
+	const setSecondsUsed = (value: number | ((prev: number) => number)) => {
+		if (typeof value === "function") {
+			setTotalSecondsUsed((prev) => value(prev));
+		} else {
+			setTotalSecondsUsed(value);
+		}
+	};
 
 	return {
 		secondsLeft,
 		setSecondsLeft,
-		secondsUsed,
+		secondsUsed: totalSecondsUsed,
 		setSecondsUsed,
 		isExamTimeUp,
 	};

@@ -46,10 +46,12 @@ export function AdminQuestionReview({
 	result,
 	items,
 	onBack,
+	onCalculate,
 }: {
 	result: CandidateResult;
 	items: Item[];
 	onBack?: () => void;
+	onCalculate?: (updatedResult: any) => void;
 }) {
 	const [answers, setAnswers] = useState(() =>
 		items.map((item) => item.answer),
@@ -455,7 +457,7 @@ export function AdminQuestionReview({
 											<p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
 												Candidate's Response:
 											</p>
-											<p className="text-xs leading-relaxed text-slate-700 bg-slate-50 border border-slate-100 rounded-xl p-4 whitespace-pre-wrap font-medium">
+											<p className="text-xs leading-relaxed text-slate-700 bg-slate-50 border border-slate-100 rounded-xl p-4 whitespace-pre-wrap font-medium overflow-x-auto">
 												{(typeof item.answer.answerValue === "string" && item.answer.answerValue.trim())
 													? item.answer.answerValue 
 													: "(No text response submitted)"}
@@ -505,7 +507,7 @@ export function AdminQuestionReview({
 															Visible Test Cases
 														</span>
 														{item.question.testCasesVisible.map((tc: any, tcIdx: number) => (
-															<div key={tcIdx} className="text-xs font-mono text-slate-600 bg-slate-100/50 border border-slate-200/50 rounded-lg p-2 flex justify-between">
+															<div key={tcIdx} className="text-xs font-mono text-slate-600 bg-slate-100/50 border border-slate-200/50 rounded-lg p-2 flex justify-between overflow-x-auto">
 																<span>Input: {tc.input}</span>
 																<span>Expected: {tc.expected}</span>
 															</div>
@@ -608,6 +610,7 @@ export function AdminQuestionReview({
 					resultId={result.id}
 					tabSwitches={result.tabSwitches}
 					disabled={result.totalMarksAwarded !== undefined}
+					onCalculate={onCalculate}
 				/>
 			</div>
 		</div>

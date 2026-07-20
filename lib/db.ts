@@ -26,7 +26,8 @@ export function getSupabaseServerClient(): SupabaseClient {
 }
 
 export type CandidateInput = {
-  name: string
+  firstName: string
+  lastName: string
   mobile: string
   email: string
   role: string
@@ -37,62 +38,137 @@ export type CandidateInput = {
   expectedSalary?: number
   offerSalary?: number
   hrNotes?: string
+  vacancyId?: string
 }
 
-export type CandidateRecord = CandidateInput & {
+export type CandidateRecord = Omit<CandidateInput, 'firstName' | 'lastName'> & {
   id: string
+  firstName: string
+  lastName: string
+  vacancyTitle?: string
   created_at: string
 }
 
-function mapCandidateRow(row: Record<string, unknown>): CandidateRecord {
-  return {
-    id: String(row.id),
-    name: String(row.name),
-    mobile: String(row.mobile),
-    email: String(row.email),
-    role: String(row.role),
-    experience: String(row.experience),
-    testLocation: (row.test_location as Candidate["testLocation"]) ?? "home",
-    hiringLocation: (row.hiring_location as string | null) ?? undefined,
-    hiringStatus: (row.hiring_status as Candidate["hiringStatus"]) ?? "screening",
-    expectedSalary: row.expected_salary == null ? undefined : Number(row.expected_salary),
-    offerSalary: row.offer_salary == null ? undefined : Number(row.offer_salary),
-    hrNotes: (row.hr_notes as string | null) ?? undefined,
-    created_at: String(row.created_at),
-  }
-}
-
 export async function createCandidate(input: CandidateInput): Promise<CandidateRecord> {
-  const { data, error } = await getSupabaseServerClient()
+  const supabase = getSupabaseServerClient();
+
+  // Resolve string values to UUIDs from master tables
+  const { data: roleData } = await supabase.from("master_roles").select("id").eq("value", input.role).maybeSingle();
+  const { data: expData } = await supabase.from("master_experiences").select("id").eq("value", input.experience).maybeSingle();
+  const { data: testData } = await supabase.from("master_test_locations").select("id").eq("value", input.testLocation || "home").maybeSingle();
+
+  let hiringLocId: string | null = null;
+  if (input.hiringLocation) {
+    const { data: hiringData } = await supabase.from("master_hiring_locations").select("id").eq("value", input.hiringLocation).maybeSingle();
+    hiringLocId = hiringData?.id || null;
+  }
+
+  const roleId = roleData?.id;
+  const expId = expData?.id;
+  const testLocId = testData?.id;
+
+  if (!roleId || !expId || !testLocId) {
+    throw new Error(`Invalid pre-registration choices: role=${input.role}, exp=${input.experience}, testLoc=${input.testLocation}`);
+  }
+
+  const { data, error } = await supabase
     .from("candidates")
     .insert({
-      name: input.name,
+      first_name: input.firstName,
+      last_name: input.lastName,
       mobile: input.mobile,
       email: input.email,
-      role: input.role,
-      experience: input.experience,
-      test_location: input.testLocation ?? "home",
-      hiring_location: input.hiringLocation ?? null,
+      role: roleId,
+      experience: expId,
+      test_location: testLocId,
+      hiring_location: hiringLocId,
       hiring_status: input.hiringStatus ?? "screening",
       expected_salary: input.expectedSalary ?? null,
       offer_salary: input.offerSalary ?? null,
       hr_notes: input.hrNotes ?? null,
+      vacancy_id: input.vacancyId || null,
     })
-    .select("id, name, mobile, email, role, experience, test_location, hiring_location, hiring_status, expected_salary, offer_salary, hr_notes, created_at")
+    .select(`
+      id, first_name, last_name, mobile, email, hiring_status, expected_salary, offer_salary, hr_notes, vacancy_id, created_at,
+      hiringLocObj:master_hiring_locations(value)
+    `)
     .single()
 
   if (error) throw new Error(`Could not save candidate: ${error.message}`)
-  return mapCandidateRow(data as Record<string, unknown>)
+
+  const hiringLocVal = (data as any).hiringLocObj?.value || undefined;
+
+  return {
+    id: String(data.id),
+    firstName: String(data.first_name),
+    lastName: String(data.last_name),
+    mobile: String(data.mobile),
+    email: String(data.email),
+    role: input.role,
+    experience: input.experience,
+    testLocation: input.testLocation ?? "home",
+    hiringLocation: hiringLocVal,
+    hiringStatus: (data.hiring_status as any) ?? "screening",
+    expectedSalary: data.expected_salary == null ? undefined : Number(data.expected_salary),
+    offerSalary: data.offer_salary == null ? undefined : Number(data.offer_salary),
+    hrNotes: (data.hr_notes as string | null) ?? undefined,
+    vacancyId: data.vacancy_id || undefined,
+    created_at: String(data.created_at),
+  }
 }
 
 export async function getCandidateById(id: string): Promise<CandidateRecord | null> {
   const { data, error } = await getSupabaseServerClient()
     .from("candidates")
-    .select("id, name, mobile, email, role, experience, test_location, hiring_location, hiring_status, expected_salary, offer_salary, hr_notes, created_at")
+    .select(`
+      id, first_name, last_name, mobile, email, hiring_status, expected_salary, offer_salary, hr_notes, created_at, vacancy_id,
+      roleObj:master_roles(value),
+      experienceObj:master_experiences(value),
+      testLocObj:master_test_locations(value),
+      hiringLocObj:master_hiring_locations(value),
+      vacancyObj:job_vacancies(
+        id,
+        roleObj:master_roles(value, label),
+        experienceObj:master_experiences(value, label),
+        hiringLocObj:master_hiring_locations(value, label)
+      )
+    `)
     .eq("id", id)
     .maybeSingle()
 
   if (error) throw new Error(`Could not load candidate: ${error.message}`)
   if (!data) return null
-  return mapCandidateRow(data as Record<string, unknown>)
+
+  const roleVal = (data as any).roleObj?.value || "";
+  const expVal = (data as any).experienceObj?.value || "";
+  const testLocVal = (data as any).testLocObj?.value || "home";
+  const hiringLocVal = (data as any).hiringLocObj?.value || undefined;
+
+  const vacancyVal = (data as any).vacancyObj;
+  let vacancyTitleVal: string | undefined = undefined;
+  if (vacancyVal) {
+    const rLabel = vacancyVal.roleObj?.label || "";
+    const eLabel = vacancyVal.experienceObj?.label || "";
+    const hLabel = vacancyVal.hiringLocObj?.label || "";
+    vacancyTitleVal = `${rLabel} (${eLabel}) - ${hLabel}`;
+  }
+
+  return {
+    id: String(data.id),
+    firstName: String(data.first_name),
+    lastName: String(data.last_name),
+    mobile: String(data.mobile),
+    email: String(data.email),
+    role: roleVal,
+    experience: expVal,
+    testLocation: testLocVal,
+    hiringLocation: hiringLocVal,
+    hiringStatus: (data.hiring_status as any) ?? "screening",
+    expectedSalary: data.expected_salary == null ? undefined : Number(data.expected_salary),
+    offerSalary: data.offer_salary == null ? undefined : Number(data.offer_salary),
+    hrNotes: (data.hr_notes as string | null) ?? undefined,
+    vacancyId: data.vacancy_id || undefined,
+    vacancyTitle: vacancyTitleVal,
+    created_at: String(data.created_at),
+  }
 }

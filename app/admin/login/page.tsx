@@ -23,12 +23,13 @@ export default function AdminLoginPage() {
 			email,
 			password,
 		});
-		if (signInError) setError(signInError.message);
-		else {
+		if (signInError) {
+			setError(signInError.message);
+			setLoading(false);
+		} else {
 			window.sessionStorage.clear();
 			router.replace("/admin");
 		}
-		setLoading(false);
 	}
 
 	return (

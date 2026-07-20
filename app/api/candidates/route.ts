@@ -1,220 +1,270 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/db";
+import { emptyInterviewRounds } from "@/lib/interview-rounds";
 
 export async function GET(req: NextRequest) {
-	const email = req.nextUrl.searchParams.get("email")?.trim().toLowerCase();
-	const role = req.nextUrl.searchParams.get("role")?.trim();
-	const experience = req.nextUrl.searchParams.get("experience")?.trim();
+  const email = req.nextUrl.searchParams.get("email")?.trim().toLowerCase();
+  const role = req.nextUrl.searchParams.get("role")?.trim();
+  const experience = req.nextUrl.searchParams.get("experience")?.trim();
 
-	if (!email) {
-		return NextResponse.json(
-			{ error: "email is a required query parameter" },
-			{ status: 400 },
-		);
-	}
+  if (!email) {
+    return NextResponse.json(
+      { error: "email is a required query parameter" },
+      { status: 400 },
+    );
+  }
 
-	const { data: candidate } = await getSupabaseServerClient()
-		.from("candidates")
-		.select("id, name, mobile, role, experience, test_location")
-		.ilike("email", email)
-		.maybeSingle();
+  // Join master configuration tables to resolve UUID to string and select split names
+  const { data: candidateRow, error: candidateError } = await getSupabaseServerClient()
+    .from("candidates")
+    .select(`
+      id, first_name, last_name, mobile, 
+      roleObj:master_roles(value),
+      experienceObj:master_experiences(value),
+      testLocObj:master_test_locations(value)
+    `)
+    .ilike("email", email)
+    .maybeSingle();
 
-	if (!candidate) {
-		return NextResponse.json(
-			{ error: "You are not pre-registered. Please contact HR." },
-			{ status: 403 },
-		);
-	}
+  if (candidateError || !candidateRow) {
+    return NextResponse.json(
+      { error: "You are not pre-registered. Please contact HR." },
+      { status: 403 },
+    );
+  }
 
-	if (role && experience) {
-		if ((candidate.role ?? "").toLowerCase().trim() !== (role ?? "").toLowerCase().trim() || (candidate.experience ?? "").toLowerCase().trim() !== (experience ?? "").toLowerCase().trim()) {
-			return NextResponse.json(
-				{ error: `Mismatch: You are registered for the "${candidate.role}" role with "${candidate.experience}" years of experience. Please select these options.` },
-				{ status: 403 },
-			);
-		}
-	}
+  const roleVal = (candidateRow as any).roleObj?.value || "";
+  const expVal = (candidateRow as any).experienceObj?.value || "";
+  const testLocVal = (candidateRow as any).testLocObj?.value || "home";
 
-	const { data: resultRecord } = await getSupabaseServerClient()
-		.from("results")
-		.select("payload")
-		.eq("id", candidate.id)
-		.maybeSingle();
+  if (role && experience) {
+    if (roleVal.toLowerCase().trim() !== role.toLowerCase().trim() || expVal.toLowerCase().trim() !== experience.toLowerCase().trim()) {
+      return NextResponse.json(
+        { error: `Mismatch: You are registered for the "${roleVal}" role with "${expVal}" years of experience. Please select these options.` },
+        { status: 403 },
+      );
+    }
+  }
 
-	if (!resultRecord) {
-		return NextResponse.json(
-			{ error: "No screening review found. Please contact HR." },
-			{ status: 403 },
-		);
-	}
+  // Look up session by candidate id (using boolean flags)
+  const supabase = getSupabaseServerClient();
+  const { data: session } = await supabase
+    .from("exam_sessions")
+    .select("id, is_exam_submitted")
+    .eq("candidate_id", candidateRow.id)
+    .maybeSingle();
 
-	const resultPayload = resultRecord.payload as any;
-	const rounds = resultPayload?.interviewRounds || {};
-	const hasFailed = Object.values(rounds).some((r: any) => r?.status === "fail");
-	if (hasFailed) {
-		return NextResponse.json(
-			{ error: "Application Process Terminated" },
-			{ status: 403 },
-		);
-	}
+  if (!session) {
+    return NextResponse.json(
+      { error: "No active exam session found. Please contact HR." },
+      { status: 403 },
+    );
+  }
 
-	const faceToFaceStatus =
-		resultPayload?.interviewRounds?.face_to_face?.status;
+  const { data: resultRecord } = await supabase
+    .from("results")
+    .select("interview_rounds")
+    .eq("id", session.id)
+    .maybeSingle();
 
-	if (faceToFaceStatus !== "pass") {
-		return NextResponse.json(
-			{ error: "You have not cleared the face-to-face screening round yet." },
-			{ status: 403 },
-		);
-	}
+  if (!resultRecord) {
+    return NextResponse.json(
+      { error: "No screening review found. Please contact HR." },
+      { status: 403 },
+    );
+  }
 
-	const { data: session } = await getSupabaseServerClient()
-		.from("exam_sessions")
-		.select("is_exam_submitted")
-		.eq("candidate_id", candidate.id)
-		.maybeSingle();
+  const rounds = resultRecord.interview_rounds || {};
+  const hasFailed = Object.values(rounds).some((r: any) => r?.status === "fail");
+  if (hasFailed) {
+    return NextResponse.json(
+      { error: "Application Process Terminated" },
+      { status: 403 },
+    );
+  }
 
-	const completed = session?.is_exam_submitted === 1;
-	return NextResponse.json({
-		completed,
-		candidate: {
-			id: candidate.id,
-			name: candidate.name,
-			mobile: candidate.mobile,
-			role: candidate.role,
-			experience: candidate.experience,
-			testLocation: candidate.test_location ?? "home",
-		}
-	});
+  const faceToFaceStatus = (rounds as any)?.face_to_face?.status;
+  if (faceToFaceStatus !== "pass") {
+    return NextResponse.json(
+      { error: "You have not cleared the face-to-face screening round yet." },
+      { status: 403 },
+    );
+  }
+
+  const completed = session.is_exam_submitted === true;
+
+  return NextResponse.json({
+    completed,
+    candidate: {
+      id: candidateRow.id,
+      name: `${candidateRow.first_name} ${candidateRow.last_name}`.trim(),
+      mobile: candidateRow.mobile,
+      role: roleVal,
+      experience: expVal,
+      testLocation: testLocVal,
+    }
+  });
 }
 
 const requiredFields = [
-	"name",
-	"mobile",
-	"email",
-	"role",
-	"experience",
+  "firstName",
+  "lastName",
+  "mobile",
+  "email",
+  "vacancyId",
+  "testLocation",
 ] as const;
 
 export async function POST(req: NextRequest) {
-	try {
-		const body = await req.json();
+  try {
+    const body = await req.json();
 
-		if (
-			!body ||
-			requiredFields.some(
-				(field) => typeof body[field] !== "string" || !body[field].trim(),
-			)
-		) {
-			return NextResponse.json(
-				{ error: "All candidate fields are required." },
-				{ status: 400 },
-			);
-		}
+    if (
+      !body ||
+      requiredFields.some(
+        (field) => typeof body[field] !== "string" || !body[field].trim(),
+      )
+    ) {
+      return NextResponse.json(
+        { error: "All candidate fields are required." },
+        { status: 400 },
+      );
+    }
 
-		const email = body.email.trim().toLowerCase();
-		const role = body.role.trim();
-		const experience = body.experience.trim();
+    const email = body.email.trim().toLowerCase();
+    const vacancyId = body.vacancyId.trim();
+    const testLocation = body.testLocation.trim();
 
-		const { data: existing } = await getSupabaseServerClient()
-			.from("candidates")
-			.select(
-				"id, name, mobile, email, role, experience, test_location, hiring_location, hiring_status",
-			)
-			.ilike("email", email)
-			.maybeSingle();
+    // Query candidates joining master config lookups and selecting split names
+    const supabase = getSupabaseServerClient();
+    const { data: existingRow, error: checkError } = await supabase
+      .from("candidates")
+      .select(`
+        id, first_name, last_name, mobile, email, hiring_status, vacancy_id,
+        roleObj:master_roles(id, value),
+        experienceObj:master_experiences(value),
+        testLocObj:master_test_locations(value),
+        hiringLocObj:master_hiring_locations(value)
+      `)
+      .ilike("email", email)
+      .maybeSingle();
 
-		if (!existing) {
-			return NextResponse.json(
-				{ error: "You are not pre-registered. Please contact HR." },
-				{ status: 403 },
-			);
-		}
+    if (checkError || !existingRow) {
+      return NextResponse.json(
+        { error: "You are not pre-registered. Please contact HR." },
+        { status: 403 },
+      );
+    }
 
-		if ((existing.role ?? "").toLowerCase().trim() !== (role ?? "").toLowerCase().trim() || (existing.experience ?? "").toLowerCase().trim() !== (experience ?? "").toLowerCase().trim()) {
-			return NextResponse.json(
-				{ error: `Mismatch: You are registered for the "${existing.role}" role with "${existing.experience}" years of experience. Please select these options.` },
-				{ status: 403 },
-			);
-		}
+    const roleVal = (existingRow as any).roleObj?.value || "";
+    const expVal = (existingRow as any).experienceObj?.value || "";
+    const testLocVal = (existingRow as any).testLocObj?.value || "home";
+    const hiringLocVal = (existingRow as any).hiringLocObj?.value || undefined;
 
-		const { data: resultRecord } = await getSupabaseServerClient()
-			.from("results")
-			.select("payload")
-			.eq("id", existing.id)
-			.maybeSingle();
+    if (existingRow.vacancy_id !== vacancyId) {
+      return NextResponse.json(
+        { error: "Mismatch: You are registered for a different vacancy. Please contact HR or select the correct vacancy." },
+        { status: 403 },
+      );
+    }
 
-		if (!resultRecord) {
-			return NextResponse.json(
-				{ error: "No screening review found. Please contact HR." },
-				{ status: 403 },
-			);
-		}
+    // Check 3-month reapplication lockout gateway
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
-		const resultPayload = resultRecord.payload as any;
-		const faceToFaceStatus =
-			resultPayload?.interviewRounds?.face_to_face?.status;
+    const { data: existingApps } = await supabase
+      .from("candidates")
+      .select("id, created_at")
+      .eq("role", (existingRow as any).roleObj?.id)
+      .neq("id", existingRow.id)
+      .or(`email.ilike.${email.trim()},mobile.eq.${existingRow.mobile}`)
+      .gt("created_at", threeMonthsAgo.toISOString());
 
-		if (faceToFaceStatus !== "pass") {
-			return NextResponse.json(
-				{ error: "You have not cleared the face-to-face screening round yet." },
-				{ status: 403 },
-			);
-		}
+    if (existingApps && existingApps.length > 0) {
+      return NextResponse.json(
+        { error: "Application restriction: You have already applied for this position within the last 3 months." },
+        { status: 400 }
+      );
+    }
 
-		// Query the exam session to check progression status
-		const { data: session } = await getSupabaseServerClient()
-			.from("exam_sessions")
-			.select("is_exam_submitted")
-			.eq("candidate_id", existing.id)
-			.maybeSingle();
+    // Lookup session for candidate (using boolean flags)
+    let { data: session } = await supabase
+      .from("exam_sessions")
+      .select("id, is_exam_submitted")
+      .eq("candidate_id", existingRow.id)
+      .maybeSingle();
 
-		if (session && session.is_exam_submitted === 1) {
-			return NextResponse.json(
-				{
-					error:
-						"You have already completed the assessment for this specific vacancy.",
-				},
-				{ status: 403 },
-			);
-		}
+    if (!session) {
+      return NextResponse.json(
+        { error: "No active exam session found. Please contact HR." },
+        { status: 403 },
+      );
+    }
 
-		// Generate new session token (takeover active session)
-		const newToken = `${existing.id}-${Date.now()}`;
-		const { error: sessionError } = await getSupabaseServerClient()
-			.from("exam_sessions")
-			.upsert(
-				{
-					candidate_id: existing.id,
-					role: existing.role,
-					experience: existing.experience,
-					active_session_token: newToken,
-				},
-				{ onConflict: "candidate_id,role,experience" },
-			);
+    const { data: resultRecord } = await supabase
+      .from("results")
+      .select("interview_rounds")
+      .eq("id", session.id)
+      .maybeSingle();
 
-		if (sessionError) {
-			console.error("Upsert session token error:", sessionError.message);
-		}
+    if (!resultRecord) {
+      return NextResponse.json(
+        { error: "No screening review found. Please contact HR." },
+        { status: 403 },
+      );
+    }
 
-		return NextResponse.json(
-			{
-				id: existing.id,
-				name: existing.name,
-				mobile: existing.mobile,
-				email: existing.email,
-				role: existing.role,
-				experience: existing.experience,
-				testLocation: existing.test_location ?? "home",
-				hiringLocation: existing.hiring_location ?? undefined,
-				hiringStatus: existing.hiring_status ?? "screening",
-				active_session_token: newToken,
-			},
-			{ status: 200 },
-		);
-	} catch (error) {
-		const message =
-			error instanceof Error ? error.message : "Failed to register candidate";
-		return NextResponse.json({ error: message }, { status: 500 });
-	}
+    const rounds = resultRecord.interview_rounds || {};
+    const faceToFaceStatus = (rounds as any)?.face_to_face?.status;
+
+    if (faceToFaceStatus !== "pass") {
+      return NextResponse.json(
+        { error: "You have not cleared the face-to-face screening round yet." },
+        { status: 403 },
+      );
+    }
+
+    if (session.is_exam_submitted === true) {
+      return NextResponse.json(
+        {
+          error:
+            "You have already completed the assessment for this specific vacancy.",
+        },
+        { status: 403 },
+      );
+    }
+
+    // Generate new session token (takeover active session)
+    const newToken = `${existingRow.id}-${Date.now()}`;
+    const { error: sessionError } = await supabase
+      .from("exam_sessions")
+      .update({
+        active_session_token: newToken,
+      })
+      .eq("candidate_id", existingRow.id);
+
+    if (sessionError) {
+      console.error("Update session token error:", sessionError.message);
+    }
+
+    return NextResponse.json(
+      {
+        id: existingRow.id,
+        name: `${existingRow.first_name} ${existingRow.last_name}`.trim(),
+        mobile: existingRow.mobile,
+        email: existingRow.email,
+        role: roleVal,
+        experience: expVal,
+        testLocation: testLocVal,
+        hiringLocation: hiringLocVal,
+        hiringStatus: existingRow.hiring_status ?? "screening",
+        active_session_token: newToken,
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to register candidate";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

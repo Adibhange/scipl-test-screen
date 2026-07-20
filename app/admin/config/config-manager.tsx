@@ -947,6 +947,16 @@ export function ConfigManager() {
                           ) : (
                             <div>
                               <p className="font-bold text-slate-800">{item.label}</p>
+                              {item.type === "experience" && item.metadata && !!item.metadata.filled && (
+                                <span className="inline-flex items-center gap-1 mt-1">
+                                  <span className="text-[10px] text-slate-400 font-medium">Complexity level:</span>
+                                  <span className="inline-flex items-center gap-0.5">
+                                    {[0, 1, 2, 3].map(i => (
+                                      <span key={i} className={`h-1.5 w-1.5 rounded-full ${i < Number(item.metadata?.filled) ? 'bg-indigo-500' : 'bg-slate-200'}`} />
+                                    ))}
+                                  </span>
+                                </span>
+                              )}
                             </div>
                           )}
                         </td>

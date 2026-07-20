@@ -120,25 +120,30 @@ export default async function AdminPage({
 		{ value: "thane_office", label: "Thane Office" }
 	];
 
-	try {
-		const { data: dbMetadata } = await getSupabaseServerClient()
-			.from("assessment_metadata")
-			.select("*")
-			.eq("is_active", true);
+	let activeHiringLocations = [
+		{ value: "pune", label: "Pune Office" },
+		{ value: "thane", label: "Thane Office" },
+		{ value: "bangalore", label: "Bangalore" }
+	];
 
-		if (dbMetadata && dbMetadata.length > 0) {
-			const dbRoles = dbMetadata.filter(item => item.type === "role");
-			if (dbRoles.length > 0) {
-				activeRoles = dbRoles.map(item => ({ value: item.value, label: item.label }));
-			}
-			const dbExperiences = dbMetadata.filter(item => item.type === "experience");
-			if (dbExperiences.length > 0) {
-				activeExperiences = dbExperiences.map(item => ({ value: item.value, label: item.label }));
-			}
-			const dbTestLocations = dbMetadata.filter(item => item.type === "test_location");
-			if (dbTestLocations.length > 0) {
-				activeTestLocations = dbTestLocations.map(item => ({ value: item.value, label: item.label }));
-			}
+	try {
+		const supabase = getSupabaseServerClient();
+		const { data: dbRoles } = await supabase.from("master_roles").select("value, label").eq("is_active", true);
+		const { data: dbExperiences } = await supabase.from("master_experiences").select("value, label").eq("is_active", true);
+		const { data: dbTestLocations } = await supabase.from("master_test_locations").select("value, label").eq("is_active", true);
+		const { data: dbHiring } = await supabase.from("master_hiring_locations").select("value, label").eq("is_active", true);
+
+		if (dbRoles && dbRoles.length > 0) {
+			activeRoles = dbRoles.map(item => ({ value: item.value, label: item.label }));
+		}
+		if (dbExperiences && dbExperiences.length > 0) {
+			activeExperiences = dbExperiences.map(item => ({ value: item.value, label: item.label }));
+		}
+		if (dbTestLocations && dbTestLocations.length > 0) {
+			activeTestLocations = dbTestLocations.map(item => ({ value: item.value, label: item.label }));
+		}
+		if (dbHiring && dbHiring.length > 0) {
+			activeHiringLocations = dbHiring.map(item => ({ value: item.value, label: item.label }));
 		}
 	} catch (err) {
 		console.warn("Failed to fetch metadata in AdminPage, using defaults:", err);
@@ -318,6 +323,10 @@ export default async function AdminPage({
 								.map((name) => name[0])
 								.join("")
 								.toUpperCase() || "—";
+							const displayRole = activeRoles.find((roleOpt) => roleOpt.value === r.candidate.role)?.label || r.candidate.role;
+							const displayExp = activeExperiences.find((expOpt) => expOpt.value === r.candidate.experience)?.label || r.candidate.experience;
+							const displayTestLoc = activeTestLocations.find((loc) => loc.value === r.candidate.testLocation)?.label || r.candidate.testLocation || "Home";
+							const displayHiringLoc = activeHiringLocations.find((loc) => loc.value === r.candidate.hiringLocation)?.label || r.candidate.hiringLocation || "Not assigned";
 
 						return (
 							<div
@@ -374,28 +383,24 @@ export default async function AdminPage({
 												</p>
 											</div>
 
-											<div className='mt-5 space-y-2 border-t border-border pt-4 text-xs text-muted-foreground'>
+											<div className='mt-5 space-y-2 border-t border-border pt-4 text-xs text-slate-500 border-slate-100'>
 												<p className='flex items-center gap-2'>
 													<BriefcaseBusiness className='h-3.5 w-3.5 shrink-0 text-primary' />
-													<span className='truncate'>
-														{r.candidate.role} · {r.candidate.experience} yrs
+													<span className='truncate font-medium'>
+														{displayRole} · {displayExp} yrs
 													</span>
 												</p>
 												<p className='flex items-center gap-2'>
 													<MapPin className='h-3.5 w-3.5 shrink-0 text-primary' />
-													<span>
-														{r.candidate.testLocation === "pune_office" ?
-															"Pune Office"
-														: r.candidate.testLocation === "thane_office" ?
-															"Thane Office"
-														:	"Home"}{" "}
-														· Hiring:{" "}
-														{r.candidate.hiringLocation || "Not assigned"}
+													<span className='font-medium'>
+														{displayTestLoc} · Hiring: {displayHiringLoc}
 													</span>
 												</p>
 												<p className='flex items-center gap-2'>
 													<CalendarDays className='h-3.5 w-3.5 shrink-0 text-primary' />
-													{new Date(r.submittedAt).toLocaleDateString()}
+													<span className='font-medium'>
+														{new Date(r.submittedAt).toLocaleDateString()}
+													</span>
 												</p>
 											</div>
 

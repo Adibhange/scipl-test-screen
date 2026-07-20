@@ -181,6 +181,7 @@ export function CandidateTestScreen({
 		setTabSwitches,
 		setShowWarning,
 		guardRef,
+		candidateId: candidate.id,
 	});
 
 	// Attempt backup serialization effect on structural changes

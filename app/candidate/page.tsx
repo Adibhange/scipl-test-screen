@@ -89,8 +89,18 @@ export default function CandidateRegistrationPage() {
 		setSubmitError(null);
 		setIsSubmitting(true);
 
+		const firstName = data.name.split(" ")[0] || "";
+		const lastName = data.name.split(" ").slice(1).join(" ") || "";
+
 		try {
-			const payload = await registerCandidate(data);
+			const payload = await registerCandidate({
+				firstName,
+				lastName,
+				mobile: data.mobile,
+				email: data.email,
+				vacancyId: data.vacancyId,
+				testLocation: data.testLocation,
+			});
 
 			sessionStorage.removeItem("assessment-attempt");
 			sessionStorage.setItem("candidate", JSON.stringify(payload));

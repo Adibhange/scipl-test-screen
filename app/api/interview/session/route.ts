@@ -29,13 +29,12 @@ export async function GET(request: NextRequest) {
 	const supabase = getSupabaseServerClient();
 	const { data: resultRecord } = await supabase
 		.from("results")
-		.select("payload")
-		.eq("id", candidateId)
+		.select("interview_rounds")
+		.eq("id", session.id)
 		.maybeSingle();
 
 	if (resultRecord) {
-		const payload = resultRecord.payload as any;
-		const rounds = payload?.interviewRounds || {};
+		const rounds = resultRecord.interview_rounds || {};
 		const hasFailed = Object.values(rounds).some((r: any) => r?.status === "fail");
 		if (hasFailed) {
 			return NextResponse.json(
@@ -65,40 +64,41 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Verify if the candidate has failed any rounds
 		const supabase = getSupabaseServerClient();
-		const { data: resultRecord } = await supabase
-			.from("results")
-			.select("payload")
-			.eq("id", candidateId)
-			.maybeSingle();
+		const existing = await getExamSession(candidateId);
 
-		if (resultRecord) {
-			const payload = resultRecord.payload as any;
-			const rounds = payload?.interviewRounds || {};
-			const hasFailed = Object.values(rounds).some((r: any) => r?.status === "fail");
-			if (hasFailed) {
-				return NextResponse.json(
-					{ error: "Application Process Terminated" },
-					{ status: 403 },
-				);
+		// Verify if the candidate has failed any rounds
+		if (existing) {
+			const { data: resultRecord } = await supabase
+				.from("results")
+				.select("interview_rounds")
+				.eq("id", existing.id)
+				.maybeSingle();
+
+			if (resultRecord) {
+				const rounds = resultRecord.interview_rounds || {};
+				const hasFailed = Object.values(rounds).some((r: any) => r?.status === "fail");
+				if (hasFailed) {
+					return NextResponse.json(
+						{ error: "Application Process Terminated" },
+						{ status: 403 },
+					);
+				}
 			}
 		}
 
-		const existing = await getExamSession(candidateId);
-
-		// If it's a refresh of the same tab with matching token, proceed without conflict
-		if (existing && existing.is_exam_started === 1 && existing.is_exam_submitted === 0 && existing.active_session_token === sessionToken) {
+		// If it's a refresh of the same tab with matching token, proceed without conflict (using booleans)
+		if (existing && existing.is_exam_started === true && existing.is_exam_submitted === false && existing.active_session_token === sessionToken) {
 			return NextResponse.json(buildExamSessionResponse(existing));
 		}
 
 		// If force-restart requested, clear the stuck session
-		if (force && existing?.is_exam_started === 1 && existing?.is_exam_submitted === 0) {
+		if (force && existing?.is_exam_started === true && existing?.is_exam_submitted === false) {
 			await clearExamSession(candidateId);
 		}
 
 		// Still active (and not force-cleared) — return conflict
-		if (!force && existing?.is_exam_started === 1 && existing?.is_exam_submitted === 0) {
+		if (!force && existing?.is_exam_started === true && existing?.is_exam_submitted === false) {
 			return NextResponse.json(
 				{
 					error: "Exam is already active in another window",
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		if (existing?.is_exam_submitted === 1) {
+		if (existing?.is_exam_submitted === true) {
 			return NextResponse.json(buildExamSessionResponse(existing));
 		}
 

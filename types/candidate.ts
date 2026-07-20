@@ -11,6 +11,7 @@ export type Candidate = {
 	expectedSalary?: number;
 	offerSalary?: number;
 	hrNotes?: string;
+	vacancyId?: string;
 };
 
 export type AnswerValue = string | string[];
