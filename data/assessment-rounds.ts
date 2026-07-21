@@ -15,8 +15,8 @@ export const ASSESSMENT_ROUNDS: AssessmentRound[] = [
 		id: 1,
 		label: "MCQ",
 		types: ["mcq_single", "mcq_multi", "output_prediction"],
-		limit: 20,
-		durationSeconds: 20 * 60,
+		limit: 1,
+		durationSeconds: 1 * 60,
 		audience: "all",
 	},
 	{
@@ -24,7 +24,7 @@ export const ASSESSMENT_ROUNDS: AssessmentRound[] = [
 		label: "Subjective",
 		types: ["subjective"],
 		limit: 3,
-		durationSeconds: 30 * 60,
+		durationSeconds: 1 * 60,
 		audience: "it",
 	},
 	{
@@ -32,7 +32,7 @@ export const ASSESSMENT_ROUNDS: AssessmentRound[] = [
 		label: "Coding",
 		types: ["coding", "sql"],
 		limit: 5,
-		durationSeconds: 60 * 60,
+		durationSeconds: 1 * 60,
 		audience: "it",
 	},
 ];
