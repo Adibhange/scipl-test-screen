@@ -1,78 +1,48 @@
-import { NextRequest, NextResponse } from "next/server"
-import { getSupabaseServerClient } from "@/lib/db"
-import { getAllQuestions } from "@/lib/questions"
-import { getResultById } from "@/lib/results"
-import type { AdminGrade } from "@/types"
-
-const validGrades: AdminGrade[] = ["correct", "partial", "incorrect"]
+import { NextRequest } from "next/server";
+import { getCurrentAdmin } from "@/repositories/admin.repository";
+import { gradeCandidateAnswer } from "@/services/server/grading/grading.service";
+import { handleApiError } from "@/lib/api-handler";
+import * as apiResponse from "@/lib/api-response";
+import { validateSchema } from "@/lib/validate";
+import { GradeCandidateAnswerSchema } from "@/validators/admin.validator";
+import { rateLimit } from "@/lib/rate-limit";
+import { getClientIpFromHeaders, logSecurityEvent } from "@/lib/audit-logger";
 
 export async function POST(request: NextRequest) {
-  const body: { resultId?: string; questionId?: string; grade?: AdminGrade } =
-    await request.json()
+	const ip = getClientIpFromHeaders(request.headers);
+	const limiter = rateLimit(ip, { limit: 60, windowMs: 60000, keyPrefix: "rl:grade" });
+	if (limiter.isBlocked) return limiter.response!;
 
-  if (
-    !body.resultId ||
-    !body.questionId ||
-    !body.grade ||
-    !validGrades.includes(body.grade)
-  ) {
-    return NextResponse.json({ error: "Invalid grading request" }, { status: 400 })
-  }
+	const admin = await getCurrentAdmin();
+	if (!admin) {
+		return apiResponse.unauthorized("Authentication required", "UNAUTHORIZED");
+	}
 
-  const supabase = getSupabaseServerClient();
+	let targetResultId = "";
+	try {
+		const body = await request.json().catch(() => null);
+		const validated = validateSchema(GradeCandidateAnswerSchema, body);
+		targetResultId = validated.resultId;
 
-  // Verify candidate answer exists
-  const { data: answerRow, error: checkError } = await supabase
-    .from("candidate_answers")
-    .select("id")
-    .eq("exam_session_id", body.resultId)
-    .eq("question_id", body.questionId)
-    .maybeSingle();
+		const updatedResult = await gradeCandidateAnswer(validated.resultId, validated.questionId, validated.grade);
 
-  if (checkError || !answerRow) {
-    return NextResponse.json({ error: "Candidate answer not found" }, { status: 404 })
-  }
+		logSecurityEvent({
+			action: "answer_graded",
+			actor: { id: admin.userId, email: admin.email, role: admin.role, ip },
+			targetId: validated.resultId,
+			status: "success",
+			details: { questionId: validated.questionId, grade: validated.grade }
+		});
 
-  // Lookup the question details to find maximum possible marks
-  const questions = await getAllQuestions();
-  const question = questions.find((q) => q.id === body.questionId);
-  const maxMarks = question ? question.marks : 0;
-
-  // Calculate marks awarded based on grade
-  const marksAwarded =
-    body.grade === "correct" ? maxMarks
-    : body.grade === "partial" ? maxMarks / 2
-    : 0;
-
-  // Mutate candidate answer directly
-  const { error: updateError } = await supabase
-    .from("candidate_answers")
-    .update({
-      admin_grade: body.grade,
-      marks_awarded: marksAwarded,
-    })
-    .eq("exam_session_id", body.resultId)
-    .eq("question_id", body.questionId);
-
-  if (updateError) {
-    return NextResponse.json({ error: `Could not grade answer: ${updateError.message}` }, { status: 500 })
-  }
-
-  // Reset finalized total score fields in results table so they can be re-resolved
-  await supabase
-    .from("results")
-    .update({
-      total_marks_awarded: null,
-      total_marks_possible: null,
-      score_breakdown: null,
-    })
-    .eq("id", body.resultId);
-
-  // Return the newly updated CandidateResult representation
-  const updatedResult = await getResultById(body.resultId);
-  if (!updatedResult) {
-    return NextResponse.json({ error: "Failed to reload updated result" }, { status: 500 })
-  }
-
-  return NextResponse.json(updatedResult)
+		return apiResponse.success(updatedResult);
+	} catch (error) {
+		logSecurityEvent({
+			action: "answer_graded",
+			actor: { id: admin.userId, email: admin.email, role: admin.role, ip },
+			targetId: targetResultId || undefined,
+			status: "failure",
+			details: { error: error instanceof Error ? error.message : String(error) }
+		});
+		return handleApiError(error);
+	}
 }

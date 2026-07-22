@@ -1,107 +1,43 @@
-import { NextResponse } from "next/server";
-import { getAllQuestions } from "@/lib/questions";
-import { getResultById, updateResult } from "@/lib/results";
-import type { Answer } from "@/types";
+import { calculateCandidateResults } from "@/services/server/grading/grading.service";
+import { handleApiError } from "@/lib/api-handler";
+import * as apiResponse from "@/lib/api-response";
+import { validateSchema } from "@/lib/validate";
+import { CalculateResultScoreSchema } from "@/validators/result.validator";
+import { rateLimit } from "@/lib/rate-limit";
+import { getClientIpFromHeaders, logSecurityEvent } from "@/lib/audit-logger";
 
 export async function POST(
-	_request: Request,
+	request: Request,
 	context: RouteContext<"/api/results/[id]/calculate">,
 ) {
-	const { id } = await context.params;
-	const result = await getResultById(id);
+	const ip = getClientIpFromHeaders(request.headers);
+	const limiter = rateLimit(ip, { limit: 20, windowMs: 60000, keyPrefix: "rl:calculate" });
+	if (limiter.isBlocked) return limiter.response!;
 
-	if (!result) {
-		return NextResponse.json({ error: "Result not found" }, { status: 404 });
+	let targetResultId = "";
+	try {
+		const params = await context.params;
+		const validated = validateSchema(CalculateResultScoreSchema, { id: params.id });
+		targetResultId = validated.id;
+
+		const result = await calculateCandidateResults(validated.id);
+
+		logSecurityEvent({
+			action: "exam_result_calculate",
+			actor: { ip },
+			targetId: validated.id,
+			status: "success"
+		});
+
+		return apiResponse.success(result);
+	} catch (error) {
+		logSecurityEvent({
+			action: "exam_result_calculate",
+			actor: { ip },
+			targetId: targetResultId || undefined,
+			status: "failure",
+			details: { error: error instanceof Error ? error.message : String(error) }
+		});
+		return handleApiError(error);
 	}
-
-	if (result.totalMarksAwarded !== undefined) {
-		return NextResponse.json(
-			{ error: "Assessment already finalized" },
-			{ status: 409 },
-		);
-	}
-
-	const questions = await getAllQuestions();
-	const questionById = new Map(
-		questions.map((question) => [question.id, question]),
-	);
-
-	interface Accumulator {
-		awarded: number;
-		possible: number;
-		breakdown: {
-			mcq: { awarded: number; possible: number };
-			coding: { awarded: number; possible: number };
-			sql: { awarded: number; possible: number };
-			subjective: { awarded: number; possible: number };
-		};
-	}
-
-	const totals = result.answers.reduce<Accumulator>(
-		(current, answer: Answer) => {
-			const question = questionById.get(answer.questionId);
-			if (!question) return current;
-
-			const marks = question.marks;
-			const isManual =
-				answer.questionType === "coding" ||
-				answer.questionType === "sql" ||
-				answer.questionType === "subjective";
-			const awarded =
-				isManual ?
-					answer.adminGrade === "correct" ? marks
-					: answer.adminGrade === "partial" ? marks / 2
-					: 0
-				: answer.isCorrect ? marks
-				: 0;
-
-			const category = (
-				(
-					answer.questionType === "mcq_single" ||
-					answer.questionType === "mcq_multi" ||
-					answer.questionType === "output_prediction"
-				) ?
-					"mcq"
-				:	answer.questionType
-			) as keyof Accumulator["breakdown"];
-
-			return {
-				awarded: current.awarded + awarded,
-				possible: current.possible + marks,
-				breakdown: {
-					...current.breakdown,
-					[category]: {
-						awarded: current.breakdown[category].awarded + awarded,
-						possible: current.breakdown[category].possible + marks,
-					},
-				},
-			};
-		},
-		{
-			awarded: 0,
-			possible: 0,
-			breakdown: {
-				mcq: { awarded: 0, possible: 0 },
-				coding: { awarded: 0, possible: 0 },
-				sql: { awarded: 0, possible: 0 },
-				subjective: { awarded: 0, possible: 0 },
-			},
-		},
-	);
-
-	const tabSwitchDeduction = result.tabSwitches * 10;
-	const finalScore = Math.max(0, totals.awarded - tabSwitchDeduction);
-
-	const updated = await updateResult(id, (currentResult) => ({
-		...currentResult,
-		totalMarksAwarded: finalScore,
-		totalMarksPossible: totals.possible,
-		scoreBreakdown: {
-			...totals.breakdown,
-			scoreBeforeDeduction: totals.awarded,
-			tabSwitchDeduction,
-		},
-	}));
-
-	return NextResponse.json(updated);
 }

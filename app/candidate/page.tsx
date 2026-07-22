@@ -6,8 +6,8 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { CandidateForm } from "@/components/candidate/candidate-form";
 import { AlertCircle, X } from "lucide-react";
 import type { Candidate } from "@/types/candidate";
-import { registerCandidate } from "@/services/candidate";
-import { syncAssessmentSession } from "@/services/assessment";
+import { registerCandidate } from "@/services/client/candidate.service";
+import { syncAssessmentSession } from "@/services/client/assessment.service";
 
 let cachedCandidateValue: string | null = null;
 let cachedCandidate: Candidate | null = null;

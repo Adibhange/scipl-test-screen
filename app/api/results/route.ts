@@ -1,106 +1,64 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getAllResults, getResultById, saveResult } from "@/lib/results";
-import { getCandidateById, getSupabaseServerClient } from "@/lib/db";
-import type { Answer, Candidate } from "@/types";
-import { emptyInterviewRounds } from "@/lib/interview-rounds";
+import { NextRequest } from "next/server";
+import { fetchAllResultsList, submitResults } from "@/services/server/grading/grading.service";
+import { handleApiError } from "@/lib/api-handler";
+import * as apiResponse from "@/lib/api-response";
+import { validateSchema } from "@/lib/validate";
+import { SubmitAssessmentResultsSchema } from "@/validators/result.validator";
+import { rateLimit } from "@/lib/rate-limit";
+import { getClientIpFromHeaders, logSecurityEvent } from "@/lib/audit-logger";
 
-export async function GET() {
-  try {
-    return NextResponse.json(await getAllResults());
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Could not load results";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+export async function GET(req: NextRequest) {
+	const ip = getClientIpFromHeaders(req.headers);
+	const limiter = rateLimit(ip, { limit: 30, windowMs: 60000, keyPrefix: "rl:results_get" });
+	if (limiter.isBlocked) return limiter.response!;
+
+	try {
+		const results = await fetchAllResultsList();
+		return apiResponse.success(results);
+	} catch (error) {
+		return handleApiError(error, "Could not load results");
+	}
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const body: {
-      candidate?: Candidate;
-      answers?: Answer[];
-      tabSwitches?: number;
-      secondsUsed?: number;
-    } = await req.json();
+	const ip = getClientIpFromHeaders(req.headers);
+	const limiter = rateLimit(ip, { limit: 5, windowMs: 600000, keyPrefix: "rl:results_post" }); // 5 submissions per 10 mins
+	if (limiter.isBlocked) {
+		logSecurityEvent({
+			action: "exam_results_submit_rate_limited",
+			actor: { ip },
+			status: "failure",
+			details: { message: "Rate limit exceeded" }
+		});
+		return limiter.response!;
+	}
 
-    if (!body.candidate?.id || !Array.isArray(body.answers)) {
-      return NextResponse.json(
-        { error: "A saved candidate and answers are required." },
-        { status: 400 },
-      );
-    }
-    const savedCandidate = await getCandidateById(body.candidate.id);
-    if (
-      !savedCandidate ||
-      savedCandidate.email.toLowerCase() !==
-        body.candidate.email.trim().toLowerCase()
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Candidate email does not match the registered application.",
-        },
-        { status: 403 },
-      );
-    }
+	let candidateIdLog = "";
+	let candidateEmailLog = "";
+	try {
+		const body = await req.json().catch(() => null);
+		const validated = validateSchema(SubmitAssessmentResultsSchema, body);
+		candidateIdLog = validated.candidate.id;
+		candidateEmailLog = validated.candidate.email;
 
-    const supabase = getSupabaseServerClient();
-    
-    // Find exam session ID corresponding to this candidate
-    const { data: session, error: sessionError } = await supabase
-      .from("exam_sessions")
-      .select("id")
-      .eq("candidate_id", savedCandidate.id)
-      .maybeSingle();
+		const result = await submitResults(validated as unknown as Parameters<typeof submitResults>[0]);
 
-    if (sessionError || !session) {
-      return NextResponse.json({ error: "Exam session not found" }, { status: 404 });
-    }
+		logSecurityEvent({
+			action: "exam_results_submit",
+			actor: { id: validated.candidate.id, email: validated.candidate.email, ip },
+			targetId: result.id,
+			status: "success",
+			details: { tabSwitches: validated.tabSwitches, secondsUsed: validated.secondsUsed }
+		});
 
-    // Try to load any pre-existing placeholder result record created at registration
-    const existingResult = await getResultById(session.id);
-
-    const result = {
-      id: session.id, // session ID
-      candidate: {
-        ...body.candidate,
-        id: savedCandidate.id,
-        email: savedCandidate.email,
-        name: `${savedCandidate.firstName} ${savedCandidate.lastName}`.trim(),
-        mobile: savedCandidate.mobile,
-        role: savedCandidate.role,
-        experience: savedCandidate.experience,
-        testLocation: savedCandidate.testLocation,
-        hiringLocation:
-          savedCandidate.hiringLocation ||
-          existingResult?.candidate.hiringLocation,
-        hiringStatus:
-          savedCandidate.hiringStatus ||
-          existingResult?.candidate.hiringStatus ||
-          "screening",
-      },
-      answers: body.answers,
-      tabSwitches: body.tabSwitches ?? 0,
-      secondsUsed: body.secondsUsed ?? 0,
-      submittedAt: new Date().toISOString(),
-      interviewRounds: {
-        ...emptyInterviewRounds(),
-        ...(existingResult?.interviewRounds ?? {}),
-        face_to_face: existingResult?.interviewRounds?.face_to_face ?? {
-          status: "pass",
-        },
-        assessment: { status: "pending" as const },
-      },
-      assignedInterviewerId: existingResult?.assignedInterviewerId,
-      assignedInterviewerName: existingResult?.assignedInterviewerName,
-      assignedInterviewerEmail: existingResult?.assignedInterviewerEmail,
-    };
-
-    await saveResult(result);
-    return NextResponse.json(result, { status: 201 });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Could not save assessment result";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+		return apiResponse.created(result);
+	} catch (error) {
+		logSecurityEvent({
+			action: "exam_results_submit",
+			actor: { id: candidateIdLog || undefined, email: candidateEmailLog || undefined, ip },
+			status: "failure",
+			details: { error: error instanceof Error ? error.message : String(error) }
+		});
+		return handleApiError(error, "Could not save assessment result");
+	}
 }

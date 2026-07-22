@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Clock, CheckCircle2, ShieldAlert, Lock, ChevronRight, Send } from "lucide-react";
+import { useAssessmentUiStore } from "@/stores/assessment-ui.store";
+import { Clock, CheckCircle2, ShieldAlert, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -13,11 +14,11 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import type { Question, MCQOption, QuestionType } from "@/types/metadata";
+import type { Question } from "@/types/metadata";
 import type { Candidate, AnswerValue, SavedAttempt } from "@/types/candidate";
 import { AssessmentRoundCard } from "./assessment-round-card";
 import { AssessmentStatusBar } from "./assessment-status-bar";
-import { getAssessmentRounds } from "@/data/assessment-rounds";
+import { getAssessmentRounds, type AssessmentRound } from "@/constants/assessment-rounds";
 import { useSecurityGuard } from "@/hooks/useSecurityGuard";
 import { useExamTimer } from "@/hooks/useExamTimer";
 import { QuestionNavigator } from "./question-navigator";
@@ -74,7 +75,6 @@ export function CandidateTestScreen({
 	questions,
 	onSubmit,
 	onDone,
-	serverSecondsLeft,
 	serverSecondsUsed = 0,
 	onHeartbeat = () => {},
 	onStart = () => {},
@@ -110,7 +110,23 @@ export function CandidateTestScreen({
 	const [completedRounds, setCompletedRounds] = useState<number[]>(
 		savedAttempt?.completedRounds ?? [],
 	);
-	const [current, setCurrent] = useState(savedAttempt?.current ?? 0);
+	const current = useAssessmentUiStore((state) => state.activeQuestionIndex);
+	const setActiveQuestionIndex = useAssessmentUiStore((state) => state.setActiveQuestionIndex);
+
+	const setCurrent = useCallback(
+		(val: number | ((prev: number) => number)) => {
+			if (typeof val === "function") {
+				setActiveQuestionIndex(val(current));
+			} else {
+				setActiveQuestionIndex(val);
+			}
+		},
+		[current, setActiveQuestionIndex],
+	);
+
+	useEffect(() => {
+		setActiveQuestionIndex(savedAttempt?.current ?? 0);
+	}, [savedAttempt, setActiveQuestionIndex]);
 	const [answers, setAnswers] = useState<Record<string, AnswerValue>>(
 		savedAttempt?.answers ?? {},
 	);
@@ -731,8 +747,8 @@ type ExamTimerProps = {
 	hasStarted: boolean;
 	allSubmitted: boolean;
 	showRoundGate: boolean;
-	ROUNDS: any[];
-	activeRound: any;
+	ROUNDS: AssessmentRound[];
+	activeRound: AssessmentRound;
 	roundIdx: number;
 	serverSecondsUsed: number;
 	savedAttempt: SavedAttempt | null;

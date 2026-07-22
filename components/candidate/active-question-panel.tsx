@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/types/metadata";
 import type { AnswerValue } from "@/types/candidate";
-import type { AssessmentRound } from "@/data/assessment-rounds";
+import type { AssessmentRound } from "@/constants/assessment-rounds";
 import { CodeEditor } from "./code-editor";
 import { Flag, Send, ChevronRight, ChevronLeft, CheckCircle2, Terminal } from "lucide-react";
 

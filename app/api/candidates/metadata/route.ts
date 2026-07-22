@@ -1,89 +1,21 @@
-import { NextResponse } from "next/server"
-import { getSupabaseServerClient } from "@/lib/db"
+import { NextRequest } from "next/server";
+import { getMetadataAndVacancies } from "@/services/server/candidate/candidate.service";
+import { handleApiError } from "@/lib/api-handler";
+import * as apiResponse from "@/lib/api-response";
+import { rateLimit } from "@/lib/rate-limit";
+import { getClientIpFromHeaders } from "@/lib/audit-logger";
 
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
 
-export async function GET() {
-  try {
-    const supabase = getSupabaseServerClient();
-    
-    // Fetch master configurations from separate tables
-    const { data: masterRoles } = await supabase.from("master_roles").select("value, label").eq("is_active", true);
-    const { data: masterExperiences } = await supabase.from("master_experiences").select("value, label, filled_dots").eq("is_active", true);
-    const { data: masterHiring } = await supabase.from("master_hiring_locations").select("value, label").eq("is_active", true);
-    const { data: masterTest } = await supabase.from("master_test_locations").select("value, label").eq("is_active", true);
+export async function GET(req: NextRequest) {
+	const ip = getClientIpFromHeaders(req.headers);
+	const limiter = rateLimit(ip, { limit: 30, windowMs: 60000, keyPrefix: "rl:metadata" });
+	if (limiter.isBlocked) return limiter.response!;
 
-    // Fetch active vacancies from job_vacancies table joining master configurations
-    const { data: vacancies } = await supabase
-      .from("job_vacancies")
-      .select(`
-        id, openings, is_active, test_locations,
-        roleObj:master_roles(value, label),
-        experienceObj:master_experiences(value, label),
-        hiringLocObj:master_hiring_locations(value, label)
-      `)
-      .eq("is_active", true);
-
-    // Fetch from assessment_metadata table (which is used in admin panel config/add candidate dialogs)
-    const { data: dbMetadata } = await supabase
-      .from("assessment_metadata")
-      .select("*")
-      .eq("is_active", true);
-
-    let mRoles = masterRoles || [];
-    let mExps = masterExperiences || [];
-    let mHiring = masterHiring || [];
-    let mTest = masterTest || [];
-
-    if (dbMetadata && dbMetadata.length > 0) {
-      const dbRoles = dbMetadata.filter(item => item.type === "role");
-      if (dbRoles.length > 0) {
-        mRoles = dbRoles.map(item => ({ value: item.value, label: item.label }));
-      }
-      const dbTest = dbMetadata.filter(item => item.type === "test_location");
-      if (dbTest.length > 0) {
-        mTest = dbTest.map(item => ({ value: item.value, label: item.label }));
-      }
-      const dbExps = dbMetadata.filter(item => item.type === "experience");
-      if (dbExps.length > 0) {
-        mExps = dbExps.map(item => ({ value: item.value, label: item.label, filled_dots: 2 }));
-      }
-    }
-
-    const roles = mRoles.map(item => ({ value: item.value, label: item.label }));
-    const experience = mExps.map(item => ({
-      value: item.value,
-      label: item.label,
-      filled: (item as any).filled_dots ?? (item as any).filled ?? 1
-    }));
-    const testLocations = mTest.map(item => ({ value: item.value, label: item.label }));
-    const hiringLocations = mHiring.map(item => ({ value: item.value, label: item.label }));
-
-    const vacanciesMapped = (vacancies || []).map(v => ({
-      id: v.id,
-      role: (v as any).roleObj?.value || "",
-      experience: (v as any).experienceObj?.value || "",
-      hiring_location: (v as any).hiringLocObj?.value || "",
-      test_locations: v.test_locations,
-      openings: v.openings,
-      is_active: v.is_active
-    }));
-
-    return NextResponse.json({
-      roles,
-      experience,
-      testLocations,
-      hiringLocations,
-      vacancies: vacanciesMapped
-    })
-  } catch (err) {
-    console.error("Metadata API error:", err)
-    return NextResponse.json({
-      roles: [],
-      experience: [],
-      testLocations: [],
-      hiringLocations: [],
-      vacancies: []
-    })
-  }
+	try {
+		const result = await getMetadataAndVacancies();
+		return apiResponse.success(result);
+	} catch (err) {
+		return handleApiError(err);
+	}
 }

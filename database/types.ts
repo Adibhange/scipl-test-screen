@@ -1,0 +1,79 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+export interface ICandidatesAdapter {
+	getById(id: string): Promise<any>;
+	getByEmail(email: string): Promise<any>;
+	getWithDetailsByEmail(email: string): Promise<any>;
+	create(data: any): Promise<any>;
+	update(id: string, data: any): Promise<any>;
+	checkReapplicationLockout(
+		email: string,
+		mobile: string,
+		roleId: string,
+		candidateId?: string,
+		months?: number,
+	): Promise<boolean>;
+	getRoleExperienceList(): Promise<any[]>;
+}
+
+export interface IExamSessionsAdapter {
+	getById(id: string): Promise<any>;
+	getByCandidateId(candidateId: string): Promise<any>;
+	create(data: any): Promise<any>;
+	update(id: string, data: any): Promise<any>;
+	deleteByCandidateId(candidateId: string): Promise<void>;
+}
+
+export interface IQuestionsAdapter {
+	getAll(): Promise<any[]>;
+	getByIds(ids: string[]): Promise<any[]>;
+}
+
+export interface IResultsAdapter {
+	getAll(): Promise<any[]>;
+	getById(id: string): Promise<any>;
+	save(result: any): Promise<void>;
+	insertProctoringLog(sessionId: string, violationType: string): Promise<void>;
+	getProctoringLogsCount(sessionId: string, violationType: string): Promise<number>;
+	getCandidateAnswer(sessionId: string, questionId: string): Promise<any>;
+	updateCandidateAnswer(sessionId: string, questionId: string, data: any): Promise<void>;
+}
+
+export interface IAdminsAdapter {
+	getById(userId: string): Promise<any>;
+	getAll(): Promise<any[]>;
+	upsert(data: any): Promise<any>;
+	update(userId: string, data: any): Promise<any>;
+	delete(userId: string): Promise<void>;
+	authCreateUser(email: string, password: string): Promise<any>;
+	authUpdateUser(userId: string, data: any): Promise<void>;
+	authListUsers(): Promise<any[]>;
+}
+
+export interface IMetadataAdapter {
+	getMasterRoles(activeOnly?: boolean): Promise<any[]>;
+	getMasterExperiences(activeOnly?: boolean): Promise<any[]>;
+	getMasterHiringLocations(activeOnly?: boolean): Promise<any[]>;
+	getMasterTestLocations(activeOnly?: boolean): Promise<any[]>;
+	getAssessmentMetadata(activeOnly?: boolean): Promise<any[]>;
+	getVacancies(activeOnly?: boolean): Promise<any[]>;
+	createVacancy(data: any): Promise<any>;
+	updateVacancy(id: string, data: any): Promise<any>;
+	deleteVacancy(id: string): Promise<void>;
+	createMasterItem(type: string, data: any): Promise<any>;
+	updateMasterItem(type: string, id: string, data: any): Promise<any>;
+	deleteMasterItem(type: string, id: string): Promise<void>;
+	resolveRoleValue(value: string): Promise<any>;
+	resolveExperienceValue(value: string): Promise<any>;
+	resolveHiringLocationValue(value: string): Promise<any>;
+	resolveTestLocationValue(value: string): Promise<any>;
+}
+
+export interface IDatabaseAdapter {
+	candidates: ICandidatesAdapter;
+	examSessions: IExamSessionsAdapter;
+	questions: IQuestionsAdapter;
+	results: IResultsAdapter;
+	admins: IAdminsAdapter;
+	metadata: IMetadataAdapter;
+}

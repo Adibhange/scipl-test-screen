@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, LogOut, UsersRound, Settings, Menu } from "lucide-react";
+import { LayoutDashboard, LogOut, UsersRound, Settings, Menu, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AdminRole } from "@/types";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { createSupabaseBrowserClient } from "@/database/adapters/browser-client";
+import { useIsMutating } from "@tanstack/react-query";
+import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 import {
 	Dialog,
 	DialogContent,
@@ -26,6 +28,7 @@ export function AdminShell({
 }) {
 	const pathname = usePathname();
 	const router = useRouter();
+	const isMutating = useIsMutating();
 	const [showSessionModal, setShowSessionModal] = useState(false);
 	const [sessionWarning, setSessionWarning] = useState(false);
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -73,8 +76,43 @@ export function AdminShell({
 		router.replace("/admin/login");
 	}
 
+	async function handleLogoutWithRedirect() {
+		const supabase = createSupabaseBrowserClient();
+		await supabase.auth.signOut();
+		window.localStorage.clear();
+		window.sessionStorage.clear();
+		router.replace("/admin/login?inactive=true");
+	}
+
+	const { isIdle, remainingSeconds } = useIdleTimeout({
+		idleThresholdSeconds: 30,
+		countdownSeconds: 1200,
+		onLogout: handleLogoutWithRedirect,
+	});
+
+	const formatTime = (totalSeconds: number) => {
+		const minutes = Math.floor(totalSeconds / 60);
+		const seconds = totalSeconds % 60;
+		return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+	};
+
+	const showFeedback = isMutating > 0;
+
 	return (
-		<div className='min-h-screen bg-slate-50 text-slate-900'>
+		<div className='min-h-screen bg-slate-50 text-slate-900 relative'>
+			{/* Floating Syncing Badge */}
+			{showFeedback && (
+				<div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-none">
+					<div className="flex items-center gap-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 shadow-md rounded-full px-3.5 py-1.5 text-xs font-semibold text-slate-700">
+						<span className="relative flex h-2 w-2">
+							<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+							<span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+						</span>
+						<span>Syncing data...</span>
+					</div>
+				</div>
+			)}
+
 			{/* Desktop Sidebar */}
 			<aside className='fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200 bg-white lg:flex'>
 				<div className='flex h-20 items-center gap-3 border-b border-slate-100 px-6'>
@@ -91,7 +129,7 @@ export function AdminShell({
 						const active =
 							item.href === "/admin" ?
 								pathname === "/admin"
-							:	pathname.startsWith(item.href);
+								: pathname.startsWith(item.href);
 						const Icon = item.icon;
 						return (
 							<Link
@@ -101,7 +139,7 @@ export function AdminShell({
 									"flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
 									active ?
 										"bg-indigo-50 text-indigo-700"
-									:	"text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+										: "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
 								)}>
 								<Icon className='h-4 w-4' />
 								{item.label}
@@ -133,7 +171,7 @@ export function AdminShell({
 								const active =
 									item.href === "/admin" ?
 										pathname === "/admin"
-									:	pathname.startsWith(item.href);
+										: pathname.startsWith(item.href);
 								const Icon = item.icon;
 								return (
 									<Link
@@ -144,7 +182,7 @@ export function AdminShell({
 											"flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
 											active ?
 												"bg-indigo-50 text-indigo-700"
-											:	"text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+												: "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
 										)}>
 										<Icon className='h-4 w-4' />
 										{item.label}
@@ -157,7 +195,12 @@ export function AdminShell({
 			)}
 
 			<div className='lg:pl-64'>
-				<header className='sticky top-0 z-20 flex h-20 items-center justify-between border-b border-slate-200 bg-white/90 px-5 backdrop-blur lg:px-8'>
+				<header className='sticky top-0 z-20 flex h-20 items-center justify-between border-b border-slate-200 bg-white/90 px-5 backdrop-blur lg:px-8 relative'>
+					{/* Ambient Header Glow */}
+					{showFeedback && (
+						<div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 animate-pulse z-30" />
+					)}
+
 					<div className='flex items-center gap-3'>
 						<button
 							type='button'
@@ -176,13 +219,39 @@ export function AdminShell({
 							</div>
 						</div>
 					</div>
+
+
+
 					<div className='relative flex items-center gap-3'>
+						{/* Session Inactivity Timer Chip */}
+						<div
+							title="Session expires due to inactivity"
+							className={cn(
+								"inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50/80 px-2.5 py-1 backdrop-blur-sm shadow-sm transition-all duration-200 hover:scale-105 hover:bg-amber-100/80",
+								isIdle ?
+									"opacity-100 scale-100 pointer-events-auto"
+									: "opacity-0 scale-90 pointer-events-none w-0 overflow-hidden border-0 px-0"
+							)}
+						>
+							<span className="relative flex h-1.5 w-1.5 shrink-0">
+								<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+								<span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-500" />
+							</span>
+							<Clock className="h-3 w-3 shrink-0 text-amber-600" aria-hidden="true" />
+							<span className="font-mono text-lg font-bold tabular-nums leading-none text-amber-700">
+								{formatTime(remainingSeconds)}
+							</span>
+						</div>
+
 						<div className='hidden text-right sm:block'>
 							<p className='text-xs font-semibold text-slate-800'>{admin.name}</p>
 							<p className='text-[11px] capitalize text-slate-500'>
 								{admin.role}
 							</p>
 						</div>
+
+
+
 						<button
 							type='button'
 							onClick={() => setIsDropdownOpen((prev) => !prev)}
@@ -192,9 +261,9 @@ export function AdminShell({
 
 						{isDropdownOpen && (
 							<>
-								<div 
-									className="fixed inset-0 z-40" 
-									onClick={() => setIsDropdownOpen(false)} 
+								<div
+									className="fixed inset-0 z-40"
+									onClick={() => setIsDropdownOpen(false)}
 								/>
 								<div className="absolute right-0 top-11 z-50 w-48 rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl animate-in fade-in slide-in-from-top-2 duration-150">
 									<div className="px-4 py-2 border-b border-slate-100 sm:hidden">

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { logProctoringViolation } from "@/services/client/interview.service";
 
 /**
  * Custom hook to enforce anti-cheating rules on the candidate test screen:
@@ -30,11 +31,8 @@ export function useSecurityGuard({
         setTabSwitches((n) => n + 1);
         setShowWarning(true);
         if (candidateId) {
-          fetch("/api/interview/proctoring", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ candidateId, violationType: "tab_switch" }),
-          }).catch((err) => console.warn("Failed to log proctoring violation:", err));
+          logProctoringViolation({ candidateId, violationType: "tab_switch" })
+            .catch((err) => console.warn("Failed to log proctoring violation:", err));
         }
       }
     };

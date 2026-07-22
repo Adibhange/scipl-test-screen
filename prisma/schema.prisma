@@ -1,0 +1,120 @@
+datasource db {
+  provider = "mysql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Candidate {
+  id             String   @id @default(uuid())
+  firstName      String   @map("first_name")
+  lastName       String   @map("last_name")
+  mobile         String
+  email          String   @unique
+  role           String
+  experience     String
+  testLocation   String?  @map("test_location")
+  hiringLocation String?  @map("hiring_location")
+  hiringStatus   String   @default("screening") @map("hiring_status")
+  expectedSalary Decimal? @map("expected_salary")
+  offerSalary    Decimal? @map("offer_salary")
+  hrNotes        String?  @map("hr_notes")
+  vacancyId      String?  @map("vacancy_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("candidates")
+}
+
+model ExamSession {
+  id              String    @id @default(uuid())
+  candidateId     String    @unique @map("candidate_id")
+  candidateEmail  String    @map("candidate_email")
+  sessionToken    String?   @map("session_token")
+  expiresAt       DateTime? @map("expires_at")
+  isExamSubmitted Boolean   @default(false) @map("is_exam_submitted")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@map("exam_sessions")
+}
+
+model QuestionDocument {
+  id        String   @id @default(uuid())
+  payload   Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("question_documents")
+}
+
+model Result {
+  id                      String   @id @default(uuid())
+  candidateId             String   @map("candidate_id")
+  tabSwitches             Int      @default(0) @map("tab_switches")
+  secondsUsed             Int      @default(0) @map("seconds_used")
+  submittedAt             DateTime @default(now()) @map("submitted_at")
+  totalMarksPossible      Int?     @map("total_marks_possible")
+  totalMarksAwarded       Int?     @map("total_marks_awarded")
+  scoreBreakdown          Json?    @map("score_breakdown")
+  assignedInterviewerId   String?  @map("assigned_interviewer_id")
+  assignedInterviewerName String?  @map("assigned_interviewer_name")
+  assignedInterviewerEmail String?  @map("assigned_interviewer_email")
+  interviewRounds         Json?    @map("interview_rounds")
+
+  @@map("results")
+}
+
+model CandidateAnswer {
+  id           String   @id @default(uuid())
+  sessionId    String   @map("session_id")
+  questionId   String   @map("question_id")
+  answerValue  Json     @map("answer_value")
+  isCorrect    Boolean? @map("is_correct")
+  adminGrade   String?  @map("admin_grade")
+  marksAwarded Int?     @map("marks_awarded")
+
+  @@map("candidate_answers")
+}
+
+model ProctoringLog {
+  id            String   @id @default(uuid())
+  sessionId     String   @map("session_id")
+  violationType String   @map("violation_type")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("proctoring_logs")
+}
+
+model AdminUser {
+  userId    String   @id @map("user_id")
+  email     String   @unique
+  name      String
+  role      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("admin_users")
+}
+
+model JobVacancy {
+  id             String   @id @default(uuid())
+  role           String
+  experience     String
+  hiringLocation String   @map("hiring_location")
+  testLocations  Json     @map("test_locations")
+  openings       Int      @default(1)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("job_vacancies")
+}
+
+model MasterItem {
+  id        String   @id @default(uuid())
+  type      String
+  value     String
+  label     String
+  isActive  Boolean  @default(true) @map("is_active")
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("master_items")
+}

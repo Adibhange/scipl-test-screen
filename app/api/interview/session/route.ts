@@ -1,191 +1,142 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient } from "@/lib/db";
+import { NextRequest } from "next/server";
 import {
-	buildExamSessionResponse,
-	clearExamSession,
-	getExamSession,
-	startExamSession,
-	updateExamSession,
-} from "@/lib/exam-session";
+	getExamSessionDetails,
+	initiateExamSession,
+	progressExamSession,
+	clearActiveSession,
+} from "@/services/server/session/session.service";
+import { buildExamSessionResponse } from "@/repositories/exam-session.repository";
+import { handleApiError } from "@/lib/api-handler";
+import * as apiResponse from "@/lib/api-response";
+import { validateSchema } from "@/lib/validate";
+import {
+	GetExamSessionSchema,
+	InitiateExamSessionSchema,
+	ProgressExamSessionSchema,
+	DeleteExamSessionSchema,
+} from "@/validators/session.validator";
+import { rateLimit } from "@/lib/rate-limit";
+import { getClientIpFromHeaders, logSecurityEvent } from "@/lib/audit-logger";
 
 export async function GET(request: NextRequest) {
-	const candidateId = request.nextUrl.searchParams.get("candidateId");
-	if (!candidateId) {
-		return NextResponse.json(
-			{ error: "candidateId is required" },
-			{ status: 400 },
-		);
+	const ip = getClientIpFromHeaders(request.headers);
+	const limiter = rateLimit(ip, { limit: 30, windowMs: 60000, keyPrefix: "rl:session_get" });
+	if (limiter.isBlocked) return limiter.response!;
+
+	try {
+		const { searchParams } = new URL(request.url);
+		const query = validateSchema(GetExamSessionSchema, {
+			candidateId: searchParams.get("candidateId"),
+		});
+
+		const session = await getExamSessionDetails(query.candidateId);
+		return apiResponse.success(buildExamSessionResponse(session));
+	} catch (error) {
+		return handleApiError(error);
 	}
-
-	const session = await getExamSession(candidateId);
-	if (!session) {
-		return NextResponse.json(
-			{ error: "No active exam session found" },
-			{ status: 404 },
-		);
-	}
-
-	// Verify if the candidate has failed any rounds
-	const supabase = getSupabaseServerClient();
-	const { data: resultRecord } = await supabase
-		.from("results")
-		.select("interview_rounds")
-		.eq("id", session.id)
-		.maybeSingle();
-
-	if (resultRecord) {
-		const rounds = resultRecord.interview_rounds || {};
-		const hasFailed = Object.values(rounds).some((r: any) => r?.status === "fail");
-		if (hasFailed) {
-			return NextResponse.json(
-				{ error: "Application Process Terminated" },
-				{ status: 403 },
-			);
-		}
-	}
-
-	return NextResponse.json(buildExamSessionResponse(session));
 }
 
 export async function POST(request: NextRequest) {
+	const ip = getClientIpFromHeaders(request.headers);
+	const limiter = rateLimit(ip, { limit: 10, windowMs: 60000, keyPrefix: "rl:session_post" });
+	if (limiter.isBlocked) return limiter.response!;
+
+	let candidateIdLog = "";
 	try {
 		const body = await request.json().catch(() => null);
-		const candidateId = body?.candidateId;
-		const candidateEmail = body?.candidateEmail;
-		const role = body?.role ?? "";
-		const experience = body?.experience ?? "";
-		const sessionToken = body?.sessionToken;
-		const force = body?.force === true;
+		const validated = validateSchema(InitiateExamSessionSchema, body);
+		candidateIdLog = validated.candidateId;
 
-		if (!candidateId || !candidateEmail) {
-			return NextResponse.json(
-				{ error: "Candidate details are required" },
-				{ status: 400 },
-			);
-		}
-
-		const supabase = getSupabaseServerClient();
-		const existing = await getExamSession(candidateId);
-
-		// Verify if the candidate has failed any rounds
-		if (existing) {
-			const { data: resultRecord } = await supabase
-				.from("results")
-				.select("interview_rounds")
-				.eq("id", existing.id)
-				.maybeSingle();
-
-			if (resultRecord) {
-				const rounds = resultRecord.interview_rounds || {};
-				const hasFailed = Object.values(rounds).some((r: any) => r?.status === "fail");
-				if (hasFailed) {
-					return NextResponse.json(
-						{ error: "Application Process Terminated" },
-						{ status: 403 },
-					);
-				}
-			}
-		}
-
-		// If it's a refresh of the same tab with matching token, proceed without conflict (using booleans)
-		if (existing && existing.is_exam_started === true && existing.is_exam_submitted === false && existing.active_session_token === sessionToken) {
-			return NextResponse.json(buildExamSessionResponse(existing));
-		}
-
-		// If force-restart requested, clear the stuck session
-		if (force && existing?.is_exam_started === true && existing?.is_exam_submitted === false) {
-			await clearExamSession(candidateId);
-		}
-
-		// Still active (and not force-cleared) — return conflict
-		if (!force && existing?.is_exam_started === true && existing?.is_exam_submitted === false) {
-			return NextResponse.json(
-				{
-					error: "Exam is already active in another window",
-					...buildExamSessionResponse(existing),
-				},
-				{ status: 409 },
-			);
-		}
-
-		if (existing?.is_exam_submitted === true) {
-			return NextResponse.json(buildExamSessionResponse(existing));
-		}
-
-		const { session, conflict } = await startExamSession({
-			candidateId,
-			candidateEmail,
-			role,
-			experience,
+		const { session, conflict } = await initiateExamSession({
+			candidateId: validated.candidateId,
+			candidateEmail: validated.candidateEmail,
+			role: validated.role,
+			experience: validated.experience,
+			sessionToken: validated.sessionToken || undefined,
+			force: validated.force,
 		});
+
 		if (conflict) {
-			return NextResponse.json(
-				{
-					error: "Exam is already active in another window",
-					...buildExamSessionResponse(session),
-				},
-				{ status: 409 },
-			);
+			logSecurityEvent({
+				action: "exam_session_initiate_conflict",
+				actor: { id: validated.candidateId, email: validated.candidateEmail, ip },
+				status: "failure",
+				details: { message: "Conflict: Session active in another window" }
+			});
+			return apiResponse.conflict("conflict", "CONFLICT");
 		}
 
-		return NextResponse.json(buildExamSessionResponse(session), {
-			status: 201,
+		logSecurityEvent({
+			action: "exam_session_initiate",
+			actor: { id: validated.candidateId, email: validated.candidateEmail, ip },
+			status: "success",
+			details: { force: validated.force }
 		});
+
+		const status = session.is_exam_submitted === true ? 200 : 201;
+		return apiResponse.success(buildExamSessionResponse(session), status);
 	} catch (error) {
-		const msg = error instanceof Error ? error.message : "Could not start exam session";
-		return NextResponse.json(
-			{ error: msg },
-			{ status: 500 },
-		);
+		logSecurityEvent({
+			action: "exam_session_initiate",
+			actor: { id: candidateIdLog || undefined, ip },
+			status: "failure",
+			details: { error: error instanceof Error ? error.message : String(error) }
+		});
+		return handleApiError(error, "Could not start exam session");
 	}
 }
 
 export async function PATCH(request: NextRequest) {
+	const ip = getClientIpFromHeaders(request.headers);
+	const limiter = rateLimit(ip, { limit: 60, windowMs: 60000, keyPrefix: "rl:session_patch" }); // Allow high frequency for heartbeats
+	if (limiter.isBlocked) return limiter.response!;
+
 	try {
 		const body = await request.json().catch(() => null);
-		const candidateId = body?.candidateId;
-		if (!candidateId) {
-			return NextResponse.json(
-				{ error: "candidateId is required" },
-				{ status: 400 },
-			);
-		}
+		const validated = validateSchema(ProgressExamSessionSchema, body);
 
-		const result = await updateExamSession(candidateId, {
-			sessionToken: body?.sessionToken,
-			action: body?.action,
-			secondsUsed: body?.secondsUsed,
+		const session = await progressExamSession(validated.candidateId, {
+			sessionToken: validated.sessionToken,
+			action: validated.action,
+			secondsUsed: validated.secondsUsed,
 		});
 
-		if (!result) {
-			return NextResponse.json(
-				{ error: "No active exam session found" },
-				{ status: 404 },
-			);
+		if (validated.action === "submit") {
+			logSecurityEvent({
+				action: "exam_session_submit_action",
+				actor: { id: validated.candidateId, ip },
+				status: "success",
+				details: { secondsUsed: validated.secondsUsed }
+			});
 		}
 
-		if (result.invalidToken) {
-			return NextResponse.json(
-				{ error: "Session token is invalid" },
-				{ status: 403 },
-			);
-		}
-
-		return NextResponse.json(buildExamSessionResponse(result.session));
+		return apiResponse.success(buildExamSessionResponse(session));
 	} catch (error) {
-		const msg = error instanceof Error ? error.message : "Could not update exam session";
-		return NextResponse.json(
-			{ error: msg },
-			{ status: 500 },
-		);
+		return handleApiError(error, "Could not update exam session");
 	}
 }
 
 export async function DELETE(request: NextRequest) {
-	const candidateId = request.nextUrl.searchParams.get("candidateId");
-	if (!candidateId) {
-		return NextResponse.json({ error: "candidateId is required" }, { status: 400 });
+	const ip = getClientIpFromHeaders(request.headers);
+	const limiter = rateLimit(ip, { limit: 10, windowMs: 60000, keyPrefix: "rl:session_delete" });
+	if (limiter.isBlocked) return limiter.response!;
+
+	try {
+		const { searchParams } = new URL(request.url);
+		const query = validateSchema(DeleteExamSessionSchema, {
+			candidateId: searchParams.get("candidateId"),
+		});
+
+		await clearActiveSession(query.candidateId);
+
+		logSecurityEvent({
+			action: "exam_session_clear",
+			actor: { id: query.candidateId, ip },
+			status: "success"
+		});
+
+		return apiResponse.success({ cleared: true });
+	} catch (error) {
+		return handleApiError(error);
 	}
-	await clearExamSession(candidateId);
-	return NextResponse.json({ cleared: true });
 }

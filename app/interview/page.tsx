@@ -15,7 +15,7 @@ import {
 	fetchAssessmentQuestions,
 	submitAssessmentResults,
 	finalizeAssessmentSession,
-} from "@/services/assessment";
+} from "@/services/client/assessment.service";
 
 let cachedCandidateValue: string | null = null;
 let cachedCandidate: Candidate | null = null;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { getCandidateMetadata, type CandidateMetadataResponse } from "@/services/client/candidate.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,9 +57,8 @@ export function CandidateForm({
 	const [isNoVacanciesWarningOpen, setIsNoVacanciesWarningOpen] = useState(false);
 
 	useEffect(() => {
-		fetch("/api/candidates/metadata")
-			.then((res) => (res.ok ? res.json() : {}))
-			.then((data: any) => {
+		getCandidateMetadata()
+			.then((data: CandidateMetadataResponse) => {
 				if (data.roles) setRolesList(data.roles);
 				if (data.experience) setExperienceList(data.experience);
 				if (data.testLocations) setLocationsList(data.testLocations);

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import type { SavedAttempt } from "@/types/candidate";
-import type { AssessmentRound } from "@/data/assessment-rounds";
+import type { AssessmentRound } from "@/constants/assessment-rounds";
 
 /**
  * Custom hook to run a drift-free local countdown timer, sync it

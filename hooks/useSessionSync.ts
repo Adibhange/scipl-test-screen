@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Candidate } from "@/types/candidate";
 import type { Question } from "@/types/metadata";
-import { syncAssessmentSession, fetchAssessmentQuestions } from "@/services/assessment";
+import { syncAssessmentSession, fetchAssessmentQuestions } from "@/services/client/assessment.service";
 
 /**
  * Custom hook to manage client-server session synchronization, including
@@ -14,7 +14,7 @@ export function useSessionSync(candidate: Candidate | null, mounted: boolean) {
 	const [sessionToken, setSessionToken] = useState<string | null>(null);
 	const [serverSecondsLeft, setServerSecondsLeft] = useState<number | null>(null);
 	const [serverSecondsUsed, setServerSecondsUsed] = useState<number>(0);
-	const [blockReason, setBlockReason] = useState<"conflict" | "submitted" | "expired" | null>(null);
+	const [blockReason, setBlockReason] = useState<"conflict" | "submitted" | "expired" | "terminated" | null>(null);
 
 	// Multi-tab takeover real-time detection via BroadcastChannel
 	useEffect(() => {
@@ -45,20 +45,23 @@ export function useSessionSync(candidate: Candidate | null, mounted: boolean) {
 	useEffect(() => {
 		if (!mounted) return;
 		if (!candidate) {
-			setLoading(false);
+			Promise.resolve().then(() => setLoading(false));
 			return;
 		}
 
 		const runSync = async () => {
 			try {
 				const storedToken = sessionStorage.getItem("sessionToken");
-				const data = await syncAssessmentSession({
-					candidateId: candidate.id!,
-					candidateEmail: candidate.email,
-					role: candidate.role,
-					experience: candidate.experience,
-					sessionToken: storedToken,
-				});
+				const [data, qs] = await Promise.all([
+					syncAssessmentSession({
+						candidateId: candidate.id!,
+						candidateEmail: candidate.email,
+						role: candidate.role,
+						experience: candidate.experience,
+						sessionToken: storedToken,
+					}),
+					fetchAssessmentQuestions(candidate.role, candidate.experience),
+				]);
 
 				if (data.status === "submitted") {
 					setBlockReason("submitted");
@@ -75,14 +78,13 @@ export function useSessionSync(candidate: Candidate | null, mounted: boolean) {
 				setSessionToken(data.sessionToken);
 				setServerSecondsLeft(data.remainingSeconds);
 				setServerSecondsUsed(data.secondsUsed ?? 0);
-
-				const qs = await fetchAssessmentQuestions(candidate.role, candidate.experience);
 				setQuestions(qs);
-			} catch (err: any) {
-				if (err.message === "conflict") {
+			} catch (err: unknown) {
+				const errorMsg = err instanceof Error ? err.message : String(err);
+				if (errorMsg === "conflict") {
 					setBlockReason("conflict");
-				} else if (err.message === "Application Process Terminated") {
-					setBlockReason("terminated" as any);
+				} else if (errorMsg === "Application Process Terminated") {
+					setBlockReason("terminated");
 				} else {
 					console.error("Session sync failed:", err);
 				}
@@ -109,3 +111,4 @@ export function useSessionSync(candidate: Candidate | null, mounted: boolean) {
 		setBlockReason,
 	};
 }
+export type SessionSyncResult = ReturnType<typeof useSessionSync>;

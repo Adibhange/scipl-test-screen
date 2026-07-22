@@ -1,19 +1,28 @@
-import { NextRequest, NextResponse } from "next/server"
-import { getAssessmentQuestions, getQuestionsByRoleAndExperience } from "@/lib/questions"
+import { NextRequest } from "next/server";
+import { getQuestionsForAssessment } from "@/services/server/assessment/assessment.service";
+import { handleApiError } from "@/lib/api-handler";
+import * as apiResponse from "@/lib/api-response";
+import { validateSchema } from "@/lib/validate";
+import { GetQuestionsSchema } from "@/validators/assessment.validator";
+import { rateLimit } from "@/lib/rate-limit";
+import { getClientIpFromHeaders } from "@/lib/audit-logger";
 
 export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url)
-    const role = searchParams.get("role") ?? ""
-    const experience = searchParams.get("experience") ?? ""
-    const all = searchParams.get("all") === "1"
+	const ip = getClientIpFromHeaders(req.headers);
+	const limiter = rateLimit(ip, { limit: 30, windowMs: 60000, keyPrefix: "rl:questions" });
+	if (limiter.isBlocked) return limiter.response!;
 
-    const questions = all
-      ? await getQuestionsByRoleAndExperience(role, experience)
-      : await getAssessmentQuestions(role, experience)
-    return NextResponse.json(questions)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Could not load questions"
-    return NextResponse.json({ error: message }, { status: 400 })
-  }
+	try {
+		const { searchParams } = new URL(req.url);
+		const query = validateSchema(GetQuestionsSchema, {
+			role: searchParams.get("role"),
+			experience: searchParams.get("experience"),
+			all: searchParams.get("all") || undefined,
+		});
+
+		const questions = await getQuestionsForAssessment(query.role, query.experience, query.all);
+		return apiResponse.success(questions);
+	} catch (error) {
+		return handleApiError(error, "Could not load questions");
+	}
 }
