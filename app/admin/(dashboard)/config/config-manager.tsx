@@ -10,6 +10,8 @@ import {
 } from "@/hooks/mutations/useAdminMutations"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -24,15 +26,39 @@ import {
   Trash2,
   Edit3,
   AlertTriangle,
-  ToggleLeft,
-  ToggleRight,
   Check,
   X,
   Users,
-  Settings,
   Loader2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { PageHeader, EmptyState } from "@/components/ui/layout-primitives"
+import { SectionCard } from "@/components/ui/enterprise-primitives"
+import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
+type ConfirmDialogState =
+  | { open: false }
+  | {
+      open: true
+      type: "delete-vacancy"
+      vacancyId: string
+    }
+  | {
+      open: true
+      type: "delete-master"
+      masterId: string
+      masterType: "role" | "experience" | "test_location" | "hiring_location"
+    }
 
 type ConfigItem = {
   id: string
@@ -56,7 +82,7 @@ type JobVacancy = {
 }
 
 export function ConfigManager() {
-  const { data, isLoading: loading, error: queryError } = useAdminConfigurationsQuery()
+  const { data, error: queryError } = useAdminConfigurationsQuery()
   const configs = data?.configs || []
   const vacancies = data?.vacancies || []
   const error = queryError ? (queryError.message || "Failed to load configs") : null
@@ -85,8 +111,6 @@ export function ConfigManager() {
     openings: "1"
   })
 
-  const [customTestVenueInput, setCustomTestVenueInput] = useState("")
-
   // Separate add form states for Master Data columns
   const [masterRoleForm, setMasterRoleForm] = useState({ label: "", value: "" })
   const [masterExpForm, setMasterExpForm] = useState({ label: "", value: "", filledDots: "1" })
@@ -98,6 +122,7 @@ export function ConfigManager() {
   const [editOpenings, setEditOpenings] = useState("1")
 
   const [actionError, setActionError] = useState<string | null>(null)
+  const [confirmState, setConfirmState] = useState<ConfirmDialogState>({ open: false })
   const rawAdminTab = useUiStore((state) => state.activeAdminTab);
   const activeMasterTab = (rawAdminTab === "candidates" || rawAdminTab === "hr" || rawAdminTab === "interviewer") ? "role" : (rawAdminTab as "role" | "experience" | "hiring_location" | "test_location");
   const setActiveMasterTab = useUiStore((state) => state.setActiveAdminTab);
@@ -165,9 +190,10 @@ export function ConfigManager() {
         isVacancy: true,
         is_active: !vacancy.is_active
       })
+      toast.success("Vacancy status updated successfully.")
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to update status"
-      alert(msg)
+      toast.error(msg)
     }
   }
 
@@ -185,86 +211,56 @@ export function ConfigManager() {
         isVacancy: true,
         openings: num
       })
-
       setEditingVacancyId(null)
+      toast.success("Vacancy openings updated successfully.")
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to save openings"
-      setActionError(msg)
+      const msg = err instanceof Error ? err.message : "Failed to update vacancy openings"
+      toast.error(msg)
     }
   }
 
   async function handleDeleteVacancy(id: string) {
-    if (!confirm("Are you sure you want to delete this vacancy? Registered candidates can still view their active processes, but new registrations will be blocked.")) return
-
     try {
       await deleteConfigMutation.mutateAsync({ id, isVacancy: true })
+      toast.success("Vacancy deleted successfully.")
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to delete vacancy"
-      alert(msg)
+      toast.error(msg)
     }
   }
 
-  // ── Master Configs Actions ─────────────────────────────────────
 
-  async function handleAddMaster(type: ConfigItem["type"], fields: Record<string, string>) {
+  // ── Master Config Actions ────────────────────────────────────────
+
+  async function handleAddMaster(type: ConfigItem["type"], form: { label: string, value: string, filledDots?: string }) {
     setActionError(null)
-    if (!fields.label || !fields.value) {
-      setActionError("Label and Value are required.")
+    const val = form.value.trim()
+    const lbl = form.label.trim()
+
+    if (!val || !lbl) {
+      setActionError("Label and identifier value are required.")
       return
     }
 
     try {
-      let metadata: Record<string, unknown> = {}
-      if (type === "experience") {
-        metadata = {
-          filled: Number(fields.filledDots || 1)
-        }
-      }
+      const meta = type === "experience" ? { filled: Number(form.filledDots || 1) } : null
 
       await createConfigMutation.mutateAsync({
         type,
-        value: fields.value.trim(),
-        label: fields.label.trim(),
-        metadata
+        label: lbl,
+        value: val,
+        metadata: meta
       })
 
       // Reset forms
-      if (type === "role") {
-        setMasterRoleForm({ label: "", value: "" })
-      } else if (type === "experience") {
-        setMasterExpForm({ label: "", value: "", filledDots: "1" })
-      } else if (type === "hiring_location") {
-        setMasterHiringForm({ label: "", value: "" })
-      } else if (type === "test_location") {
-        setMasterTestForm({ label: "", value: "" })
-      }
+      setMasterRoleForm({ label: "", value: "" })
+      setMasterExpForm({ label: "", value: "", filledDots: "1" })
+      setMasterHiringForm({ label: "", value: "" })
+      setMasterTestForm({ label: "", value: "" })
+      toast.success("Option added successfully.")
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to add configuration"
+      const msg = err instanceof Error ? err.message : "Failed to add master option"
       setActionError(msg)
-    }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async function handleQuickAddTestVenue() {
-    if (!customTestVenueInput.trim()) return
-    const value = customTestVenueInput.trim().toLowerCase().replace(/\s+/g, "_")
-    const label = customTestVenueInput.trim()
-
-    try {
-      await createConfigMutation.mutateAsync({
-        type: "test_location",
-        value,
-        label
-      })
-
-      setVacancyForm(prev => ({
-        ...prev,
-        testLocations: [...prev.testLocations, value]
-      }))
-      setCustomTestVenueInput("")
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to add test location"
-      alert(msg)
     }
   }
 
@@ -275,9 +271,10 @@ export function ConfigManager() {
         type: item.type,
         is_active: !item.is_active
       })
+      toast.success("Option status updated successfully.")
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to update status"
-      alert(msg)
+      toast.error(msg)
     }
   }
 
@@ -289,35 +286,41 @@ export function ConfigManager() {
     }
 
     try {
-      let metadata: Record<string, unknown> = {}
-      if (type === "experience") {
-        metadata = {
-          filled: Number(editForm.filledDots || 1)
-        }
-      }
+      const meta = type === "experience" ? { filled: Number(editForm.filledDots) } : null
 
       await updateConfigMutation.mutateAsync({
         id,
         type,
-        label: editForm.label.trim(),
-        metadata
+        label: editForm.label,
+        metadata: meta
       })
-
       setEditingId(null)
+      toast.success("Option edits saved successfully.")
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to update configuration"
-      setActionError(msg)
+      const msg = err instanceof Error ? err.message : "Failed to save edits"
+      toast.error(msg)
     }
   }
 
   async function handleDeleteMaster(id: string, type: ConfigItem["type"]) {
-    if (!confirm("Are you sure you want to delete this option? Open vacancies containing this configuration choice may be affected.")) return
-
     try {
       await deleteConfigMutation.mutateAsync({ id, isVacancy: false, type })
+      toast.success("Option deleted successfully.")
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to delete option"
-      alert(msg)
+      const msg = err instanceof Error ? err.message : "Failed to delete"
+      toast.error(msg)
+    }
+  }
+
+  async function handleConfirmDelete() {
+    if (!confirmState.open) return
+    const state = confirmState
+    setConfirmState({ open: false })
+
+    if (state.type === "delete-vacancy") {
+      await handleDeleteVacancy(state.vacancyId)
+    } else if (state.type === "delete-master") {
+      await handleDeleteMaster(state.masterId, state.masterType)
     }
   }
 
@@ -332,12 +335,12 @@ export function ConfigManager() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 animate-fade-in">
       {/* Title */}
-      <div className="border-b border-slate-100 pb-4">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900">Job Configuration & Vacancies</h2>
-        <p className="text-xs text-slate-500 mt-0.5 font-medium">Manage open job descriptions, candidate test centers, hiring targets, and standalone dropdown configurations.</p>
-      </div>
+      <PageHeader
+        title="Job Configuration & Vacancies"
+        description="Manage open job openings, candidate test centers, hiring locations, and master dropdown options."
+      />
 
       {/* Warnings & Errors */}
       {error && (
@@ -353,574 +356,608 @@ export function ConfigManager() {
       )}
 
       {actionError && (
-        <div className="rounded-xl border border-red-200 bg-red-50/50 p-3 text-red-950 text-xs font-semibold flex items-center gap-2 animate-in slide-in-from-top-1">
+        <div className="rounded-xl border border-red-200 bg-red-50/50 p-3 text-red-955 text-xs font-semibold flex items-center gap-2 animate-in slide-in-from-top-1">
           <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
           <span>{actionError}</span>
         </div>
       )}
 
-        <div className="space-y-8">
-
-          {/* 1. Main Job Vacancies Grid & Quick-Add Form */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-
-            {/* Vacancy List Card */}
-            <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col min-h-[480px]">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
-                <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-                  <Briefcase className="h-4 w-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800">Active Job Vacancies</h3>
-                  <p className="text-[10px] text-slate-400 font-medium">Current openings published on candidate registration form.</p>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-x-auto">
-                {vacancies.length === 0 ? (
-                  <div className="h-64 flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl text-center p-6">
-                    <Briefcase className="h-8 w-8 text-slate-350 mb-2" />
-                    <p className="text-xs font-bold text-slate-400">No Job Vacancies created.</p>
-                    <p className="text-[10px] text-slate-400 max-w-xs mt-1 leading-relaxed">Use the form on the right to post a new vacancy by choosing from roles and experiences.</p>
-                  </div>
-                ) : (
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50/50 text-slate-500 font-bold border-b border-slate-200">
-                        <th className="px-4 py-2.5">Job Vacancy Description</th>
-                        <th className="px-4 py-2.5">Locations</th>
-                        <th className="px-4 py-2.5 text-center">Openings</th>
-                        <th className="px-4 py-2.5 text-center">Applicants</th>
-                        <th className="px-4 py-2.5 text-center">Status</th>
-                        <th className="px-4 py-2.5 text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-150">
-                      {vacancies.map(item => (
-                        <tr key={item.id} className="hover:bg-slate-50/30 transition-colors">
-                          <td className="px-4 py-3">
-                            <p className="font-bold text-slate-850 text-xs leading-tight">{item.role}</p>
-                            <p className="text-[10px] text-slate-450 mt-0.5 font-semibold uppercase">{item.experience} Exp Required</p>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="space-y-1">
-                              <span className="inline-flex items-center gap-1 text-[10px] text-slate-550 font-bold">
-                                <Building className="h-3 w-3 text-slate-400" /> {item.hiring_location}
-                              </span>
-                              <div className="flex flex-wrap gap-1">
-                                {(item.test_locations || []).map((locVal: string) => {
-                                  const found = testLocations.find(tl => tl.value === locVal)
-                                  return (
-                                    <span key={locVal} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[9px] font-extrabold uppercase">
-                                      {found?.label ?? locVal}
-                                    </span>
-                                  )
-                                })}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            {editingVacancyId === item.id ? (
-                              <div className="flex items-center justify-center gap-1 max-w-[80px] mx-auto">
-                                <Input
-                                  className="h-7 text-xs rounded-md text-center p-1 border-slate-200"
-                                  value={editOpenings}
-                                  onChange={e => setEditOpenings(e.target.value)}
-                                  type="number"
-                                  min="0"
-                                />
-                                <Button size="icon" className="h-6 w-6 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer" onClick={() => handleSaveOpenings(item.id)}>
-                                  <Check className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-center gap-1 group">
-                                <span className="font-extrabold text-slate-850 text-xs">{item.openings}</span>
-                                <button className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-slate-100 text-slate-400 hover:text-slate-650 rounded transition-opacity cursor-pointer" onClick={() => { setEditingVacancyId(item.id); setEditOpenings(String(item.openings)) }}>
-                                  <Edit3 className="h-3 w-3" />
-                                </button>
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
-                              <Users className="h-3 w-3 text-slate-400" /> {item.applicantCount ?? 0}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <button
-                              type="button"
-                              onClick={() => toggleVacancyActive(item)}
-                              className="text-[10px] font-bold text-slate-400 hover:text-indigo-650 cursor-pointer flex items-center justify-center gap-0.5 mx-auto"
-                            >
-                              {item.is_active ? (
-                                <span className="text-emerald-600 flex items-center font-bold"><ToggleRight className="h-5 w-5 text-emerald-500" /> Open</span>
-                              ) : (
-                                <span className="text-slate-400 flex items-center font-bold"><ToggleLeft className="h-5 w-5 text-slate-350" /> Closed</span>
-                              )}
-                            </button>
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <button className="p-1.5 hover:bg-red-50 text-red-500 hover:text-red-700 rounded-lg cursor-pointer transition-colors" onClick={() => handleDeleteVacancy(item.id)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </div>
-
-            {/* Create Vacancy Form Card */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-                  <Plus className="h-4 w-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800">Create Job Vacancy</h3>
-                  <p className="text-[10px] text-slate-400 font-medium">Link roles and configurations together.</p>
-                </div>
-              </div>
-
-              <form onSubmit={handleCreateVacancy} className="space-y-4 text-xs font-bold text-slate-650">
-                {/* Role */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600">Role Title</label>
-                  <Select
-                    value={vacancyForm.role}
-                    onValueChange={v => setVacancyForm({ ...vacancyForm, role: v })}
-                  >
-                    <SelectTrigger className="h-9 rounded-lg border-slate-200 bg-white w-full text-xs font-semibold text-slate-700 focus:ring-1 focus:ring-indigo-500">
-                      <SelectValue placeholder="Select Role" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-slate-200 shadow-xl p-1" position="popper" sideOffset={6}>
-                      {roles.map(r => (
-                        <SelectItem key={r.id} value={r.value} className="rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 focus:bg-indigo-50 data-[state=checked]:bg-indigo-50 data-[state=checked]:text-indigo-700">
-                          {r.label}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="custom" className="rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-indigo-500 hover:bg-indigo-50 focus:bg-indigo-50">
-                        + Type Custom Role
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {vacancyForm.role === "custom" && (
-                    <Input
-                      className="mt-1 h-8 text-xs rounded-lg"
-                      value={vacancyForm.customRole}
-                      onChange={e => setVacancyForm({ ...vacancyForm, customRole: e.target.value })}
-                      placeholder="e.g. ReactJS Developer"
-                    />
-                  )}
-                </div>
-
-                {/* Experience */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600">Experience Requirement</label>
-                  <Select
-                    value={vacancyForm.experience}
-                    onValueChange={v => setVacancyForm({ ...vacancyForm, experience: v })}
-                  >
-                    <SelectTrigger className="h-9 rounded-lg border-slate-200 bg-white w-full text-xs font-semibold text-slate-700 focus:ring-1 focus:ring-indigo-500">
-                      <SelectValue placeholder="Select Experience" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-slate-200 shadow-xl p-1" position="popper" sideOffset={6}>
-                      {experiences.map(e => (
-                        <SelectItem key={e.id} value={e.value} className="rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-slate-700 hover:bg-indigo-50 focus:bg-indigo-50 data-[state=checked]:bg-indigo-50 data-[state=checked]:text-indigo-700">
-                          <div className="flex items-center justify-between w-full gap-6">
-                            <span>{e.label}</span>
-                            <span className="inline-flex items-center gap-1">
-                              {[0, 1, 2, 3].map(i => <span key={i} className={`h-1.5 w-2.5 rounded-full ${i < ((e.metadata as Record<string, number>)?.filled ?? 1) ? 'bg-indigo-500' : 'bg-slate-200'}`} />)}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="custom" className="rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-indigo-500 hover:bg-indigo-50 focus:bg-indigo-50">
-                        + Type Custom Experience
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {vacancyForm.experience === "custom" && (
-                    <Input
-                      className="mt-1 h-8 text-xs rounded-lg"
-                      value={vacancyForm.customExperience}
-                      onChange={e => setVacancyForm({ ...vacancyForm, customExperience: e.target.value })}
-                      placeholder="e.g. 1-3 Years"
-                    />
-                  )}
-                </div>
-
-                {/* Hiring Location */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600">Hiring Location (Office Target)</label>
-                  <Select
-                    value={vacancyForm.hiringLocation}
-                    onValueChange={v => setVacancyForm({ ...vacancyForm, hiringLocation: v })}
-                  >
-                    <SelectTrigger className="h-9 rounded-lg border-slate-200 bg-white w-full text-xs font-semibold text-slate-700 focus:ring-1 focus:ring-indigo-500">
-                      <SelectValue placeholder="Select Hiring Location" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-slate-200 shadow-xl p-1" position="popper" sideOffset={6}>
-                      {hiringLocations.map(h => (
-                        <SelectItem key={h.id} value={h.value} className="rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 focus:bg-indigo-50 data-[state=checked]:bg-indigo-50 data-[state=checked]:text-indigo-700">
-                          {h.label}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="custom" className="rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-indigo-500 hover:bg-indigo-50 focus:bg-indigo-50">
-                        + Type Custom Location
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {vacancyForm.hiringLocation === "custom" && (
-                    <Input
-                      className="mt-1 h-8 text-xs rounded-lg"
-                      value={vacancyForm.customHiringLocation}
-                      onChange={e => setVacancyForm({ ...vacancyForm, customHiringLocation: e.target.value })}
-                      placeholder="e.g. Pune"
-                    />
-                  )}
-                </div>
-
-                {/* Test Location Array Checkbox selection */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600">Exam Test Venues (Select 1 or more)</label>
-                  <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-150 max-h-[120px] overflow-y-auto">
-                    {testLocations.map(tl => (
-                      <label key={tl.id} className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={vacancyForm.testLocations.includes(tl.value)}
-                          onChange={e => {
-                            const checked = e.target.checked
-                            setVacancyForm(prev => {
-                              const list = checked
-                                ? [...prev.testLocations, tl.value]
-                                : prev.testLocations.filter(val => val !== tl.value)
-                              return { ...prev, testLocations: list }
-                            })
-                          }}
-                          className="rounded text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
-                        />
-                        {tl.label}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Openings */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600">No. of Openings (Available Vacancies)</label>
-                  <Input
-                    className="h-9 text-xs rounded-lg"
-                    value={vacancyForm.openings}
-                    onChange={e => setVacancyForm({ ...vacancyForm, openings: e.target.value })}
-                    type="number"
-                    min="1"
-                    placeholder="1"
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={createConfigMutation.isPending}
-                  className="group w-full h-11 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold shadow-md transition-all duration-300 hover:shadow-lg hover:scale-[1.02] hover:from-indigo-700 hover:to-violet-700 active:scale-[0.98] flex items-center justify-center gap-2"
-                >
-                  {createConfigMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Plus className="h-4 w-4 transition-transform duration-300 group-hover:rotate-90" />
-                  )}
-                  {createConfigMutation.isPending ? "Publishing..." : "Publish Vacancy"}
-                </Button>
-              </form>
-            </div>
-
-          </div>
-
-          {/* 2. Master Data Management lists */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3 mb-4 gap-3">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-slate-100 text-slate-600 rounded-lg">
-                  <Settings className="h-4 w-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800">Master Data Configuration</h3>
-                  <p className="text-[10px] text-slate-400 font-medium">Add, toggle, or delete dynamic items used in vacancy selections.</p>
-                </div>
-              </div>
-
-              {/* Master lists tabs */}
-              <div className="flex gap-1 border border-slate-200 bg-slate-50/50 p-1 rounded-xl">
-                {[
-                  { key: "role", label: "Roles" },
-                  { key: "experience", label: "Experiences" },
-                  { key: "hiring_location", label: "Hiring Locations" },
-                  { key: "test_location", label: "Test Venues" }
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => { setActiveMasterTab(tab.key as "role" | "experience" | "hiring_location" | "test_location"); setEditingId(null) }}
-                    className={cn(
-                      "px-3 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer",
-                      activeMasterTab === tab.key
-                        ? "bg-white text-indigo-700 shadow-xs border border-slate-150"
-                        : "text-slate-400 hover:text-slate-600"
-                    )}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Content of Selected Master Tab */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-
-              {/* Left Form: Add Master Option */}
-              <div className="md:col-span-1 rounded-xl bg-slate-50/50 p-4 border border-slate-150 space-y-3 font-semibold text-slate-650 text-xs">
-                <h4 className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">Add Master Option</h4>
-
-                {activeMasterTab === "role" && (
-                  <div className="space-y-3">
-                    <label className="block space-y-1">
-                      Role Name
-                      <Input
-                        className="mt-1 h-9 bg-white text-xs rounded-lg"
-                        value={masterRoleForm.label}
-                        onChange={e => setMasterRoleForm({ label: e.target.value, value: e.target.value })}
-                        placeholder="e.g. NextJS Developer"
-                      />
-                    </label>
-                    <label className="block space-y-1">
-                      Database value identifier
-                      <Input
-                        className="mt-1 h-9 bg-white text-xs rounded-lg font-mono text-[11px]"
-                        value={masterRoleForm.value}
-                        onChange={e => setMasterRoleForm({ ...masterRoleForm, value: e.target.value })}
-                        placeholder="e.g. nextjs_developer"
-                      />
-                    </label>
-                    <Button onClick={() => handleAddMaster("role", masterRoleForm)} className="w-full bg-slate-700 hover:bg-slate-800 text-white h-9 rounded-lg cursor-pointer">
-                      Add to Master Roles
-                    </Button>
-                  </div>
-                )}
-
-                {activeMasterTab === "experience" && (
-                  <div className="space-y-3">
-                    <label className="block space-y-1">
-                      Display label
-                      <Input
-                        className="mt-1 h-9 bg-white text-xs rounded-lg"
-                        value={masterExpForm.label}
-                        onChange={e => setMasterExpForm({ ...masterExpForm, label: e.target.value })}
-                        placeholder="e.g. 1–3 Years"
-                      />
-                    </label>
-                    <label className="block space-y-1">
-                      Database value identifier
-                      <Input
-                        className="mt-1 h-9 bg-white text-xs rounded-lg font-mono text-[11px]"
-                        value={masterExpForm.value}
-                        onChange={e => setMasterExpForm({ ...masterExpForm, value: e.target.value })}
-                        placeholder="e.g. 1-3"
-                      />
-                    </label>
-                    <label className="block space-y-1">
-                      Progress Dots
-                      <Select
-                        value={masterExpForm.filledDots}
-                        onValueChange={v => setMasterExpForm({ ...masterExpForm, filledDots: v })}
-                      >
-                        <SelectTrigger className="mt-1 h-9 rounded-lg border-slate-200 bg-white w-full text-xs font-semibold text-slate-700 focus:ring-1 focus:ring-indigo-500">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-2xl border-slate-200 shadow-xl p-1" position="popper" sideOffset={6}>
-                          {[["1", "Junior"], ["2", "Mid"], ["3", "Senior"], ["4", "Lead"]].map(([val, lbl], idx) => (
-                            <SelectItem key={val} value={val} className="rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-slate-700 hover:bg-indigo-50 focus:bg-indigo-50 data-[state=checked]:bg-indigo-50 data-[state=checked]:text-indigo-700">
-                              <div className="flex items-center justify-between w-full gap-4">
-                                <span>{idx + 1} Dot{idx > 0 ? 's' : ''} · {lbl}</span>
-                                <span className="inline-flex items-center gap-1">
-                                  {[0, 1, 2, 3].map(i => <span key={i} className={`h-1.5 w-2.5 rounded-full ${i <= idx ? 'bg-indigo-500' : 'bg-slate-200'}`} />)}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </label>
-                    <Button onClick={() => handleAddMaster("experience", masterExpForm)} className="w-full bg-slate-700 hover:bg-slate-800 text-white h-9 rounded-lg cursor-pointer">
-                      Add to Master Experiences
-                    </Button>
-                  </div>
-                )}
-
-                {activeMasterTab === "hiring_location" && (
-                  <div className="space-y-3">
-                    <label className="block space-y-1">
-                      Location Name
-                      <Input
-                        className="mt-1 h-9 bg-white text-xs rounded-lg"
-                        value={masterHiringForm.label}
-                        onChange={e => setMasterHiringForm({ label: e.target.value, value: e.target.value.toLowerCase().replace(/\s+/g, "_") })}
-                        placeholder="e.g. Pune"
-                      />
-                    </label>
-                    <label className="block space-y-1">
-                      Database value identifier
-                      <Input
-                        className="mt-1 h-9 bg-white text-xs rounded-lg font-mono text-[11px]"
-                        value={masterHiringForm.value}
-                        onChange={e => setMasterHiringForm({ ...masterHiringForm, value: e.target.value })}
-                        placeholder="e.g. pune"
-                      />
-                    </label>
-                    <Button onClick={() => handleAddMaster("hiring_location", masterHiringForm)} className="w-full bg-slate-700 hover:bg-slate-800 text-white h-9 rounded-lg cursor-pointer">
-                      Add to Hiring Locations
-                    </Button>
-                  </div>
-                )}
-
-                {activeMasterTab === "test_location" && (
-                  <div className="space-y-3">
-                    <label className="block space-y-1">
-                      Test Venue Name
-                      <Input
-                        className="mt-1 h-9 bg-white text-xs rounded-lg"
-                        value={masterTestForm.label}
-                        onChange={e => setMasterTestForm({ label: e.target.value, value: e.target.value.toLowerCase().replace(/\s+/g, "_") })}
-                        placeholder="e.g. Pune Office"
-                      />
-                    </label>
-                    <label className="block space-y-1">
-                      Database value identifier
-                      <Input
-                        className="mt-1 h-9 bg-white text-xs rounded-lg font-mono text-[11px]"
-                        value={masterTestForm.value}
-                        onChange={e => setMasterTestForm({ ...masterTestForm, value: e.target.value })}
-                        placeholder="e.g. pune_office"
-                      />
-                    </label>
-                    <Button onClick={() => handleAddMaster("test_location", masterTestForm)} className="w-full bg-slate-700 hover:bg-slate-800 text-white h-9 rounded-lg cursor-pointer">
-                      Add to Test Venues
-                    </Button>
-                  </div>
-                )}
-
-              </div>
-
-              {/* Right Table: Master List Options */}
-              <div className="md:col-span-2 overflow-y-auto max-h-[360px] border border-slate-150 rounded-xl bg-slate-50/10">
+      <div className="space-y-6">
+        {/* 1. Main Job Vacancies Grid & Quick-Add Form */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          
+          {/* Vacancy List Card */}
+          <SectionCard
+            title="Active Job Vacancies"
+            description="Current openings published on candidate registration form."
+            className="lg:col-span-2 min-h-[480px]"
+          >
+            <div className="overflow-x-auto w-full">
+              {vacancies.length === 0 ? (
+                <EmptyState
+                  title="No Job Vacancies created"
+                  description="Use the form on the right to post a new vacancy by choosing from roles and experiences."
+                  icon={Briefcase}
+                />
+              ) : (
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-100/50 text-slate-500 font-bold border-b border-slate-200">
-                      <th className="px-4 py-2.5">Display Option</th>
-                      <th className="px-4 py-2.5 font-mono">DB value</th>
-                      <th className="px-4 py-2.5 text-center">Status</th>
-                      <th className="px-4 py-2.5 text-right">Actions</th>
+                    <tr className="bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 font-bold border-b border-border/80">
+                      <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Job Vacancy Description</th>
+                      <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Locations</th>
+                      <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground font-bold text-center">Openings</th>
+                      <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground font-bold text-center">Applicants</th>
+                      <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground font-bold text-center">Status</th>
+                      <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground font-bold text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-150 bg-white">
-                    {(activeMasterTab === "role" ? allRoles
-                      : activeMasterTab === "experience" ? allExperiences
-                        : activeMasterTab === "hiring_location" ? allHiringLocations
-                          : allTestLocations
-                    ).map(item => (
-                      <tr key={item.id} className="hover:bg-slate-50/45 transition-colors">
-                        <td className="px-4 py-3">
-                          {editingId === item.id ? (
-                            <div className="space-y-1.5 max-w-[200px]">
+                  <tbody className="divide-y divide-border/40">
+                    {vacancies.map((item) => (
+                      <tr key={item.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-900/30 transition-colors">
+                        <td className="px-4 py-3.5">
+                          <p className="font-semibold text-foreground text-sm leading-tight tracking-tight">{item.role}</p>
+                          <p className="text-[10px] text-muted-foreground mt-1 font-bold uppercase tracking-wider">{item.experience} Exp Required</p>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <div className="space-y-1.5">
+                            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-semibold">
+                              <Building className="h-3.5 w-3.5 text-muted-foreground" /> {item.hiring_location}
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {(item.test_locations || []).map((locVal: string) => {
+                                const found = testLocations.find(tl => tl.value === locVal);
+                                return (
+                                  <span key={locVal} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground text-[9px] font-extrabold uppercase border border-border/60">
+                                    {found?.label ?? locVal}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
+                          {editingVacancyId === item.id ? (
+                            <div className="flex items-center justify-center gap-1 max-w-[80px] mx-auto">
                               <Input
-                                className="h-8 text-xs rounded-md"
-                                value={editForm.label}
-                                onChange={e => setEditForm({ ...editForm, label: e.target.value })}
+                                className="h-7 text-xs rounded-md text-center p-1 border-input focus-visible:ring-1 focus-visible:ring-indigo-500 bg-background"
+                                value={editOpenings}
+                                onChange={e => setEditOpenings(e.target.value)}
+                                type="number"
+                                min="0"
+                                aria-label="Edit openings count"
                               />
-                              {activeMasterTab === "experience" && (
-                                <Select
-                                  value={editForm.filledDots}
-                                  onValueChange={v => setEditForm({ ...editForm, filledDots: v })}
-                                >
-                                  <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white w-full text-xs font-semibold text-slate-700 focus:ring-1 focus:ring-indigo-500">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent className="rounded-2xl border-slate-200 shadow-xl p-1" position="popper" sideOffset={6}>
-                                    {[["1", "Junior"], ["2", "Mid"], ["3", "Senior"], ["4", "Lead"]].map(([val, lbl], idx) => (
-                                      <SelectItem key={val} value={val} className="rounded-xl py-2 px-3 cursor-pointer text-xs font-semibold text-slate-700 hover:bg-indigo-50 focus:bg-indigo-50 data-[state=checked]:bg-indigo-50 data-[state=checked]:text-indigo-700">
-                                        <div className="flex items-center justify-between w-full gap-4">
-                                          <span>{lbl}</span>
-                                          <span className="inline-flex items-center gap-1">
-                                            {[0, 1, 2, 3].map(i => <span key={i} className={`h-1.5 w-2.5 rounded-full ${i <= idx ? 'bg-indigo-500' : 'bg-slate-200'}`} />)}
-                                          </span>
-                                        </div>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                              <div className="flex gap-1.5 pt-0.5">
-                                <Button size="icon" className="h-6 w-6 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer" onClick={() => handleSaveMasterEdit(item.id, activeMasterTab)}>
-                                  <Check className="h-3 w-3" />
-                                </Button>
-                                <Button size="icon" variant="outline" className="h-6 w-6 rounded-md cursor-pointer" onClick={() => setEditingId(null)}>
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </div>
+                              <Button 
+                                size="icon-xs"
+                                className="h-7 w-7 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer" 
+                                onClick={() => handleSaveOpenings(item.id)}
+                                aria-label="Save openings count"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                              </Button>
                             </div>
                           ) : (
-                            <div>
-                              <p className="font-bold text-slate-800">{item.label}</p>
-                              {item.type === "experience" && item.metadata && !!item.metadata.filled && (
-                                <span className="inline-flex items-center gap-1 mt-1">
-                                  <span className="text-[10px] text-slate-400 font-medium">Complexity level:</span>
-                                  <span className="inline-flex items-center gap-0.5">
-                                    {[0, 1, 2, 3].map(i => (
-                                      <span key={i} className={`h-1.5 w-1.5 rounded-full ${i < Number(item.metadata?.filled) ? 'bg-indigo-500' : 'bg-slate-200'}`} />
-                                    ))}
-                                  </span>
-                                </span>
-                              )}
+                            <div className="flex items-center justify-center gap-1.5 group">
+                              <span className="font-extrabold text-foreground text-xs">{item.openings}</span>
+                              <button 
+                                className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground rounded transition-opacity cursor-pointer focus-visible:opacity-100 focus-visible:ring-1 focus-visible:ring-indigo-500 outline-hidden" 
+                                onClick={() => { setEditingVacancyId(item.id); setEditOpenings(String(item.openings)) }}
+                                aria-label={`Edit openings count for ${item.role}`}
+                              >
+                                <Edit3 className="h-3.5 w-3.5" />
+                              </button>
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3 font-mono text-[11px] text-slate-500">{item.value}</td>
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => toggleMasterActive(item)}
-                            className="text-[10px] font-bold text-slate-400 hover:text-indigo-650 cursor-pointer flex items-center justify-center gap-0.5 mx-auto"
-                          >
-                            {item.is_active ? (
-                              <span className="text-emerald-600 flex items-center font-bold"><ToggleRight className="h-4.5 w-4.5 text-emerald-500" /> Active</span>
-                            ) : (
-                              <span className="text-slate-400 flex items-center font-bold"><ToggleLeft className="h-4.5 w-4.5 text-slate-350" /> Inactive</span>
-                            )}
-                          </button>
+                        <td className="px-4 py-3.5 text-center">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-muted border border-border/60 px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                            <Users className="h-3 w-3 text-muted-foreground" /> {item.applicantCount ?? 0}
+                          </span>
                         </td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex justify-end gap-1.5">
-                            <button className="p-1 hover:bg-slate-100 text-slate-500 rounded-md cursor-pointer" onClick={() => startMasterEdit(item)}>
-                              <Edit3 className="h-3.5 w-3.5" />
-                            </button>
-                            <button className="p-1 hover:bg-red-50 text-red-500 rounded-md cursor-pointer" onClick={() => handleDeleteMaster(item.id, activeMasterTab)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+                        <td className="px-4 py-3.5 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <Switch
+                              checked={item.is_active}
+                              onCheckedChange={() => toggleVacancyActive(item)}
+                              aria-label={`Toggle vacancy status for ${item.role}`}
+                            />
+                            <span className={cn(
+                              "text-[10px] font-extrabold tracking-wide uppercase select-none w-10 text-left",
+                              item.is_active ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/60"
+                            )}>
+                              {item.is_active ? "Open" : "Closed"}
+                            </span>
                           </div>
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          <button 
+                            className="p-1.5 hover:bg-destructive/10 text-destructive hover:text-destructive rounded-lg cursor-pointer transition-colors focus-visible:ring-1 focus-visible:ring-indigo-500 outline-hidden" 
+                            onClick={() => setConfirmState({ open: true, type: "delete-vacancy", vacancyId: item.id })}
+                            aria-label={`Delete vacancy opening for ${item.role}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+              )}
+            </div>
+          </SectionCard>
+
+          {/* Create Vacancy Form Card */}
+          <SectionCard
+            title="Create Job Vacancy"
+            description="Link roles and configurations together."
+          >
+            <form onSubmit={handleCreateVacancy} className="space-y-4 text-xs font-bold text-slate-650 dark:text-slate-400">
+              {/* Role */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-350">Role Title</label>
+                <Select
+                  value={vacancyForm.role}
+                  onValueChange={v => setVacancyForm({ ...vacancyForm, role: v })}
+                >
+                  <SelectTrigger className="h-9 rounded-lg border-input bg-background w-full text-xs font-semibold text-foreground focus:ring-1 focus:ring-indigo-500">
+                    <SelectValue placeholder="Select Role" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl border-slate-200 shadow-xl p-1" position="popper" sideOffset={6}>
+                    {roles.map(r => (
+                      <SelectItem key={r.id} value={r.value} className="rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-slate-705 hover:bg-indigo-55 hover:text-indigo-700 focus:bg-indigo-50 data-[state=checked]:bg-indigo-50 data-[state=checked]:text-indigo-700">
+                        {r.label}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="custom" className="rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-indigo-505 hover:bg-indigo-50 focus:bg-indigo-50">
+                      + Type Custom Role
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                {vacancyForm.role === "custom" && (
+                  <Input
+                    className="mt-1 h-8 text-xs rounded-lg border-input bg-background"
+                    value={vacancyForm.customRole}
+                    onChange={e => setVacancyForm({ ...vacancyForm, customRole: e.target.value })}
+                    placeholder="e.g. ReactJS Developer"
+                    aria-label="Custom role title input"
+                  />
+                )}
               </div>
 
+              {/* Experience */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-350">Experience Requirement</label>
+                <Select
+                  value={vacancyForm.experience}
+                  onValueChange={v => setVacancyForm({ ...vacancyForm, experience: v })}
+                >
+                  <SelectTrigger className="h-9 rounded-lg border-input bg-background w-full text-xs font-semibold text-foreground focus:ring-1 focus:ring-indigo-500">
+                    <SelectValue placeholder="Select Experience" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl border-slate-200 shadow-xl p-1" position="popper" sideOffset={6}>
+                    {experiences.map(e => (
+                      <SelectItem key={e.id} value={e.value} className="rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-slate-750 hover:bg-indigo-50 focus:bg-indigo-50 data-[state=checked]:bg-indigo-50 data-[state=checked]:text-indigo-700">
+                        <div className="flex items-center justify-between w-full gap-6">
+                          <span>{e.label}</span>
+                          <span className="inline-flex items-center gap-1">
+                            {[0, 1, 2, 3].map(i => <span key={i} className={`h-1.5 w-2.5 rounded-full ${i < ((e.metadata as Record<string, number>)?.filled ?? 1) ? 'bg-indigo-505' : 'bg-slate-200'}`} />)}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="custom" className="rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-indigo-505 hover:bg-indigo-50 focus:bg-indigo-50">
+                      + Type Custom Experience
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                {vacancyForm.experience === "custom" && (
+                  <Input
+                    className="mt-1 h-8 text-xs rounded-lg border-input bg-background"
+                    value={vacancyForm.customExperience}
+                    onChange={e => setVacancyForm({ ...vacancyForm, customExperience: e.target.value })}
+                    placeholder="e.g. 1-3 Years"
+                    aria-label="Custom experience input"
+                  />
+                )}
+              </div>
+
+              {/* Hiring Location */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-350">Hiring Location (Office Target)</label>
+                <Select
+                  value={vacancyForm.hiringLocation}
+                  onValueChange={v => setVacancyForm({ ...vacancyForm, hiringLocation: v })}
+                >
+                  <SelectTrigger className="h-9 rounded-lg border-input bg-background w-full text-xs font-semibold text-foreground focus:ring-1 focus:ring-indigo-500">
+                    <SelectValue placeholder="Select Hiring Location" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl border-slate-200 shadow-xl p-1" position="popper" sideOffset={6}>
+                    {hiringLocations.map(h => (
+                      <SelectItem key={h.id} value={h.value} className="rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-slate-705 hover:bg-indigo-50 hover:text-indigo-705 focus:bg-indigo-50 data-[state=checked]:bg-indigo-50 data-[state=checked]:text-indigo-700">
+                        {h.label}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="custom" className="rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-indigo-505 hover:bg-indigo-50 focus:bg-indigo-50">
+                      + Type Custom Location
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                {vacancyForm.hiringLocation === "custom" && (
+                  <Input
+                    className="mt-1 h-8 text-xs rounded-lg border-input bg-background"
+                    value={vacancyForm.customHiringLocation}
+                    onChange={e => setVacancyForm({ ...vacancyForm, customHiringLocation: e.target.value })}
+                    placeholder="e.g. Pune"
+                    aria-label="Custom hiring location input"
+                  />
+                )}
+              </div>
+
+              {/* Test Location Array Checkbox selection */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-350">Exam Test Venues (Select 1 or more)</label>
+                <div className="grid grid-cols-2 gap-2.5 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-border max-h-[120px] overflow-y-auto">
+                  {testLocations.map(tl => (
+                    <label key={tl.id} className="flex items-center gap-2 text-xs font-semibold text-slate-750 dark:text-slate-350 cursor-pointer select-none">
+                      <Checkbox
+                        checked={vacancyForm.testLocations.includes(tl.value)}
+                        onCheckedChange={(checked) => {
+                          setVacancyForm(prev => {
+                            const list = checked
+                              ? [...prev.testLocations, tl.value]
+                              : prev.testLocations.filter(val => val !== tl.value)
+                            return { ...prev, testLocations: list }
+                          })
+                        }}
+                      />
+                      {tl.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Openings */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-350">No. of Openings (Available Vacancies)</label>
+                <Input
+                  className="h-9 text-xs rounded-lg border-input bg-background"
+                  value={vacancyForm.openings}
+                  onChange={e => setVacancyForm({ ...vacancyForm, openings: e.target.value })}
+                  type="number"
+                  min="1"
+                  placeholder="1"
+                  aria-label="Number of openings input"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={createConfigMutation.isPending}
+                className="group w-full h-10 text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {createConfigMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-current" />
+                ) : (
+                  <Plus className="h-4 w-4 transition-transform duration-300 group-hover:rotate-90 text-current" />
+                )}
+                {createConfigMutation.isPending ? "Publishing..." : "Publish Vacancy"}
+              </Button>
+            </form>
+          </SectionCard>
+
+        </div>
+
+        {/* 2. Master Data Management lists */}
+        <SectionCard
+          title="Master Data Configuration"
+          description="Add, toggle, or delete dynamic items used in vacancy selections."
+          headerActions={
+            <div className="flex gap-1 border border-border bg-muted/60 p-1 rounded-lg">
+              {[
+                { key: "role", label: "Roles" },
+                { key: "experience", label: "Experiences" },
+                { key: "hiring_location", label: "Hiring Locations" },
+                { key: "test_location", label: "Test Venues" }
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => { setActiveMasterTab(tab.key as "role" | "experience" | "hiring_location" | "test_location"); setEditingId(null) }}
+                  className={cn(
+                    "px-3 py-1.5 rounded-md text-[10px] font-bold transition-all cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                    activeMasterTab === tab.key
+                      ? "bg-background text-foreground shadow-xs border border-border/80"
+                      : "text-muted-foreground hover:bg-background/40 hover:text-foreground"
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          }
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start w-full">
+
+            {/* Left Form: Add Master Option */}
+            <div className="md:col-span-1 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 p-4 border border-border/80 space-y-4 font-semibold text-slate-600 dark:text-slate-400 text-xs">
+              <h4 className="text-[11px] font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide border-b border-border/40 pb-2">Add Master Option</h4>
+
+              {activeMasterTab === "role" && (
+                <div className="space-y-3">
+                  <label className="block space-y-1">
+                    Role Name
+                    <Input
+                      className="mt-1 h-9 border-input bg-background text-xs rounded-lg"
+                      value={masterRoleForm.label}
+                      onChange={e => setMasterRoleForm({ label: e.target.value, value: e.target.value })}
+                      placeholder="e.g. NextJS Developer"
+                    />
+                  </label>
+                  <label className="block space-y-1">
+                    Database value identifier
+                    <Input
+                      className="mt-1 h-9 border-input bg-background text-xs rounded-lg font-mono text-[11px]"
+                      value={masterRoleForm.value}
+                      onChange={e => setMasterRoleForm({ ...masterRoleForm, value: e.target.value })}
+                      placeholder="e.g. nextjs_developer"
+                    />
+                  </label>
+                  <Button onClick={() => handleAddMaster("role", masterRoleForm)} className="w-full h-9 text-xs font-bold mt-2 cursor-pointer">
+                    Add to Master Roles
+                  </Button>
+                </div>
+              )}
+
+              {activeMasterTab === "experience" && (
+                <div className="space-y-3">
+                  <label className="block space-y-1">
+                    Display label
+                    <Input
+                      className="mt-1 h-9 border-input bg-background text-xs rounded-lg"
+                      value={masterExpForm.label}
+                      onChange={e => setMasterExpForm({ ...masterExpForm, label: e.target.value })}
+                      placeholder="e.g. 1–3 Years"
+                    />
+                  </label>
+                  <label className="block space-y-1">
+                    Database value identifier
+                    <Input
+                      className="mt-1 h-9 border-input bg-background text-xs rounded-lg font-mono text-[11px]"
+                      value={masterExpForm.value}
+                      onChange={e => setMasterExpForm({ ...masterExpForm, value: e.target.value })}
+                      placeholder="e.g. 1-3"
+                    />
+                  </label>
+                  <label className="block space-y-1">
+                    Progress Dots
+                    <Select
+                      value={masterExpForm.filledDots}
+                      onValueChange={v => setMasterExpForm({ ...masterExpForm, filledDots: v })}
+                    >
+                      <SelectTrigger className="mt-1 h-9 border-input bg-background w-full text-xs font-semibold text-foreground focus:ring-1 focus:ring-indigo-500">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl border-slate-200 shadow-xl p-1" position="popper" sideOffset={6}>
+                        {[["1", "Junior"], ["2", "Mid"], ["3", "Senior"], ["4", "Lead"]].map(([val, lbl], idx) => (
+                          <SelectItem key={val} value={val} className="rounded-xl py-2 px-3 cursor-pointer text-xs font-semibold text-slate-700 hover:bg-indigo-50 focus:bg-indigo-50 data-[state=checked]:bg-indigo-50 data-[state=checked]:text-indigo-700">
+                            <div className="flex items-center justify-between w-full gap-4">
+                              <span>{idx + 1} Dot{idx > 0 ? 's' : ''} · {lbl}</span>
+                              <span className="inline-flex items-center gap-1">
+                                {[0, 1, 2, 3].map(i => <span key={i} className={`h-1.5 w-2.5 rounded-full ${i <= idx ? 'bg-indigo-500' : 'bg-slate-200'}`} />)}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </label>
+                  <Button onClick={() => handleAddMaster("experience", masterExpForm)} className="w-full h-9 text-xs font-bold mt-2 cursor-pointer">
+                    Add to Master Experiences
+                  </Button>
+                </div>
+              )}
+
+              {activeMasterTab === "hiring_location" && (
+                <div className="space-y-3">
+                  <label className="block space-y-1">
+                    Location Name
+                    <Input
+                      className="mt-1 h-9 border-input bg-background text-xs rounded-lg"
+                      value={masterHiringForm.label}
+                      onChange={e => setMasterHiringForm({ label: e.target.value, value: e.target.value.toLowerCase().replace(/\s+/g, "_") })}
+                      placeholder="e.g. Pune"
+                    />
+                  </label>
+                  <label className="block space-y-1">
+                    Database value identifier
+                    <Input
+                      className="mt-1 h-9 border-input bg-background text-xs rounded-lg font-mono text-[11px]"
+                      value={masterHiringForm.value}
+                      onChange={e => setMasterHiringForm({ ...masterHiringForm, value: e.target.value })}
+                      placeholder="e.g. pune"
+                    />
+                  </label>
+                  <Button onClick={() => handleAddMaster("hiring_location", masterHiringForm)} className="w-full h-9 text-xs font-bold mt-2 cursor-pointer">
+                    Add to Hiring Locations
+                  </Button>
+                </div>
+              )}
+
+              {activeMasterTab === "test_location" && (
+                <div className="space-y-3">
+                  <label className="block space-y-1">
+                    Test Venue Name
+                    <Input
+                      className="mt-1 h-9 border-input bg-background text-xs rounded-lg"
+                      value={masterTestForm.label}
+                      onChange={e => setMasterTestForm({ label: e.target.value, value: e.target.value.toLowerCase().replace(/\s+/g, "_") })}
+                      placeholder="e.g. Pune Office"
+                    />
+                  </label>
+                  <label className="block space-y-1">
+                    Database value identifier
+                    <Input
+                      className="mt-1 h-9 border-input bg-background text-xs rounded-lg font-mono text-[11px]"
+                      value={masterTestForm.value}
+                      onChange={e => setMasterTestForm({ ...masterTestForm, value: e.target.value })}
+                      placeholder="e.g. pune_office"
+                    />
+                  </label>
+                  <Button onClick={() => handleAddMaster("test_location", masterTestForm)} className="w-full h-9 text-xs font-bold mt-2 cursor-pointer">
+                    Add to Test Venues
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Right Table: Master List Options */}
+            <div className="md:col-span-2 overflow-y-auto max-h-[360px] border border-border rounded-xl bg-slate-50/10 dark:bg-slate-900/10">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-100/50 dark:bg-slate-900/50 text-slate-500 font-bold border-b border-border/80">
+                    <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Display Option</th>
+                    <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground font-bold font-mono">DB value</th>
+                    <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground font-bold text-center">Status</th>
+                    <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-muted-foreground font-bold text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40 bg-white dark:bg-slate-955">
+                  {(activeMasterTab === "role" ? allRoles
+                    : activeMasterTab === "experience" ? allExperiences
+                      : activeMasterTab === "hiring_location" ? allHiringLocations
+                        : allTestLocations
+                  ).map(item => (
+                    <tr key={item.id} className="hover:bg-slate-50/45 dark:hover:bg-slate-900/40 transition-colors">
+                      <td className="px-4 py-3">
+                        {editingId === item.id ? (
+                          <div className="space-y-1.5 max-w-[200px]">
+                            <Input
+                              className="h-8 text-xs rounded-md"
+                              value={editForm.label}
+                              onChange={e => setEditForm({ ...editForm, label: e.target.value })}
+                            />
+                            {activeMasterTab === "experience" && (
+                              <Select
+                                value={editForm.filledDots}
+                                onValueChange={v => setEditForm({ ...editForm, filledDots: v })}
+                              >
+                                <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white dark:bg-slate-955 w-full text-xs font-semibold text-slate-750 dark:text-slate-300 focus:ring-1 focus:ring-indigo-500">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-2xl border-slate-200 shadow-xl p-1" position="popper" sideOffset={6}>
+                                  {[["1", "Junior"], ["2", "Mid"], ["3", "Senior"], ["4", "Lead"]].map(([val, lbl], idx) => (
+                                    <SelectItem key={val} value={val} className="rounded-xl py-2 px-3 cursor-pointer text-xs font-semibold text-slate-700 hover:bg-indigo-50 focus:bg-indigo-50 data-[state=checked]:bg-indigo-50 data-[state=checked]:text-indigo-700">
+                                      <div className="flex items-center justify-between w-full gap-4">
+                                        <span>{lbl}</span>
+                                        <span className="inline-flex items-center gap-1">
+                                          {[0, 1, 2, 3].map(i => <span key={i} className={`h-1.5 w-2.5 rounded-full ${i <= idx ? 'bg-indigo-500' : 'bg-slate-200'}`} />)}
+                                        </span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                            <div className="flex gap-1.5 pt-0.5">
+                              <Button size="icon-xs" className="h-7 w-7 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer" onClick={() => handleSaveMasterEdit(item.id, activeMasterTab)}>
+                                <Check className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button size="icon-xs" variant="outline" className="h-7 w-7 rounded-md cursor-pointer border-slate-200 text-slate-500 hover:bg-slate-100" onClick={() => setEditingId(null)}>
+                                <X className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="font-semibold text-foreground text-sm tracking-tight">{item.label}</p>
+                            {item.type === "experience" && item.metadata && !!item.metadata.filled && (
+                              <span className="inline-flex items-center gap-1 mt-1">
+                                <span className="text-[10px] text-muted-foreground font-medium">Complexity level:</span>
+                                <span className="inline-flex items-center gap-0.5">
+                                  {[0, 1, 2, 3].map(i => (
+                                    <span key={i} className={`h-1.5 w-1.5 rounded-full ${i < Number(item.metadata?.filled) ? 'bg-indigo-500' : 'bg-slate-200'}`} />
+                                  ))}
+                                </span>
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-[11px] text-muted-foreground/80">{item.value}</td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <Switch
+                            checked={item.is_active}
+                            onCheckedChange={() => toggleMasterActive(item)}
+                            aria-label={`Toggle master status for ${item.label}`}
+                          />
+                          <span className={cn(
+                            "text-[10px] font-extrabold uppercase select-none w-12 text-left",
+                            item.is_active ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/60"
+                          )}>
+                            {item.is_active ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex justify-end gap-1.5">
+                          <button 
+                            className="p-1 hover:bg-muted text-muted-foreground rounded-md cursor-pointer focus-visible:ring-1 focus-visible:ring-indigo-500 outline-hidden" 
+                            onClick={() => startMasterEdit(item)}
+                            aria-label={`Edit master option ${item.label}`}
+                          >
+                            <Edit3 className="h-3.5 w-3.5" />
+                          </button>
+                          <button 
+                            className="p-1 hover:bg-destructive/10 text-destructive rounded-md cursor-pointer focus-visible:ring-1 focus-visible:ring-indigo-500 outline-hidden" 
+                            onClick={() => setConfirmState({ open: true, type: "delete-master", masterId: item.id, masterType: activeMasterTab })}
+                            aria-label={`Delete master option ${item.label}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
           </div>
-        </div>
+        </SectionCard>
+      </div>
+
+      <AlertDialog
+        open={confirmState.open}
+        onOpenChange={(open) => {
+          if (!open) setConfirmState({ open: false })
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmState.open && confirmState.type === "delete-vacancy" && "Delete Vacancy?"}
+              {confirmState.open && confirmState.type === "delete-master" && "Delete Master Option?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmState.open && confirmState.type === "delete-vacancy" && (
+                "This action cannot be undone. The selected vacancy and all related configuration references will be permanently removed."
+              )}
+              {confirmState.open && confirmState.type === "delete-master" && (
+                "This action cannot be undone. The selected option will be permanently removed. Standard dropdowns in vacancies using this will fall back to literal value representation."
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-rose-600 hover:bg-rose-700 text-white font-medium"
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

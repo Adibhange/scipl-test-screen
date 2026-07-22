@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { createSupabaseBrowserClient } from "@/database/adapters/browser-client";
-import { AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function AdminLoginPage() {
 	const router = useRouter();
@@ -14,13 +14,12 @@ export default function AdminLoginPage() {
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
-	const [showInactiveToast, setShowInactiveToast] = useState(false);
 
 	useEffect(() => {
 		if (typeof window !== "undefined") {
 			const params = new URLSearchParams(window.location.search);
 			if (params.get("inactive") === "true") {
-				Promise.resolve().then(() => setShowInactiveToast(true));
+				toast.warning("Session expired.");
 				const url = new URL(window.location.href);
 				url.searchParams.delete("inactive");
 				window.history.replaceState({}, document.title, url.pathname);
@@ -39,6 +38,7 @@ export default function AdminLoginPage() {
 		});
 		if (signInError) {
 			setError(signInError.message);
+			toast.error(signInError.message);
 			setLoading(false);
 		} else {
 			window.sessionStorage.clear();
@@ -87,30 +87,6 @@ export default function AdminLoginPage() {
 					</form>
 				</CardContent>
 			</Card>
-
-			{/* Floating Toast Alert for Inactivity Logout */}
-			{showInactiveToast && (
-				<div className='fixed top-6 right-6 z-[9999] flex items-center gap-3 bg-white/95 backdrop-blur-md border border-amber-100 shadow-2xl rounded-2xl p-4 w-80 animate-in fade-in slide-in-from-top-2 duration-150 ease-out text-slate-800'>
-					<div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-500 border border-amber-100/50 shadow-xs shadow-amber-50'>
-						<AlertCircle className='h-4.5 w-4.5' />
-					</div>
-					<div className='flex-1 min-w-0'>
-						<p className='text-xs font-bold text-slate-900 tracking-tight'>
-							Session Expired
-						</p>
-						<p className='text-[11px] text-slate-500 mt-0.5 leading-relaxed truncate'>
-							Logged out due to inactivity.
-						</p>
-					</div>
-					<button 
-						type="button"
-						onClick={() => setShowInactiveToast(false)}
-						className="text-slate-400 hover:text-slate-600 transition-colors text-xs font-bold cursor-pointer"
-					>
-						✕
-					</button>
-				</div>
-			)}
 		</main>
 	);
 }

@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import type { IDatabaseAdapter } from "../types";
 import type { CandidateExperienceType, CandidateReferenceType } from "@/types";
 import { env } from "@/env";
+import { logger } from "@/lib/logger";
 
 let client: SupabaseClient | undefined;
 
@@ -59,7 +60,7 @@ export async function createSupabaseServerClient() {
 }
 
 function handleDatabaseError(error: any, fallbackMessage: string): never {
-	console.error("Database operation failed detail:", error);
+	logger.error("Database operation failed", { detail: String(error) });
 	throw new Error(fallbackMessage);
 }
 

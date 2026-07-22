@@ -29,6 +29,30 @@ export function getCurrentRoundKey(
 	return "director";
 }
 
+export function computeCandidateStatus(r: CandidateResult): "rejected" | "hired" | "on_hold" | "in_interview" | "screening" {
+	const rounds = (r.interviewRounds || {}) as Record<string, { status?: string } | undefined>;
+	const hasFail = Object.values(rounds).some((roundVal) => roundVal?.status === "fail");
+	const isScoreZero = r.totalMarksAwarded !== undefined && r.totalMarksAwarded === 0;
+
+	if (hasFail || isScoreZero) {
+		return "rejected";
+	}
+	if (r.candidate.hiringStatus === "hired") {
+		return "hired";
+	}
+	if (r.candidate.hiringStatus === "on_hold") {
+		return "on_hold";
+	}
+
+	const hasPassedFaceToFace = rounds.face_to_face?.status === "pass";
+	const isExamSubmitted = r.totalMarksAwarded !== undefined;
+	if (hasPassedFaceToFace || isExamSubmitted || r.candidate.hiringStatus === "interviewing") {
+		return "in_interview";
+	}
+
+	return "screening";
+}
+
 /**
  * Unified candidate results filter pipeline.
  * Runs Search, Date, Role, Status, and location/round filters sequentially,

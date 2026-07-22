@@ -4,10 +4,10 @@ import { useState, useEffect, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { SiteHeader } from "@/components/layout/site-header";
 import { CandidateForm } from "@/components/candidate/candidate-form";
-import { AlertCircle, X } from "lucide-react";
 import type { Candidate } from "@/types/candidate";
 import { registerCandidate } from "@/services/client/candidate.service";
 import { syncAssessmentSession } from "@/services/client/assessment.service";
+import { toast } from "sonner";
 
 let cachedCandidateValue: string | null = null;
 let cachedCandidate: Candidate | null = null;
@@ -75,13 +75,10 @@ export default function CandidateRegistrationPage() {
 		}
 	}, [router, mounted]);
 
-	// Auto-dismiss the toast notification after 3 seconds for faster user experience
+	// Trigger Sonner toast whenever a validation/submission error occurs
 	useEffect(() => {
 		if (submitError) {
-			const timer = setTimeout(() => {
-				setSubmitError(null);
-			}, 3000);
-			return () => clearTimeout(timer);
+			toast.error(submitError);
 		}
 	}, [submitError]);
 
@@ -129,29 +126,6 @@ export default function CandidateRegistrationPage() {
 					isSubmitting={isSubmitting}
 					submitError={submitError}
 				/>
-
-				{/* Floating Toast Alert */}
-				{submitError && (
-					<div className='fixed top-6 right-6 z-[9999] flex items-center gap-3 bg-white/95 backdrop-blur-md border border-red-100 shadow-2xl rounded-2xl p-4 w-80 animate-in fade-in slide-in-from-top-2 duration-150 ease-out'>
-						<div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500 border border-red-100/50 shadow-xs shadow-red-50'>
-							<AlertCircle className='h-4.5 w-4.5' />
-						</div>
-						<div className='flex-1 min-w-0'>
-							<p className='text-xs font-bold text-slate-900 tracking-tight'>
-								Registration Alert
-							</p>
-							<p className='text-[11px] font-semibold text-slate-500 mt-0.5 leading-snug break-words'>
-								{submitError}
-							</p>
-						</div>
-						<button
-							type='button'
-							onClick={() => setSubmitError(null)}
-							className='text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors p-1 rounded-lg cursor-pointer'>
-							<X className='h-3.5 w-3.5' />
-						</button>
-					</div>
-				)}
 			</main>
 		</div>
 	);

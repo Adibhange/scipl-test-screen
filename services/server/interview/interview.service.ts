@@ -63,7 +63,9 @@ export async function submitRoundFeedback(
 		},
 	}));
 
-	return updated;
+	// Reload the latest result from the database to ensure we get the updated hiring status (which is updated by PostgreSQL triggers)
+	const fresh = await getResultById(resultId);
+	return fresh || updated;
 }
 
 export async function assignInterviewerAndDetails(

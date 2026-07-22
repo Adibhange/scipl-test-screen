@@ -270,7 +270,7 @@ export function AdminShell({
 						)}
 					</div>
 				</header>
-				<main className='mx-auto w-full max-w-[1600px] p-5 lg:p-8'>
+				<main className="w-full">
 					{children}
 				</main>
 			</div>

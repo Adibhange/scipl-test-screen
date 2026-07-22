@@ -1,6 +1,7 @@
 import { getCurrentAdmin } from "@/repositories/admin.repository"
 import { redirect } from "next/navigation"
 import { ConfigManager } from "@/app/admin/(dashboard)/config/config-manager"
+import { PageContainer } from "@/components/ui/layout-primitives"
 
 export const dynamic = "force-dynamic"
 
@@ -16,6 +17,8 @@ export default async function AdminConfigPage() {
   }
 
   return (
-    <ConfigManager />
+    <PageContainer>
+      <ConfigManager />
+    </PageContainer>
   )
 }

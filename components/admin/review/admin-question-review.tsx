@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
 	ChevronLeft,
@@ -18,6 +18,7 @@ import { CalculateResultsButton } from "@/components/admin/review/calculate-resu
 import { EvaluationBreakdown } from "@/components/admin/review/evaluation-breakdown";
 import { cn } from "@/lib/utils";
 import type { AdminGrade, Answer, CandidateResult, Question } from "@/types";
+import { PageContainer } from "@/components/ui/layout-primitives";
 
 type Item = { answer: Answer; question: Question | null };
 
@@ -51,7 +52,7 @@ export function AdminQuestionReview({
 	result: CandidateResult;
 	items: Item[];
 	onBack?: () => void;
-	onCalculate?: (updatedResult: any) => void;
+	onCalculate?: (updatedResult: CandidateResult) => void;
 }) {
 	const [answers, setAnswers] = useState(() =>
 		items.map((item) => item.answer),
@@ -96,11 +97,6 @@ export function AdminQuestionReview({
 
 	// Select index state inside the active filtered subset
 	const [selectedIndex, setSelectedIndex] = useState(0);
-
-	// Reset index on tab change
-	useEffect(() => {
-		setSelectedIndex(0);
-	}, [activeTab]);
 
 	const currentItems =
 		activeTab === "mcq" ? mcqItems
@@ -165,7 +161,7 @@ export function AdminQuestionReview({
 		:	"";
 
 	return (
-		<div className="max-w-[90rem] w-full px-4 md:px-8 mx-auto py-8 space-y-6">
+		<PageContainer className="py-8 space-y-6">
 			{/* Back Link */}
 			<div>
 				{onBack ? (
@@ -206,7 +202,10 @@ export function AdminQuestionReview({
 					{/* Horizontal tab scrollable array */}
 					<div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
 						<button
-							onClick={() => setActiveTab("mcq")}
+							onClick={() => {
+								setActiveTab("mcq");
+								setSelectedIndex(0);
+							}}
 							className={cn(
 								"px-4 py-2.5 rounded-xl text-xs font-bold transition-all border shrink-0 cursor-pointer",
 								activeTab === "mcq" 
@@ -217,7 +216,10 @@ export function AdminQuestionReview({
 							ROUND 1 · MCQ ({mcqItems.length})
 						</button>
 						<button
-							onClick={() => setActiveTab("subjective")}
+							onClick={() => {
+								setActiveTab("subjective");
+								setSelectedIndex(0);
+							}}
 							className={cn(
 								"px-4 py-2.5 rounded-xl text-xs font-bold transition-all border shrink-0 cursor-pointer",
 								activeTab === "subjective" 
@@ -228,7 +230,10 @@ export function AdminQuestionReview({
 							ROUND 2 · Subjective ({subjectiveItems.length})
 						</button>
 						<button
-							onClick={() => setActiveTab("coding")}
+							onClick={() => {
+								setActiveTab("coding");
+								setSelectedIndex(0);
+							}}
 							className={cn(
 								"px-4 py-2.5 rounded-xl text-xs font-bold transition-all border shrink-0 cursor-pointer",
 								activeTab === "coding" 
@@ -242,7 +247,7 @@ export function AdminQuestionReview({
 				</div>
 			</div>
 
-			{/* Main Split Grid */}
+			{/* Main Grid Layout */}
 			<div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
 				{/* Column 1: Left Navigator Grid Matrix */}
 				<div className="lg:col-span-1 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs relative overflow-hidden">
@@ -386,7 +391,7 @@ export function AdminQuestionReview({
 								{/* MCQ layout */}
 								{activeTab === "mcq" && item.question?.options && (
 									<div className="space-y-2">
-										{item.question.options.map((opt: any) => {
+										{item.question.options.map((opt: { id: string; text: string }) => {
 											const isMcqMulti = item.answer.questionType === "mcq_multi";
 											
 											// Candidate selection check
@@ -429,7 +434,7 @@ export function AdminQuestionReview({
 													<span className="flex items-center gap-2">
 														{isCandidatePick && (
 															<Badge variant="outline" className="text-[10px] font-bold border-slate-200">
-																Candidate's Answer
+																Candidate&apos;s Answer
 															</Badge>
 														)}
 														{isCorrectOption && (
@@ -450,12 +455,12 @@ export function AdminQuestionReview({
 									</div>
 								)}
 
-								{/* Subjective Layout (Sky Blue theme) */}
+								{/* Subjective Layout */}
 								{isSubjective && (
 									<div className="space-y-4">
 										<div>
 											<p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-												Candidate's Response:
+												Candidate&apos;s Response:
 											</p>
 											<p className="text-xs leading-relaxed text-slate-700 bg-slate-50 border border-slate-100 rounded-xl p-4 whitespace-pre-wrap font-medium overflow-x-auto">
 												{(typeof item.answer.answerValue === "string" && item.answer.answerValue.trim())
@@ -484,11 +489,11 @@ export function AdminQuestionReview({
 									</div>
 								)}
 
-								{/* Coding Layout (Orange theme) */}
+								{/* Coding Layout */}
 								{isCode && (
 									<div className="space-y-5">
 										<div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
-											{/* Left: problem stem explanation */}
+											{/* Left: problem explanation */}
 											<div className="space-y-3.5 bg-slate-50/50 p-4 border border-slate-100 rounded-xl">
 												<p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
 													Problem Explanation
@@ -506,7 +511,7 @@ export function AdminQuestionReview({
 														<span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
 															Visible Test Cases
 														</span>
-														{item.question.testCasesVisible.map((tc: any, tcIdx: number) => (
+														{item.question.testCasesVisible.map((tc: { input: string; expected: string }, tcIdx: number) => (
 															<div key={tcIdx} className="text-xs font-mono text-slate-600 bg-slate-100/50 border border-slate-200/50 rounded-lg p-2 flex justify-between overflow-x-auto">
 																<span>Input: {tc.input}</span>
 																<span>Expected: {tc.expected}</span>
@@ -519,7 +524,6 @@ export function AdminQuestionReview({
 											{/* Right: mock IDE viewport block */}
 											<div className="space-y-3">
 												<div className="rounded-xl overflow-hidden border border-orange-200/60 shadow-xs">
-													{/* Orange execution headers */}
 													<div className="bg-orange-50 px-4 py-2 border-b border-orange-100 flex items-center justify-between text-[10px] font-bold text-orange-700">
 														<span className="tracking-wide uppercase">Mock Editor Viewport</span>
 														<span className="font-mono">read-only</span>
@@ -532,7 +536,7 @@ export function AdminQuestionReview({
 												</div>
 
 												{item.question?.hiddenCount ? (
-													<p className="text-[10px] font-bold text-slate-450 italic">
+													<p className="text-[10px] font-bold text-slate-455 italic">
 														* Contains {item.question.hiddenCount} hidden test cases evaluated in the background.
 													</p>
 												) : null}
@@ -613,6 +617,6 @@ export function AdminQuestionReview({
 					onCalculate={onCalculate}
 				/>
 			</div>
-		</div>
+		</PageContainer>
 	);
 }

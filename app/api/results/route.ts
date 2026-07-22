@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { fetchAllResultsList, submitResults } from "@/services/server/grading/grading.service";
+import { submitResults } from "@/services/server/grading/grading.service";
+import { getAllResults } from "@/repositories/result.repository";
 import { handleApiError } from "@/lib/api-handler";
 import * as apiResponse from "@/lib/api-response";
 import { validateSchema } from "@/lib/validate";
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
 		const startDate = searchParams.get("startDate");
 		const endDate = searchParams.get("endDate");
 
-		let results = await fetchAllResultsList();
+		let results = await getAllResults();
 
 		if (startDate || endDate) {
 			results = filterResults(results, {

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { AdminUserManagement } from "@/components/admin/users/admin-user-management";
 import { getCurrentAdmin } from "@/repositories/admin.repository";
+import { PageContainer } from "@/components/ui/layout-primitives";
 
 export const dynamic = "force-dynamic";
 
@@ -10,10 +11,8 @@ export default async function AdminTeamPage() {
 	if (admin.role !== "hr") redirect("/admin");
 
 	return (
-		<div className='max-w-6xl'>
-			<div className='mt-2'>
-				<AdminUserManagement currentAdmin={admin} />
-			</div>
-		</div>
+		<PageContainer className="max-w-6xl">
+			<AdminUserManagement currentAdmin={admin} />
+		</PageContainer>
 	);
 }

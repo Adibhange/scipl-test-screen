@@ -1,5 +1,5 @@
 import { getAllQuestions } from "@/repositories/question.repository";
-import { getResultById, updateResult, saveResult, getAllResults } from "@/repositories/result.repository";
+import { getResultById, updateResult, saveResult } from "@/repositories/result.repository";
 import { getCandidateById } from "@/repositories/candidate.repository";
 import { getExamSession } from "@/repositories/exam-session.repository";
 import { getDatabaseAdapter } from "@/database/client";
@@ -219,8 +219,4 @@ export async function submitResults(body: {
 
 	await saveResult(result);
 	return result;
-}
-
-export async function fetchAllResultsList() {
-	return getAllResults();
 }
