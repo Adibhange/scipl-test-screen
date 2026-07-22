@@ -77,3 +77,90 @@ export function useIdleTimeout({
 
 	return { isIdle, remainingSeconds };
 }
+
+
+// import { useState, useEffect, useRef } from "react";
+
+// interface UseIdleTimeoutProps {
+// 	onLogout: () => void | Promise<void>;
+// }
+
+// const IDLE_THRESHOLD_SECONDS = 30;
+// const COUNTDOWN_SECONDS = 1200;
+
+// export function useIdleTimeout({ onLogout }: UseIdleTimeoutProps) {
+// 	const [isIdle, setIsIdle] = useState(false);
+// 	const [remainingSeconds, setRemainingSeconds] = useState(COUNTDOWN_SECONDS);
+
+// 	const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+// 	const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+// 	const onLogoutRef = useRef(onLogout);
+
+// 	useEffect(() => {
+// 		onLogoutRef.current = onLogout;
+// 	}, [onLogout]);
+
+// 	useEffect(() => {
+// 		if (typeof window === "undefined") return;
+
+// 		const activityEvents = [
+// 			"mousemove",
+// 			"keydown",
+// 			"click",
+// 			"scroll",
+// 			"touchstart",
+// 		];
+
+// 		const resetIdleTimer = () => {
+// 			if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+// 			if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+
+// 			setIsIdle(false);
+// 			setRemainingSeconds(COUNTDOWN_SECONDS);
+
+// 			idleTimerRef.current = setTimeout(() => {
+// 				setIsIdle(true);
+// 			}, IDLE_THRESHOLD_SECONDS * 1000);
+// 		};
+
+// 		resetIdleTimer();
+
+// 		activityEvents.forEach((event) => {
+// 			window.addEventListener(event, resetIdleTimer);
+// 		});
+
+// 		return () => {
+// 			if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+// 			if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+
+// 			activityEvents.forEach((event) => {
+// 				window.removeEventListener(event, resetIdleTimer);
+// 			});
+// 		};
+// 	}, []);
+
+// 	useEffect(() => {
+// 		if (!isIdle) return;
+
+// 		countdownTimerRef.current = setInterval(() => {
+// 			setRemainingSeconds((prev) => {
+// 				if (prev <= 1) {
+// 					if (countdownTimerRef.current) {
+// 						clearInterval(countdownTimerRef.current);
+// 					}
+// 					void onLogoutRef.current();
+// 					return 0;
+// 				}
+// 				return prev - 1;
+// 			});
+// 		}, 1000);
+
+// 		return () => {
+// 			if (countdownTimerRef.current) {
+// 				clearInterval(countdownTimerRef.current);
+// 			}
+// 		};
+// 	}, [isIdle]);
+
+// 	return { isIdle, remainingSeconds };
+// }

@@ -359,9 +359,6 @@ export function ConfigManager() {
         </div>
       )}
 
-      {loading ? (
-        <div className="text-xs text-slate-400 py-16 text-center animate-pulse">Loading system configurations...</div>
-      ) : (
         <div className="space-y-8">
 
           {/* 1. Main Job Vacancies Grid & Quick-Add Form */}
@@ -923,9 +920,7 @@ export function ConfigManager() {
             </div>
 
           </div>
-
         </div>
-      )}
     </div>
   )
 }

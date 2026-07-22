@@ -27,7 +27,7 @@ export default function AdminLoading() {
 			</div>
 
 			{/* Filter Bar Skeleton */}
-			<div className='h-12 w-full bg-slate-200 rounded-xl border border-slate-100 bg-slate-100/50' />
+			<div className='h-12 w-full rounded-xl border border-slate-100 bg-slate-100/50' />
 
 			{/* Candidate Cards Grid Skeleton */}
 			<div className='grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3'>

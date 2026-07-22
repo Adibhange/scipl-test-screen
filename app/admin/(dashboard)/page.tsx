@@ -22,6 +22,7 @@ const AddCandidateDialog = nextDynamic(
 );
 
 import { ResultsFilterBar } from "@/components/admin/dashboard/results-filter-bar";
+import { filterResults } from "@/lib/filters";
 import { ROLES } from "@/constants/roles";
 import { EXPERIENCE_LEVELS } from "@/constants/experience";
 import { getCurrentAdmin, type AdminUser } from "@/repositories/admin.repository";
@@ -103,6 +104,9 @@ export default async function AdminPage({
 		round?: string;
 		testLocation?: string;
 		hiringLocation?: string;
+		dateRange?: string;
+		startDate?: string;
+		endDate?: string;
 	}>;
 }) {
 	const admin = await getCurrentAdmin();
@@ -125,6 +129,9 @@ async function CandidateDashboardContent({
 		round?: string;
 		testLocation?: string;
 		hiringLocation?: string;
+		dateRange?: string;
+		startDate?: string;
+		endDate?: string;
 	}>;
 	admin: AdminUser;
 }) {
@@ -176,6 +183,9 @@ async function CandidateDashboardContent({
 		round = "all",
 		testLocation = "all",
 		hiringLocation = "",
+		dateRange = "all",
+		startDate = "",
+		endDate = "",
 	} = await searchParams;
 	const pendingResults = scopedResults.filter(
 		(result) => result.totalMarksAwarded === undefined,
@@ -187,17 +197,17 @@ async function CandidateDashboardContent({
 		status === "pending" ? pendingResults
 		: status === "evaluated" ? evaluatedResults
 		: scopedResults;
-	const visibleResults = statusResults.filter(
-		(result) =>
-			(role === "all" || result.candidate.role === role) &&
-			(testLocation === "all" ||
-				(result.candidate.testLocation ?? "home") === testLocation) &&
-			(!hiringLocation ||
-				`${result.candidate.name} ${result.candidate.email} ${result.candidate.mobile} ${result.candidate.hiringLocation ?? ""}`
-					.toLowerCase()
-					.includes(hiringLocation.toLowerCase())) &&
-			(round === "all" || getCurrentRoundKey(result) === round),
-	);
+
+	const visibleResults = filterResults(scopedResults, {
+		status,
+		role,
+		round,
+		testLocation,
+		searchTerm: hiringLocation,
+		dateRange,
+		startDate,
+		endDate,
+	});
 	const metrics: Array<{
 		label: string;
 		value: number;
@@ -308,14 +318,33 @@ async function CandidateDashboardContent({
 					hiringLocation={hiringLocation}
 					rolesList={activeRoles}
 					testLocationsList={activeTestLocations}
+					dateRange={dateRange}
+					startDate={startDate}
+					endDate={endDate}
 				/>
 
 				<CandidateGridWrapper>
 				{visibleResults.length === 0 && (
-					<div className='rounded-xl border border-border bg-card px-5 py-8 text-center shadow-sm'>
-						<p className='text-sm text-muted-foreground'>
-							No results in this view.
+					<div className='flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center shadow-sm max-w-xl mx-auto my-8 animate-fade-in'>
+						<div className='flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 mb-6'>
+							<UsersRound className='h-8 w-8' />
+						</div>
+						<h3 className='text-lg font-bold text-slate-900 mb-2'>
+							No candidates found
+						</h3>
+						<p className='text-sm text-slate-500 mb-6 max-w-sm'>
+							We couldn&apos;t find any candidates matching your selected search query or filter options.
 						</p>
+						<div className='w-full text-left bg-slate-50 rounded-xl p-5 mb-8 border border-slate-100'>
+							<h4 className='text-xs font-semibold text-slate-700 uppercase tracking-wider mb-3'>
+								Suggestions to broaden your search:
+							</h4>
+							<ul className='text-xs text-slate-600 space-y-2 list-disc list-inside'>
+								<li>Double-check spelling of candidate names, emails, or locations.</li>
+								<li>Select &quot;All Time&quot; or expand your date range window.</li>
+								<li>Change or clear active filters (roles, rounds, locations).</li>
+							</ul>
+						</div>
 					</div>
 				)}
 
@@ -393,11 +422,11 @@ async function CandidateDashboardContent({
 												</p>
 											</div>
 
-											<div className='mt-5 space-y-2 border-t border-border pt-4 text-xs text-slate-500 border-slate-100'>
+											<div className='mt-5 space-y-2 border-t pt-4 text-xs text-slate-500 border-slate-100'>
 												<p className='flex items-center gap-2'>
 													<BriefcaseBusiness className='h-3.5 w-3.5 shrink-0 text-primary' />
 													<span className='truncate font-medium'>
-														{displayRole} · {displayExp} yrs
+														{displayRole} · {displayExp}
 													</span>
 												</p>
 												<p className='flex items-center gap-2'>

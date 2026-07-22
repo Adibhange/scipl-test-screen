@@ -3,11 +3,6 @@ import type { Candidate } from "@/types/candidate";
 import type { Question } from "@/types/metadata";
 import { syncAssessmentSession, fetchAssessmentQuestions } from "@/services/client/assessment.service";
 
-/**
- * Custom hook to manage client-server session synchronization, including
- * initial mount checking, token generation/verification, and real-time
- * BroadcastChannel tab duplicate warnings.
- */
 export function useSessionSync(candidate: Candidate | null, mounted: boolean) {
 	const [questions, setQuestions] = useState<Question[]>([]);
 	const [loading, setLoading] = useState(true);

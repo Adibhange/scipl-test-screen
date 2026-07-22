@@ -85,8 +85,6 @@ export function AdminShell({
 	}
 
 	const { isIdle, remainingSeconds } = useIdleTimeout({
-		idleThresholdSeconds: 30,
-		countdownSeconds: 1200,
 		onLogout: handleLogoutWithRedirect,
 	});
 
@@ -100,19 +98,6 @@ export function AdminShell({
 
 	return (
 		<div className='min-h-screen bg-slate-50 text-slate-900 relative'>
-			{/* Floating Syncing Badge */}
-			{showFeedback && (
-				<div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-none">
-					<div className="flex items-center gap-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/50 shadow-md rounded-full px-3.5 py-1.5 text-xs font-semibold text-slate-700">
-						<span className="relative flex h-2 w-2">
-							<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-							<span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-						</span>
-						<span>Syncing data...</span>
-					</div>
-				</div>
-			)}
-
 			{/* Desktop Sidebar */}
 			<aside className='fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200 bg-white lg:flex'>
 				<div className='flex h-20 items-center gap-3 border-b border-slate-100 px-6'>
@@ -289,38 +274,6 @@ export function AdminShell({
 					{children}
 				</main>
 			</div>
-			<Dialog
-				open={showSessionModal || sessionWarning}
-				onOpenChange={(open) => {
-					if (!open) setShowSessionModal(false);
-					setSessionWarning(false);
-				}}>
-				<DialogContent className='sm:max-w-xl'>
-					<DialogHeader>
-						<DialogTitle>Session expiring soon</DialogTitle>
-						<DialogDescription>
-							Your admin session is about to expire. Choose to stay signed in or
-							log out now.
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter>
-						<Button
-							variant='outline'
-							onClick={handleLogout}>
-							Logout
-						</Button>
-						<Button
-							onClick={async () => {
-								const supabase = createSupabaseBrowserClient();
-								await supabase.auth.refreshSession();
-								setShowSessionModal(false);
-								setSessionWarning(false);
-							}}>
-							Stay logged in
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
 		</div>
 	);
 }

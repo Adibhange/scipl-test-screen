@@ -7,13 +7,28 @@ import { SubmitAssessmentResultsSchema } from "@/validators/result.validator";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIpFromHeaders, logSecurityEvent } from "@/lib/audit-logger";
 
+import { filterResults } from "@/lib/filters";
+
 export async function GET(req: NextRequest) {
 	const ip = getClientIpFromHeaders(req.headers);
 	const limiter = rateLimit(ip, { limit: 30, windowMs: 60000, keyPrefix: "rl:results_get" });
 	if (limiter.isBlocked) return limiter.response!;
 
 	try {
-		const results = await fetchAllResultsList();
+		const { searchParams } = new URL(req.url);
+		const startDate = searchParams.get("startDate");
+		const endDate = searchParams.get("endDate");
+
+		let results = await fetchAllResultsList();
+
+		if (startDate || endDate) {
+			results = filterResults(results, {
+				dateRange: "custom",
+				startDate: startDate || undefined,
+				endDate: endDate || undefined,
+			});
+		}
+
 		return apiResponse.success(results);
 	} catch (error) {
 		return handleApiError(error, "Could not load results");
