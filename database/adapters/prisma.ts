@@ -3,6 +3,7 @@
 import { PrismaClient } from "@prisma/client";
 import { env } from "@/env";
 import type { IDatabaseAdapter } from "../types";
+import type { CandidateExperienceType, CandidateReferenceType } from "@/types";
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
@@ -94,5 +95,17 @@ export const prismaAdapter: IDatabaseAdapter = {
 		resolveExperienceValue: (value: string) => notImplemented("metadata.resolveExperienceValue"),
 		resolveHiringLocationValue: (value: string) => notImplemented("metadata.resolveHiringLocationValue"),
 		resolveTestLocationValue: (value: string) => notImplemented("metadata.resolveTestLocationValue"),
+	},
+	candidateExperiences: {
+		create: (data: Partial<CandidateExperienceType> & { candidate_id: string }) => notImplemented("candidateExperiences.create"),
+		update: (id: string, data: Partial<CandidateExperienceType>) => notImplemented("candidateExperiences.update"),
+		delete: (id: string) => notImplemented("candidateExperiences.delete"),
+		getByCandidateId: (candidateId: string) => notImplemented("candidateExperiences.getByCandidateId"),
+	},
+	candidateReferences: {
+		create: (data: Partial<CandidateReferenceType> & { candidate_id: string }) => notImplemented("candidateReferences.create"),
+		update: (id: string, data: Partial<CandidateReferenceType>) => notImplemented("candidateReferences.update"),
+		delete: (id: string) => notImplemented("candidateReferences.delete"),
+		getByCandidateId: (candidateId: string) => notImplemented("candidateReferences.getByCandidateId"),
 	},
 };

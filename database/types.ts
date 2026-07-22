@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { CandidateExperienceType, CandidateReferenceType } from "@/types";
 
 export interface ICandidatesAdapter {
 	getById(id: string): Promise<any>;
@@ -69,6 +70,20 @@ export interface IMetadataAdapter {
 	resolveTestLocationValue(value: string): Promise<any>;
 }
 
+export interface ICandidateExperiencesAdapter {
+	create(data: Partial<CandidateExperienceType> & { candidate_id: string }): Promise<CandidateExperienceType>;
+	update(id: string, data: Partial<CandidateExperienceType>): Promise<CandidateExperienceType>;
+	delete(id: string): Promise<void>;
+	getByCandidateId(candidateId: string): Promise<CandidateExperienceType[]>;
+}
+
+export interface ICandidateReferencesAdapter {
+	create(data: Partial<CandidateReferenceType> & { candidate_id: string }): Promise<CandidateReferenceType>;
+	update(id: string, data: Partial<CandidateReferenceType>): Promise<CandidateReferenceType>;
+	delete(id: string): Promise<void>;
+	getByCandidateId(candidateId: string): Promise<CandidateReferenceType[]>;
+}
+
 export interface IDatabaseAdapter {
 	candidates: ICandidatesAdapter;
 	examSessions: IExamSessionsAdapter;
@@ -76,4 +91,6 @@ export interface IDatabaseAdapter {
 	results: IResultsAdapter;
 	admins: IAdminsAdapter;
 	metadata: IMetadataAdapter;
+	candidateExperiences: ICandidateExperiencesAdapter;
+	candidateReferences: ICandidateReferencesAdapter;
 }

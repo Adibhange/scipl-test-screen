@@ -16,6 +16,8 @@ export type CandidateInput = {
 	offerSalary?: number;
 	hrNotes?: string;
 	vacancyId?: string;
+	experiences?: any[];
+	references?: any[];
 };
 
 export type CandidateRecord = Omit<CandidateInput, "firstName" | "lastName"> & {
@@ -64,6 +66,37 @@ export async function createCandidate(input: CandidateInput): Promise<CandidateR
 		vacancy_id: input.vacancyId || null,
 	});
 
+	// Save experiences if provided
+	if (input.experiences && Array.isArray(input.experiences)) {
+		for (const exp of input.experiences) {
+			await getDatabaseAdapter().candidateExperiences.create({
+				candidate_id: data.id,
+				companyName: exp.companyName,
+				designation: exp.designation,
+				joiningDate: new Date(exp.joiningDate).toISOString(),
+				leavingDate: exp.leavingDate ? new Date(exp.leavingDate).toISOString() : null,
+				salary: exp.salary ?? null,
+				noticePeriod: exp.noticePeriod ?? 0,
+				isCurrent: exp.isCurrent ?? false,
+			});
+		}
+	}
+
+	// Save references if provided
+	if (input.references && Array.isArray(input.references)) {
+		for (const ref of input.references) {
+			await getDatabaseAdapter().candidateReferences.create({
+				candidate_id: data.id,
+				referenceType: ref.referenceType,
+				referenceName: ref.referenceName,
+				referenceMobile: ref.referenceMobile,
+				employeeCode: ref.employeeCode || null,
+				notes: ref.notes ?? null,
+				verifiedBy: ref.verifiedBy ?? null,
+			});
+		}
+	}
+
 	const hiringLocVal = (data as any).hiringLocObj?.value || undefined;
 
 	return {
@@ -103,6 +136,9 @@ export async function getCandidateById(id: string): Promise<CandidateRecord | nu
 		vacancyTitleVal = `${rLabel} (${eLabel}) - ${hLabel}`;
 	}
 
+	const experiences = await getDatabaseAdapter().candidateExperiences.getByCandidateId(data.id);
+	const references = await getDatabaseAdapter().candidateReferences.getByCandidateId(data.id);
+
 	return {
 		id: String(data.id),
 		firstName: String(data.first_name),
@@ -120,6 +156,8 @@ export async function getCandidateById(id: string): Promise<CandidateRecord | nu
 		vacancyId: data.vacancy_id || undefined,
 		vacancyTitle: vacancyTitleVal,
 		created_at: String(data.created_at),
+		experiences,
+		references,
 	};
 }
 
@@ -131,6 +169,9 @@ export async function getCandidateByEmail(email: string): Promise<CandidateRecor
 	const expVal = (data as any).experienceObj?.value || "";
 	const testLocVal = (data as any).testLocObj?.value || "home";
 	const hiringLocVal = (data as any).hiringLocObj?.value || undefined;
+
+	const experiences = await getDatabaseAdapter().candidateExperiences.getByCandidateId(data.id);
+	const references = await getDatabaseAdapter().candidateReferences.getByCandidateId(data.id);
 
 	return {
 		id: String(data.id),
@@ -148,6 +189,8 @@ export async function getCandidateByEmail(email: string): Promise<CandidateRecor
 		hrNotes: (data.hr_notes as string | null) ?? undefined,
 		vacancyId: data.vacancy_id || undefined,
 		created_at: String(data.created_at),
+		experiences,
+		references,
 	};
 }
 
@@ -163,4 +206,94 @@ export async function checkReapplicationLockout(
 		roleId,
 		candidateId,
 	);
+}
+
+export async function updateCandidate(id: string, input: Partial<CandidateInput>): Promise<void> {
+	// First update core candidate details in candidates table
+	const candidateUpdates: any = {};
+	if (input.firstName !== undefined) candidateUpdates.first_name = input.firstName;
+	if (input.lastName !== undefined) candidateUpdates.last_name = input.lastName;
+	if (input.mobile !== undefined) candidateUpdates.mobile = input.mobile;
+	if (input.email !== undefined) candidateUpdates.email = input.email;
+	if (input.hiringStatus !== undefined) candidateUpdates.hiring_status = input.hiringStatus;
+	if (input.expectedSalary !== undefined) candidateUpdates.expected_salary = input.expectedSalary ?? null;
+	if (input.offerSalary !== undefined) candidateUpdates.offer_salary = input.offerSalary ?? null;
+	if (input.hrNotes !== undefined) candidateUpdates.hr_notes = input.hrNotes ?? null;
+	if (input.role !== undefined) candidateUpdates.role = input.role;
+	if (input.experience !== undefined) candidateUpdates.experience = input.experience;
+	if (input.testLocation !== undefined) candidateUpdates.test_location = input.testLocation;
+	if (input.hiringLocation !== undefined) candidateUpdates.hiring_location = input.hiringLocation;
+
+	if (Object.keys(candidateUpdates).length > 0) {
+		await getDatabaseAdapter().candidates.update(id, candidateUpdates);
+	}
+
+	// Update experiences if provided
+	if (input.experiences !== undefined && Array.isArray(input.experiences)) {
+		const existing = await getDatabaseAdapter().candidateExperiences.getByCandidateId(id);
+		const incomingIds = input.experiences.map((e: any) => e.id).filter(Boolean);
+
+		// Delete removed experiences
+		for (const ext of existing) {
+			if (ext.id && !incomingIds.includes(ext.id)) {
+				await getDatabaseAdapter().candidateExperiences.delete(ext.id);
+			}
+		}
+
+		// Insert or Update incoming experiences
+		for (const exp of input.experiences) {
+			const expRecord = {
+				companyName: exp.companyName,
+				designation: exp.designation,
+				joiningDate: new Date(exp.joiningDate).toISOString(),
+				leavingDate: exp.leavingDate ? new Date(exp.leavingDate).toISOString() : null,
+				salary: exp.salary ?? null,
+				noticePeriod: exp.noticePeriod ?? 0,
+				isCurrent: exp.isCurrent ?? false,
+			};
+
+			if (exp.id) {
+				await getDatabaseAdapter().candidateExperiences.update(exp.id, expRecord);
+			} else {
+				await getDatabaseAdapter().candidateExperiences.create({
+					candidate_id: id,
+					...expRecord,
+				});
+			}
+		}
+	}
+
+	// Update references if provided
+	if (input.references !== undefined && Array.isArray(input.references)) {
+		const existing = await getDatabaseAdapter().candidateReferences.getByCandidateId(id);
+		const incomingIds = input.references.map((r: any) => r.id).filter(Boolean);
+
+		// Delete removed references
+		for (const ext of existing) {
+			if (ext.id && !incomingIds.includes(ext.id)) {
+				await getDatabaseAdapter().candidateReferences.delete(ext.id);
+			}
+		}
+
+		// Insert or Update incoming references
+		for (const ref of input.references) {
+			const refRecord = {
+				referenceType: ref.referenceType,
+				referenceName: ref.referenceName,
+				referenceMobile: ref.referenceMobile,
+				employeeCode: ref.employeeCode || null,
+				notes: ref.notes ?? null,
+				verifiedBy: ref.verifiedBy ?? null,
+			};
+
+			if (ref.id) {
+				await getDatabaseAdapter().candidateReferences.update(ref.id, refRecord);
+			} else {
+				await getDatabaseAdapter().candidateReferences.create({
+					candidate_id: id,
+					...refRecord,
+				});
+			}
+		}
+	}
 }

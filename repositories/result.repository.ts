@@ -24,6 +24,8 @@ function mapToCandidateResult(row: any, session: any, candidate: any, answers: a
 			offerSalary: candidate?.offer_salary == null ? undefined : Number(candidate.offer_salary),
 			hrNotes: candidate?.hr_notes ?? undefined,
 			vacancyId: candidate?.vacancy_id || undefined,
+			experiences: candidate?.experiences || [],
+			references: candidate?.references || [],
 		},
 		answers: (answers || []).map(ans => ({
 			questionId: ans.question_id,
@@ -57,6 +59,14 @@ export async function getAllResults(): Promise<CandidateResult[]> {
 export async function getResultById(id: string): Promise<CandidateResult | undefined> {
 	const data = await getDatabaseAdapter().results.getById(id);
 	if (!data) return undefined;
+
+	if (data.candidateRow) {
+		const candidateId = data.candidateRow.id;
+		const experiences = await getDatabaseAdapter().candidateExperiences.getByCandidateId(candidateId);
+		const references = await getDatabaseAdapter().candidateReferences.getByCandidateId(candidateId);
+		data.candidateRow.experiences = experiences;
+		data.candidateRow.references = references;
+	}
 
 	return mapToCandidateResult(
 		data.resultRow,

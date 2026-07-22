@@ -16,6 +16,23 @@ export const PreRegisterCandidateSchema = z.object({
 	testLocation: z.string().trim().optional(),
 	hiringLocation: z.string().trim().optional(),
 	vacancyId: z.string().trim().optional(),
+	experiences: z.array(z.object({
+		companyName: z.string().trim().min(1, "Company name is required"),
+		designation: z.string().trim().min(1, "Designation is required"),
+		joiningDate: z.string().trim().min(1, "Joining date is required"),
+		leavingDate: z.string().trim().nullable().optional(),
+		salary: z.number().nonnegative().optional(),
+		noticePeriod: z.number().int().nonnegative().default(0),
+		isCurrent: z.boolean().default(false),
+	})).optional(),
+	references: z.array(z.object({
+		referenceType: z.enum(["INTERNAL", "EXTERNAL"]),
+		referenceName: z.string().trim().min(1, "Reference name is required"),
+		referenceMobile: z.string().trim().min(1, "Reference mobile is required"),
+		employeeCode: z.string().trim().optional(),
+		verifiedBy: z.string().trim().optional(),
+		notes: z.string().trim().optional(),
+	})).optional(),
 });
 
 export const CreateAdminUserSchema = z.object({
@@ -80,6 +97,25 @@ export const AssignInterviewerSchema = z.object({
 	interviewerId: z.string().trim().optional(),
 	interviewerName: z.string().trim().optional(),
 	interviewerEmail: z.string().trim().optional(),
+	experiences: z.array(z.object({
+		id: z.string().trim().optional(),
+		companyName: z.string().trim().min(1, "Company name is required"),
+		designation: z.string().trim().min(1, "Designation is required"),
+		joiningDate: z.string().trim().min(1, "Joining date is required"),
+		leavingDate: z.string().trim().nullable().optional(),
+		salary: z.number().nonnegative().optional(),
+		noticePeriod: z.number().int().nonnegative().default(0),
+		isCurrent: z.boolean().default(false),
+	})).optional(),
+	references: z.array(z.object({
+		id: z.string().trim().optional(),
+		referenceType: z.enum(["INTERNAL", "EXTERNAL"]),
+		referenceName: z.string().trim().min(1, "Reference name is required"),
+		referenceMobile: z.string().trim().min(1, "Reference mobile is required"),
+		employeeCode: z.string().trim().optional(),
+		verifiedBy: z.string().trim().optional(),
+		notes: z.string().trim().optional(),
+	})).optional(),
 });
 
 export const SubmitRoundFeedbackSchema = z.object({

@@ -26,6 +26,8 @@ export async function assignInterviewerAndMetadata(payload: {
 	interviewerId?: string;
 	interviewerName?: string;
 	interviewerEmail?: string;
+	experiences?: any[];
+	references?: any[];
 }): Promise<CandidateResult> {
 	return apiRequest<CandidateResult>("/api/admin/assignment", {
 		method: "PATCH",

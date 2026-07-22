@@ -1,3 +1,31 @@
+export interface CandidateExperienceType {
+	id?: string;
+	candidateId?: string;
+	companyName: string;
+	designation: string;
+	joiningDate: string;
+	leavingDate?: string | null;
+	salary?: number | null;
+	noticePeriod?: number;
+	isCurrent?: boolean;
+	createdAt?: string;
+	updatedAt?: string;
+}
+
+export interface CandidateReferenceType {
+	id?: string;
+	candidateId?: string;
+	referenceType: "INTERNAL" | "EXTERNAL";
+	referenceName: string;
+	referenceMobile: string;
+	employeeId?: string | null;
+	employeeCode?: string | null;
+	verifiedBy?: string | null;
+	notes?: string | null;
+	createdAt?: string;
+	updatedAt?: string;
+}
+
 export type Candidate = {
 	id?: string;
 	name: string;
@@ -12,6 +40,8 @@ export type Candidate = {
 	offerSalary?: number;
 	hrNotes?: string;
 	vacancyId?: string;
+	experiences?: CandidateExperienceType[];
+	references?: CandidateReferenceType[];
 };
 
 export type AnswerValue = string | string[];

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getResultById, updateResult } from "@/repositories/result.repository";
 import { canReviewRound } from "@/repositories/admin.repository";
+import { updateCandidate } from "@/repositories/candidate.repository";
 import { getDatabaseAdapter } from "@/database/client";
 import { ensureInterviewRounds } from "@/lib/interview-rounds";
 import { ValidationError, NotFoundError, AuthorizationError, ConflictError } from "@/lib/errors";
@@ -79,6 +80,8 @@ export async function assignInterviewerAndDetails(
 		interviewerId?: string;
 		interviewerName?: string;
 		interviewerEmail?: string;
+		experiences?: any[];
+		references?: any[];
 	},
 ) {
 	const result = await getResultById(resultId);
@@ -129,7 +132,9 @@ export async function assignInterviewerAndDetails(
 		body.hiringStatus !== undefined ||
 		body.expectedSalary !== undefined ||
 		body.offerSalary !== undefined ||
-		body.hrNotes !== undefined
+		body.hrNotes !== undefined ||
+		body.experiences !== undefined ||
+		body.references !== undefined
 	)) {
 		const metadataAdapter = getDatabaseAdapter().metadata;
 		const candidateUpdates: any = {};
@@ -144,22 +149,25 @@ export async function assignInterviewerAndDetails(
 		}
 		if (body.testLocation !== undefined) {
 			const td = await metadataAdapter.resolveTestLocationValue(body.testLocation.trim());
-			if (td) candidateUpdates.test_location = td.id;
+			if (td) candidateUpdates.testLocation = td.id;
 		}
 		if (body.hiringLocation !== undefined) {
 			if (body.hiringLocation) {
 				const hd = await metadataAdapter.resolveHiringLocationValue(body.hiringLocation.trim());
-				candidateUpdates.hiring_location = hd?.id || body.hiringLocation;
+				candidateUpdates.hiringLocation = hd?.id || body.hiringLocation;
 			} else {
-				candidateUpdates.hiring_location = null;
+				candidateUpdates.hiringLocation = null;
 			}
 		}
-		if (body.hiringStatus !== undefined) candidateUpdates.hiring_status = body.hiringStatus;
-		if (body.expectedSalary !== undefined) candidateUpdates.expected_salary = body.expectedSalary;
-		if (body.offerSalary !== undefined) candidateUpdates.offer_salary = body.offerSalary;
-		if (body.hrNotes !== undefined) candidateUpdates.hr_notes = body.hrNotes;
+		if (body.hiringStatus !== undefined) candidateUpdates.hiringStatus = body.hiringStatus;
+		if (body.expectedSalary !== undefined) candidateUpdates.expectedSalary = body.expectedSalary;
+		if (body.offerSalary !== undefined) candidateUpdates.offerSalary = body.offerSalary;
+		if (body.hrNotes !== undefined) candidateUpdates.hrNotes = body.hrNotes;
 
-		await getDatabaseAdapter().candidates.update(result.candidate.id, candidateUpdates);
+		if (body.experiences !== undefined) candidateUpdates.experiences = body.experiences;
+		if (body.references !== undefined) candidateUpdates.references = body.references;
+
+		await updateCandidate(result.candidate.id, candidateUpdates);
 
 		// Sync exam_sessions configuration values as well
 		if (candidateUpdates.role || candidateUpdates.experience) {

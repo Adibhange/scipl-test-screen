@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { getCandidateMetadata, type CandidateMetadataResponse } from "@/services/client/candidate.service";
 import { preRegisterCandidate } from "@/services/client/admin.service";
+import { ExperienceFormSection } from "./experience-form-section";
+import { ReferenceFormSection } from "./reference-form-section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +41,8 @@ export function AddCandidateDialog({
 	const [email, setEmail] = useState("");
 	const [testLocation, setTestLocation] = useState("home");
 	const [vacancyId, setVacancyId] = useState("");
+	const [experiences, setExperiences] = useState<any[]>([]);
+	const [references, setReferences] = useState<any[]>([]);
 	interface VacancyItem {
 		id: string;
 		role: string;
@@ -87,6 +91,8 @@ export function AddCandidateDialog({
 				experience: selectedVac?.experience,
 				testLocation,
 				vacancyId,
+				experiences: experiences.length > 0 ? experiences : undefined,
+				references: references.length > 0 ? references : undefined,
 			});
 
 			setOpen(false);
@@ -214,6 +220,11 @@ export function AddCandidateDialog({
 							</SelectContent>
 						</Select>
 					</div>
+					
+					{/* Candidate Experiences & References Form Sections */}
+					<ExperienceFormSection experiences={experiences} onChange={setExperiences} />
+					<ReferenceFormSection references={references} onChange={setReferences} />
+
 					<Button
 						type='submit'
 						disabled={submitting}

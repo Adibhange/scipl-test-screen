@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { IDatabaseAdapter } from "../types";
+import type { CandidateExperienceType, CandidateReferenceType } from "@/types";
 import { env } from "@/env";
 
 let client: SupabaseClient | undefined;
@@ -738,6 +739,227 @@ export const supabaseAdapter: IDatabaseAdapter = {
 
 			if (error) handleDatabaseError(error, "Failed to resolve test location UUID.");
 			return data;
+		},
+	},
+	candidateExperiences: {
+		async create(data: Partial<CandidateExperienceType> & { candidate_id: string }) {
+			const dbRecord = {
+				candidate_id: data.candidateId || data.candidate_id,
+				company_name: data.companyName,
+				designation: data.designation,
+				start_date: data.joiningDate,
+				end_date: data.leavingDate,
+				current_salary: data.salary,
+				notice_period: data.noticePeriod,
+				is_current: data.isCurrent,
+			};
+
+			const { data: record, error } = await getSupabaseServerClient()
+				.from("candidate_experiences")
+				.insert(dbRecord)
+				.select()
+				.single();
+
+			if (error) handleDatabaseError(error, "Failed to save candidate experience record.");
+			return {
+				id: record.id,
+				candidateId: record.candidate_id,
+				companyName: record.company_name,
+				designation: record.designation,
+				joiningDate: record.start_date,
+				leavingDate: record.end_date,
+				salary: record.current_salary ? Number(record.current_salary) : null,
+				noticePeriod: record.notice_period,
+				isCurrent: record.is_current,
+				createdAt: record.created_at,
+				updatedAt: record.updated_at,
+			};
+		},
+
+		async update(id: string, data: Partial<CandidateExperienceType>) {
+			const dbRecord: any = {};
+			if (data.candidateId !== undefined) dbRecord.candidate_id = data.candidateId;
+			if (data.companyName !== undefined) dbRecord.company_name = data.companyName;
+			if (data.designation !== undefined) dbRecord.designation = data.designation;
+			if (data.joiningDate !== undefined) dbRecord.start_date = data.joiningDate;
+			if (data.leavingDate !== undefined) dbRecord.end_date = data.leavingDate;
+			if (data.salary !== undefined) dbRecord.current_salary = data.salary;
+			if (data.noticePeriod !== undefined) dbRecord.notice_period = data.noticePeriod;
+			if (data.isCurrent !== undefined) dbRecord.is_current = data.isCurrent;
+
+			const { data: record, error } = await getSupabaseServerClient()
+				.from("candidate_experiences")
+				.update(dbRecord)
+				.eq("id", id)
+				.select()
+				.single();
+
+			if (error) handleDatabaseError(error, "Failed to update candidate experience record.");
+			return {
+				id: record.id,
+				candidateId: record.candidate_id,
+				companyName: record.company_name,
+				designation: record.designation,
+				joiningDate: record.start_date,
+				leavingDate: record.end_date,
+				salary: record.current_salary ? Number(record.current_salary) : null,
+				noticePeriod: record.notice_period,
+				isCurrent: record.is_current,
+				createdAt: record.created_at,
+				updatedAt: record.updated_at,
+			};
+		},
+
+		async delete(id: string) {
+			const { error } = await getSupabaseServerClient()
+				.from("candidate_experiences")
+				.delete()
+				.eq("id", id);
+
+			if (error) handleDatabaseError(error, "Failed to delete candidate experience record.");
+		},
+
+		async getByCandidateId(candidateId: string) {
+			const { data, error } = await getSupabaseServerClient()
+				.from("candidate_experiences")
+				.select("*")
+				.eq("candidate_id", candidateId);
+
+			if (error) handleDatabaseError(error, "Failed to fetch candidate experience list.");
+			return (data || []).map((row: any) => ({
+				id: row.id,
+				candidateId: row.candidate_id,
+				companyName: row.company_name,
+				designation: row.designation,
+				joiningDate: row.start_date,
+				leavingDate: row.end_date,
+				salary: row.current_salary ? Number(row.current_salary) : null,
+				noticePeriod: row.notice_period,
+				isCurrent: row.is_current,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			}));
+		},
+	},
+	candidateReferences: {
+		async create(data: Partial<CandidateReferenceType> & { candidate_id: string }) {
+			let employeeId = null;
+			const refType = data.referenceType;
+			const empCode = data.employeeCode;
+			
+			if (refType === "INTERNAL" && empCode) {
+				const { data: emp } = await getSupabaseServerClient()
+					.from("employees")
+					.select("id")
+					.eq("employee_code", empCode)
+					.maybeSingle();
+				if (emp) employeeId = emp.id;
+			}
+
+			const dbRecord = {
+				candidate_id: data.candidateId || data.candidate_id,
+				reference_type: refType,
+				name: data.referenceName,
+				mobile: data.referenceMobile,
+				employee_id: employeeId,
+				notes: data.notes,
+				verified_by: data.verifiedBy,
+			};
+
+			const { data: record, error } = await getSupabaseServerClient()
+				.from("candidate_references")
+				.insert(dbRecord)
+				.select()
+				.single();
+
+			if (error) handleDatabaseError(error, "Failed to save candidate reference record.");
+			return {
+				id: record.id,
+				candidateId: record.candidate_id,
+				referenceType: record.reference_type,
+				referenceName: record.name,
+				referenceMobile: record.mobile,
+				employeeId: record.employee_id,
+				notes: record.notes,
+				verifiedBy: record.verified_by,
+				createdAt: record.created_at,
+				updatedAt: record.updated_at,
+			};
+		},
+
+		async update(id: string, data: Partial<CandidateReferenceType>) {
+			let employeeId = null;
+			const refType = data.referenceType;
+			const empCode = data.employeeCode;
+
+			if (refType === "INTERNAL" && empCode) {
+				const { data: emp } = await getSupabaseServerClient()
+					.from("employees")
+					.select("id")
+					.eq("employee_code", empCode)
+					.maybeSingle();
+				if (emp) employeeId = emp.id;
+			}
+
+			const dbRecord: any = {};
+			if (data.candidateId !== undefined) dbRecord.candidate_id = data.candidateId;
+			if (refType !== undefined) dbRecord.reference_type = refType;
+			if (data.referenceName !== undefined) dbRecord.name = data.referenceName;
+			if (data.referenceMobile !== undefined) dbRecord.mobile = data.referenceMobile;
+			if (data.notes !== undefined) dbRecord.notes = data.notes;
+			if (data.verifiedBy !== undefined) dbRecord.verified_by = data.verifiedBy;
+			if (employeeId) dbRecord.employee_id = employeeId;
+
+			const { data: record, error } = await getSupabaseServerClient()
+				.from("candidate_references")
+				.update(dbRecord)
+				.eq("id", id)
+				.select()
+				.single();
+
+			if (error) handleDatabaseError(error, "Failed to update candidate reference record.");
+			return {
+				id: record.id,
+				candidateId: record.candidate_id,
+				referenceType: record.reference_type,
+				referenceName: record.name,
+				referenceMobile: record.mobile,
+				employeeId: record.employee_id,
+				notes: record.notes,
+				verifiedBy: record.verified_by,
+				createdAt: record.created_at,
+				updatedAt: record.updated_at,
+			};
+		},
+
+		async delete(id: string) {
+			const { error } = await getSupabaseServerClient()
+				.from("candidate_references")
+				.delete()
+				.eq("id", id);
+
+			if (error) handleDatabaseError(error, "Failed to delete candidate reference record.");
+		},
+
+		async getByCandidateId(candidateId: string) {
+			const { data, error } = await getSupabaseServerClient()
+				.from("candidate_references")
+				.select("*")
+				.eq("candidate_id", candidateId);
+
+			if (error) handleDatabaseError(error, "Failed to fetch candidate reference list.");
+			return (data || []).map((row: any) => ({
+				id: row.id,
+				candidateId: row.candidate_id,
+				referenceType: row.reference_type,
+				referenceName: row.name,
+				referenceMobile: row.mobile,
+				employeeId: row.employee_id,
+				notes: row.notes,
+				verifiedBy: row.verified_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			}));
 		},
 	},
 };

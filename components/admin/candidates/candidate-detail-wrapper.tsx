@@ -27,9 +27,11 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { ExperienceFormSection } from "./experience-form-section";
+import { ReferenceFormSection } from "./reference-form-section";
 import dynamic from "next/dynamic";
 import { AdminQuestionReviewSkeleton } from "@/components/admin/review/admin-question-review-skeleton";
-import type { AdminRole, CandidateResult } from "@/types";
+import type { AdminRole, CandidateResult, CandidateExperienceType, CandidateReferenceType } from "@/types";
 import { ROLES } from "@/constants/roles";
 import { EXPERIENCE_LEVELS } from "@/constants/experience";
 
@@ -93,6 +95,8 @@ export function CandidateDetailWrapper({
 		testLocation: string;
 		interviewerEmail: string;
 		interviewerName: string;
+		experiences: CandidateExperienceType[];
+		references: CandidateReferenceType[];
 	}>({
 		hiringStatus: result.candidate.hiringStatus ?? "screening",
 		hiringLocation: result.candidate.hiringLocation ?? "",
@@ -104,6 +108,8 @@ export function CandidateDetailWrapper({
 		testLocation: result.candidate.testLocation ?? "home",
 		interviewerEmail: result.assignedInterviewerEmail ?? "",
 		interviewerName: result.assignedInterviewerName ?? "",
+		experiences: (result.candidate as any).experiences ?? [],
+		references: (result.candidate as any).references ?? [],
 	});
 
 	const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
@@ -173,6 +179,8 @@ export function CandidateDetailWrapper({
 					testLocation: result.candidate.testLocation ?? "home",
 					interviewerEmail: result.assignedInterviewerEmail ?? "",
 					interviewerName: result.assignedInterviewerName ?? "",
+					experiences: (result.candidate as any).experiences ?? [],
+					references: (result.candidate as any).references ?? [],
 				});
 			});
 		}
@@ -196,7 +204,9 @@ export function CandidateDetailWrapper({
 				expectedSalary: form.expectedSalary ? Number(form.expectedSalary) : undefined,
 				offerSalary: form.offerSalary ? Number(form.offerSalary) : undefined,
 				hrNotes: form.hrNotes,
-			},
+				experiences: form.experiences,
+				references: form.references,
+			} as any,
 			assignedInterviewerEmail: form.interviewerEmail || undefined,
 			assignedInterviewerName: form.interviewerName || undefined,
 		};
@@ -218,6 +228,8 @@ export function CandidateDetailWrapper({
 				hrNotes: form.hrNotes,
 				interviewerEmail: form.interviewerEmail,
 				interviewerName: form.interviewerName,
+				experiences: form.experiences,
+				references: form.references,
 			});
 			setResult(nextResult);
 			setDetailsMessage("Candidate details and assignment saved successfully");
@@ -516,6 +528,18 @@ export function CandidateDetailWrapper({
 													/>
 												</div>
 
+												{/* Candidate Experiences & References Form Sections */}
+												<div className="col-span-2 space-y-4">
+													<ExperienceFormSection
+														experiences={form.experiences}
+														onChange={(exps) => setForm({ ...form, experiences: exps })}
+													/>
+													<ReferenceFormSection
+														references={form.references}
+														onChange={(refs) => setForm({ ...form, references: refs })}
+													/>
+												</div>
+
 												{/* Row 5 */}
 												<div className="space-y-2 col-span-2">
 													<label className="text-xs font-bold text-slate-600 block mb-1">HR Notes</label>
@@ -655,6 +679,80 @@ export function CandidateDetailWrapper({
 										</p>
 									</div>
 								</div>
+							</div>
+
+							{/* Card: Employment History */}
+							<div className="rounded-2xl border border-slate-200 bg-white p-5 lg:p-6 shadow-xs relative space-y-4">
+								<h2 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2 font-extrabold">
+									Employment History
+								</h2>
+								{!(result.candidate as any).experiences || (result.candidate as any).experiences.length === 0 ? (
+									<p className="text-xs text-slate-400 font-semibold italic">No employment history provided.</p>
+								) : (
+									<div className="space-y-3.5">
+										{((result.candidate as any).experiences).map((exp: any) => (
+											<div key={exp.id || exp.company_name} className="text-xs border-l-2 border-indigo-500 pl-3 space-y-1">
+												<div className="flex justify-between items-start">
+													<h4 className="font-extrabold text-slate-800">{exp.designation}</h4>
+													{exp.is_current && (
+														<span className="bg-indigo-50 border border-indigo-100 text-indigo-700 text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider">
+															Current
+														</span>
+													)}
+												</div>
+												<p className="font-semibold text-slate-500">{exp.company_name}</p>
+												<p className="text-[10px] text-slate-400 font-medium font-bold">
+													{exp.joining_date ? new Date(exp.joining_date).toLocaleDateString() : ""} - {exp.is_current ? "Present" : (exp.leaving_date ? new Date(exp.leaving_date).toLocaleDateString() : "")}
+												</p>
+												<div className="flex justify-between text-[10px] text-slate-400 font-bold pt-0.5">
+													<span>CTC: ₹{(exp.salary || 0).toLocaleString()}</span>
+													<span>Notice: {exp.notice_period || 0} days</span>
+												</div>
+											</div>
+										))}
+									</div>
+								)}
+							</div>
+
+							{/* Card: Professional References */}
+							<div className="rounded-2xl border border-slate-200 bg-white p-5 lg:p-6 shadow-xs relative space-y-4">
+								<h2 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2 font-extrabold">
+									Candidate References
+								</h2>
+								{!(result.candidate as any).references || (result.candidate as any).references.length === 0 ? (
+									<p className="text-xs text-slate-400 font-semibold italic">No references provided.</p>
+								) : (
+									<div className="space-y-4">
+										{((result.candidate as any).references).map((ref: any) => (
+											<div key={ref.id || ref.reference_name} className="text-xs space-y-1 border-b border-slate-50 pb-3 last:border-0 last:pb-0">
+												<div className="flex justify-between items-center">
+													<h4 className="font-extrabold text-slate-800">{ref.reference_name}</h4>
+													<span className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ${
+														ref.reference_type === "INTERNAL" 
+															? "bg-emerald-50 border border-emerald-100 text-emerald-700" 
+															: "bg-blue-50 border border-blue-100 text-blue-700"
+													}`}>
+														{ref.reference_type}
+													</span>
+												</div>
+												<p className="font-medium text-slate-500 font-bold">Phone: {ref.reference_mobile}</p>
+												
+												{ref.reference_type === "INTERNAL" && (
+													<div className="bg-slate-50 p-2 rounded-lg text-[10px] text-slate-500 font-bold space-y-0.5 mt-1 border border-slate-100">
+														<p>Employee Code: <span className="text-slate-700 font-extrabold">{ref.employee_code || "N/A"}</span></p>
+														<p>Verified By: <span className="text-slate-700 font-extrabold">{ref.verified_by || "N/A"}</span></p>
+													</div>
+												)}
+												
+												{ref.notes && (
+													<p className="text-[10px] text-slate-400 font-medium italic mt-1 bg-slate-50 p-1.5 rounded-lg border border-slate-100/50">
+														Remarks: {ref.notes}
+													</p>
+												)}
+											</div>
+										))}
+									</div>
+								)}
 							</div>
 						</div>
 

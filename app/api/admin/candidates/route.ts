@@ -34,6 +34,8 @@ export async function POST(request: NextRequest) {
 			testLocation: validated.testLocation || "home",
 			hiringLocation: validated.hiringLocation || undefined,
 			vacancyId: validated.vacancyId || undefined,
+			experiences: validated.experiences,
+			references: validated.references,
 		});
 
 		logSecurityEvent({

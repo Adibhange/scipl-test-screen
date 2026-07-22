@@ -160,6 +160,8 @@ export async function preRegisterCandidateByAdmin(input: {
 	testLocation?: string;
 	hiringLocation?: string;
 	vacancyId?: string;
+	experiences?: any[];
+	references?: any[];
 }) {
 	// 1. Resolve role & experience values to UUIDs using metadata adapter
 	const metadataAdapter = getDatabaseAdapter().metadata;
