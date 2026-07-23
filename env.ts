@@ -31,6 +31,8 @@ const serverEnvResult = isServer
 			DATABASE_URL: process.env.DATABASE_URL,
 			SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
 			NODE_ENV: process.env.NODE_ENV,
+			MASTER_CODE_HASH: process.env.MASTER_CODE_HASH,
+			MASTER_SESSION_SECRET: process.env.MASTER_SESSION_SECRET,
 	  })
 	: null;
 

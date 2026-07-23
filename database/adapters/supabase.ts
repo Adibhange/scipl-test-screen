@@ -1002,7 +1002,7 @@ export const supabaseAdapter: IDatabaseAdapter = {
 			return data;
 		},
 
-		async create(data: { candidate_id: string; validity_hours: 1 | 6 | 12; created_by: string; expires_at: string }) {
+		async create(data: { candidate_id: string; validity_hours: 1 | 12 | 24; created_by: string; expires_at: string }) {
 			const { data: record, error } = await getSupabaseServerClient()
 				.from("candidate_shares")
 				.insert({

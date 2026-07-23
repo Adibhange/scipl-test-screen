@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const GenerateShareLinkSchema = z.object({
-	validityHours: z.union([z.literal(1), z.literal(6), z.literal(12)]).default(6),
+	validityHours: z.union([z.literal(1), z.literal(12), z.literal(24)]).default(12),
 });
 
 export type GenerateShareLinkInput = z.infer<typeof GenerateShareLinkSchema>;

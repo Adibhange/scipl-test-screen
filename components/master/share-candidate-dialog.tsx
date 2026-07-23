@@ -25,8 +25,8 @@ import { ApiError } from "@/lib/api-client";
 
 const VALIDITY_OPTIONS: { value: ShareValidityHours; label: string }[] = [
 	{ value: 1, label: "1 Hour" },
-	{ value: 6, label: "6 Hours" },
 	{ value: 12, label: "12 Hours" },
+	{ value: 24, label: "24 Hours" },
 ];
 
 function formatTimestamp(value: string) {
@@ -55,7 +55,7 @@ export function ShareCandidateDialog({
 	const [loading, setLoading] = useState(false);
 	const [busy, setBusy] = useState(false);
 	const [share, setShare] = useState<ShareRecord | null>(null);
-	const [validity, setValidity] = useState<ShareValidityHours>(6);
+	const [validity, setValidity] = useState<ShareValidityHours>(12);
 
 	useEffect(() => {
 		if (!open) return;

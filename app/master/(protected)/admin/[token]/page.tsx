@@ -6,20 +6,9 @@ import { getQuestionsByIds } from "@/repositories/question.repository";
 import { getCandidateDocumentStatusMap } from "@/repositories/candidate-document.repository";
 import { CandidateDetailWrapper } from "@/components/admin/candidates/candidate-detail-wrapper";
 import CandidateDetailLoading from "@/app/admin/(dashboard)/[id]/loading";
-import type { AdminUser } from "@/repositories/admin.repository";
+import { MASTER_ACTOR } from "@/lib/write-actor";
 
 export const dynamic = "force-dynamic";
-
-/** Synthetic actor passed into the reused Admin candidate view. Master gets
- * unrestricted "hr"-equivalent edit rights (Feature 5) via this actor —
- * the underlying write endpoints authorize Master sessions separately
- * (see `lib/write-actor.ts`), so this is display-only, not a security boundary. */
-const MASTER_VIEW_ACTOR: AdminUser = {
-	userId: "master",
-	email: "master@internal",
-	name: "Master",
-	role: "hr",
-};
 
 function ShareLinkExpiredNotice() {
 	return (
@@ -79,5 +68,5 @@ async function SharedCandidateContent({ candidateId }: { candidateId: string }) 
 		? await getCandidateDocumentStatusMap(result.candidate.id)
 		: { resume: { uploaded: false, uploadedAt: null }, application_form: { uploaded: false, uploadedAt: null }, passport_photo: { uploaded: false, uploadedAt: null } };
 
-	return <CandidateDetailWrapper result={result} items={items} admin={MASTER_VIEW_ACTOR} documentStatus={documentStatus} />;
+	return <CandidateDetailWrapper result={result} items={items} admin={MASTER_ACTOR} documentStatus={documentStatus} />;
 }

@@ -368,6 +368,10 @@ export function CandidateDetailWrapper({
 	const badgeVariant: StatusVariant = 
 		computedStatus === "in_interview" ? "interviewing" : (computedStatus as StatusVariant);
 
+	// MASTER_ACTOR (lib/write-actor.ts) always has userId "master" — a real
+	// Supabase admin's userId is always a UUID, so this never false-positives.
+	const dashboardBasePath = admin.userId === "master" ? "/master" : "/admin";
+
 	const sortedRounds = [
 		{ key: "face_to_face" as const, label: "Round 1 · Face-to-Face Interview", round: result.interviewRounds?.face_to_face, defaultOrder: 1 },
 		{ key: "assessment" as const, label: "Round 2 · Technical Assessment", round: result.interviewRounds?.assessment, defaultOrder: 2 },
@@ -380,7 +384,7 @@ export function CandidateDetailWrapper({
 				<PageContainer>
 					<div className="flex flex-col gap-4 border-b border-border/45 pb-4">
 						<Link
-							href='/admin'
+							href={dashboardBasePath}
 							className='flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors w-fit'>
 							<ArrowLeft className="h-3.5 w-3.5" /> Back to candidate pipeline
 						</Link>

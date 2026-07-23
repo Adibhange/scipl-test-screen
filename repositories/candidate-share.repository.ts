@@ -1,7 +1,7 @@
 import { getDatabaseAdapter } from "@/database/client";
 import { ConflictError, NotFoundError } from "@/lib/errors";
 
-export type ShareValidityHours = 1 | 6 | 12;
+export type ShareValidityHours = 1 | 12 | 24;
 
 export type ShareStatus = "active" | "revoked" | "expired" | "none";
 

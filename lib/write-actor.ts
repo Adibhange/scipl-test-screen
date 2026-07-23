@@ -15,7 +15,7 @@ import { getCurrentMaster } from "@/repositories/master.repository";
  */
 export type WriteActor = AdminUser & { isMaster: boolean };
 
-const MASTER_ACTOR: WriteActor = {
+export const MASTER_ACTOR: WriteActor = {
 	userId: "master",
 	email: "master@internal",
 	name: "Master",

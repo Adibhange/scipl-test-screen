@@ -19,6 +19,8 @@ interface CandidateCardProps {
 	activeRoles: Array<{ value: string; label: string }>;
 	activeExperiences: Array<{ value: string; label: string }>;
 	activeHiringLocations: Array<{ value: string; label: string }>;
+	/** Defaults to "/admin" — Master's dashboard passes "/master/candidates" instead. */
+	basePath?: string;
 }
 
 function getCurrentRoundLabel(result: CandidateResult) {
@@ -35,6 +37,7 @@ export function CandidateCard({
 	activeRoles,
 	activeExperiences,
 	activeHiringLocations,
+	basePath = "/admin",
 }: CandidateCardProps) {
 	const initials = result.candidate.name
 		.split(" ")
@@ -58,7 +61,7 @@ export function CandidateCard({
 	const formattedDate = formatCompletionDate(firstRoundDate);
 
 	return (
-		<Link href={`/admin/${result.id}`} className="group block h-full animate-fade-in focus:outline-none">
+		<Link href={`${basePath}/${result.id}`} className="group block h-full animate-fade-in focus:outline-none">
 			<article className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-card p-5 shadow-xs hover:shadow-md hover:border-slate-200 dark:hover:border-slate-700 transition-all duration-300">
 				
 				{/* 1. Header Section */}

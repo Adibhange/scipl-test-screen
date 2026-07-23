@@ -92,7 +92,7 @@ export interface ICandidateSharesAdapter {
 	getByToken(token: string): Promise<any>;
 	create(data: {
 		candidate_id: string;
-		validity_hours: 1 | 6 | 12;
+		validity_hours: 1 | 12 | 24;
 		created_by: string;
 		expires_at: string;
 	}): Promise<any>;
