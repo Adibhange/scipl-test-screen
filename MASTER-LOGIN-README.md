@@ -42,12 +42,14 @@ git apply master-login-full.patch
   timestamp, never leaks *why* a token failed).
 - `POST/GET/DELETE /api/candidates/[id]/share` — usable by **both** Admin and
   Master sessions (Feature 14), rate-limited, audit-logged.
-- `ShareCandidateDialog` — the Feature 13 dialog: validity radios (1/6/12h,
-  default 6h), active-link status/expiry/access-count/**created-by**, Copy
+- `ShareCandidateDialog` — the Feature 13 dialog: validity radios (**1/12/24h**,
+  default 12h), active-link status/expiry/access-count/**created-by**, Copy
   Link, Revoke Link (shows **revoked-by** once revoked), and a disabled
   "Generate New Link" while a link is active. (Created-by/revoked-by were
   captured from the start but only surfaced in the UI after an explicit
-  audit pass against the Share Analytics deliverable.)
+  audit pass against the Share Analytics deliverable. Validity options were
+  changed from 1/6/12h to 1/12/24h per a later requirements update — see
+  `supabase/migrations/20260726_share_validity_1_12_24.sql`.)
 - Wired the Share button onto the **existing Admin candidate detail page**
   for every admin role.
 - Master dashboard (`/master`) now server-renders real data: candidate
@@ -125,10 +127,11 @@ If unset, `/api/auth/master` returns `503 NOT_CONFIGURED` instead of failing ope
 
 ## Database migrations
 
-Run both, in order, before using Phases 2–4:
+Run all three, in order:
 ```
 supabase/migrations/20260723_master_login_candidate_shares.sql
 supabase/migrations/20260725_candidate_documents.sql
+supabase/migrations/20260726_share_validity_1_12_24.sql
 ```
 
 ## Build verification performed in this environment
@@ -180,6 +183,32 @@ supabase/migrations/20260725_candidate_documents.sql
 - [ ] Replacing an existing document works, and the old file is gone from the `candidate-documents` bucket afterward.
 - [ ] Delete asks for confirmation, then removes the file and flips the row back to "Not uploaded".
 - [ ] A non-HR admin role (interviewer/director) can View but has no Upload/Delete controls; Master (and HR) can do both.
+
+## Phase 5 — Fixes from real-world setup (env bug, dashboard reuse, validity change)
+
+- **Critical fix: `env.ts` wiring bug.** `MASTER_CODE_HASH` and
+  `MASTER_SESSION_SECRET` were added to the Zod schema but never actually
+  passed into the `safeParse({...})` call that reads `process.env` — so
+  Master Login reported "not configured" no matter what was in
+  `.env.local`. This was the root cause of the entire setup back-and-forth;
+  fixed now.
+- **Master Login lands on the real Admin dashboard.** The candidate
+  results dashboard (metrics, filters, grid) was extracted into a shared
+  `CandidateDashboard` component (`components/admin/dashboard/candidate-dashboard.tsx`),
+  parameterized by `basePath`. `/admin` and `/master` now render the
+  *identical* dashboard — Master no longer gets a separate, simplified
+  page.
+- **`/master/candidates/[id]`** — Master can now click any candidate
+  directly from its own dashboard and land on the full detail/edit view,
+  without needing an Admin-generated share link first (Master already has
+  unrestricted access per Feature 5). This is separate from
+  `/master/admin/[token]`, which remains how an *Admin-shared* link is
+  opened — that flow is unchanged and still requires Master Login.
+- **Validity options changed to 1/12/24 hours** (default 12h), replacing
+  1/6/12h. Since the first migration's `validity_hours` check constraint
+  was likely already applied to a live database, this ships as a new
+  migration (`20260726_share_validity_1_12_24.sql`) rather than an edit to
+  migration history — run it after the first one.
 
 ## Known limitations (honest gaps, not oversights)
 
