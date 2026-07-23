@@ -18,8 +18,10 @@ import {
 	Phone,
 	Mail,
 	MapPin,
+	Briefcase,
 	ChevronRight,
 	ShieldAlert,
+	ShieldCheck,
 } from "lucide-react";
 import type { Candidate } from "@/types/candidate";
 
@@ -112,7 +114,6 @@ export function CandidateForm({
 
 	useEffect(() => {
 		if (submitError && submitError.includes("already completed")) {
-			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setIsLocked(true);
 		}
 	}, [submitError]);
@@ -160,16 +161,16 @@ export function CandidateForm({
 
 	if (loading) {
 		return (
-			<Card className='w-full max-w-3xl bg-white/70 backdrop-blur-xl rounded-3xl border border-slate-100 p-12 mx-auto flex items-center justify-center min-h-[400px]'>
-				<span className='h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin' />
+			<Card className='w-full max-w-3xl bg-white rounded-2xl border border-border shadow-2xl p-12 mx-auto flex items-center justify-center min-h-[400px]'>
+				<span className='h-8 w-8 border-4 border-brand-indigo-icon border-t-transparent rounded-full animate-spin' />
 			</Card>
 		);
 	}
 
 	if (isNoVacanciesWarningOpen) {
 		return (
-			<Card className='w-full max-w-3xl bg-white/70 backdrop-blur-xl rounded-3xl border border-slate-100 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.08)] p-8 md:p-12 relative overflow-hidden mx-auto flex flex-col justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-200'>
-				<div className='absolute top-0 left-0 right-0 h-1.5 bg-amber-500' />
+			<Card className='w-full max-w-3xl bg-white rounded-2xl border border-border shadow-2xl p-8 md:p-12 relative overflow-hidden mx-auto flex flex-col justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-200'>
+				<div className='absolute top-0 left-0 right-0 h-2 bg-amber-500' />
 				<CardContent className='p-0 flex flex-col items-center text-center py-12 px-6'>
 					<div className='w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mb-6 border border-amber-100/50 shadow-xs shrink-0'>
 						<ShieldAlert className='w-8 h-8 text-amber-600' />
@@ -177,7 +178,7 @@ export function CandidateForm({
 					<h2 className='text-2xl font-extrabold text-slate-900 tracking-tight'>
 						No Active Vacancies
 					</h2>
-					<p className='text-xs text-slate-550 mt-3 max-w-sm leading-relaxed font-semibold'>
+					<p className='text-sm text-slate-500 mt-3 max-w-sm leading-relaxed font-semibold'>
 						No active vacancies are currently open. Please check back later.
 					</p>
 				</CardContent>
@@ -187,8 +188,8 @@ export function CandidateForm({
 
 	if (isLocked) {
 		return (
-			<Card className='w-full max-w-3xl bg-white/70 backdrop-blur-xl rounded-3xl border border-slate-100 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.08)] p-8 md:p-12 relative overflow-hidden mx-auto flex flex-col justify-center min-h-[500px] animate-in fade-in zoom-in-95 duration-200'>
-				<div className='absolute top-0 left-0 right-0 h-1.5 bg-linear-to-r from-indigo-500 to-purple-500' />
+			<Card className='w-full max-w-3xl bg-white rounded-2xl border border-border shadow-2xl p-8 md:p-12 relative overflow-hidden mx-auto flex flex-col justify-center min-h-[500px] animate-in fade-in zoom-in-95 duration-200'>
+				<div className='absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#0a0847] to-[#3d0f96]' />
 				<CardContent className='p-0 flex flex-col items-center text-center py-12 px-6'>
 					<div className='w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-6 border border-red-100/50 shadow-xs shrink-0'>
 						<ShieldAlert className='w-8 h-8 text-red-600' />
@@ -196,10 +197,10 @@ export function CandidateForm({
 					<h2 className='text-2xl font-extrabold text-slate-900 tracking-tight'>
 						Assessment Completed
 					</h2>
-					<p className='text-xs text-slate-500 mt-3 max-w-sm leading-relaxed font-semibold'>
+					<p className='text-sm text-slate-500 mt-3 max-w-sm leading-relaxed font-semibold'>
 						You have already completed the assessment for this specific vacancy.
 					</p>
-					<div className='w-full pt-8 mt-8 border-t border-slate-100'>
+					<div className='w-full pt-8 mt-8 border-t border-border'>
 						<Button
 							type='button'
 							variant='outline'
@@ -214,7 +215,7 @@ export function CandidateForm({
 								setIsLocked(false);
 								onSubmitError(null);
 							}}
-							className='w-full cursor-pointer rounded-xl text-xs font-bold h-10 border-slate-200 hover:bg-slate-50'>
+							className='w-full h-11 rounded-xl text-sm font-bold'>
 							Change Vacancy Details
 						</Button>
 					</div>
@@ -224,30 +225,35 @@ export function CandidateForm({
 	}
 
 	return (
-		<Card className='w-full max-w-3xl bg-white/70 backdrop-blur-xl rounded-3xl border border-slate-100 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.08)] p-8 md:p-12 relative overflow-hidden mx-auto'>
-			<div className='absolute top-0 left-0 right-0 h-1.5 bg-linear-to-r from-indigo-500 to-purple-500' />
-			<CardContent className='p-0'>
-				<div className='mb-8 text-left'>
-					<h2 className='font-serif font-extrabold text-2xl tracking-wide text-slate-900'>
-						Applicant Details
-					</h2>
-					<p className='text-xs text-slate-500 mt-1 font-semibold'>
-						Enter your basic credentials below.
-					</p>
+		<Card className='w-full max-w-3xl overflow-hidden bg-white rounded-2xl border border-border shadow-2xl mx-auto'>
+			<div className='h-2 w-full bg-gradient-to-r from-[#0a0847] to-[#3d0f96]' />
+			<CardContent className='p-8 md:p-10'>
+				<div className='mb-9 flex items-center gap-5'>
+					<div className='flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-indigo-icon-bg'>
+						<User className='h-6 w-6 text-brand-indigo-icon' strokeWidth={1.7} />
+					</div>
+					<div>
+						<h2 className='text-2xl font-bold text-brand-navy'>
+							Applicant Details
+						</h2>
+						<p className='text-base text-muted-foreground mt-0.5'>
+							Enter your basic credentials below.
+						</p>
+					</div>
 				</div>
 
-				<form onSubmit={submit} className='space-y-6'>
-					<div className='grid sm:grid-cols-2 gap-x-4 gap-y-5'>
+				<form onSubmit={submit} className='space-y-7'>
+					<div className='grid sm:grid-cols-2 gap-x-6 gap-y-7'>
 						{/* First Name */}
-						<div className='space-y-1.5'>
-							<Label className='flex items-center gap-1.5 text-xs font-bold text-slate-600'>
-								<User className='h-3.5 w-3.5 text-slate-400' />
-								First Name
+						<div className='space-y-2'>
+							<Label className='flex items-center gap-1.5 text-base'>
+								<User className='h-4 w-4 text-muted-foreground' />
+								First Name <span className='text-red-500'>*</span>
 							</Label>
 							<Input
 								value={firstName}
-								placeholder='John'
-								className='h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold focus:bg-white focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/15 outline-none transition-all'
+								placeholder='Enter first name'
+								className='h-13 text-base'
 								onChange={(e) =>
 									handleChange("name", `${e.target.value} ${surname}`.trim())
 								}
@@ -255,15 +261,15 @@ export function CandidateForm({
 						</div>
 
 						{/* Surname */}
-						<div className='space-y-1.5'>
-							<Label className='flex items-center gap-1.5 text-xs font-bold text-slate-600'>
-								<User className='h-3.5 w-3.5 text-slate-400' />
-								Surname
+						<div className='space-y-2'>
+							<Label className='flex items-center gap-1.5 text-base'>
+								<User className='h-4 w-4 text-muted-foreground' />
+								Surname <span className='text-red-500'>*</span>
 							</Label>
 							<Input
 								value={surname}
-								placeholder='Doe'
-								className='h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold focus:bg-white focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/15 outline-none transition-all'
+								placeholder='Enter surname'
+								className='h-13 text-base'
 								onChange={(e) =>
 									handleChange("name", `${firstName} ${e.target.value}`.trim())
 								}
@@ -271,45 +277,46 @@ export function CandidateForm({
 						</div>
 
 						{/* Mobile */}
-						<div className='space-y-1.5'>
-							<Label className='flex items-center gap-1.5 text-xs font-bold text-slate-600'>
-								<Phone className='h-3.5 w-3.5 text-slate-400' />
-								Mobile Number
+						<div className='space-y-2'>
+							<Label className='flex items-center gap-1.5 text-base'>
+								<Phone className='h-4 w-4 text-muted-foreground' />
+								Mobile Number <span className='text-red-500'>*</span>
 							</Label>
-							<div className='relative'>
-								<span className='absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold select-none'>
+							<div className='flex gap-2'>
+								<span className='flex h-13 w-16 shrink-0 items-center justify-center rounded-lg border border-input bg-muted text-base font-semibold text-muted-foreground'>
 									+91
 								</span>
 								<Input
 									value={form.mobile}
 									maxLength={10}
 									inputMode='numeric'
-									className='pl-12 h-10 rounded-xl border border-slate-200 bg-slate-50 py-2 text-xs font-semibold focus:bg-white focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/15 outline-none transition-all'
-									placeholder='9876543210'
+									className='h-13 flex-1 text-base'
+									placeholder='Enter mobile number'
 									onChange={(e) => handleMobileChange(e.target.value)}
 								/>
 							</div>
 						</div>
 
 						{/* Email */}
-						<div className='space-y-1.5'>
-							<Label className='flex items-center gap-1.5 text-xs font-bold text-slate-600'>
-								<Mail className='h-3.5 w-3.5 text-slate-400' />
-								Email Address
+						<div className='space-y-2'>
+							<Label className='flex items-center gap-1.5 text-base'>
+								<Mail className='h-4 w-4 text-muted-foreground' />
+								Email Address <span className='text-red-500'>*</span>
 							</Label>
 							<Input
 								type='email'
 								value={form.email}
-								placeholder='john.doe@example.com'
-								className='h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold focus:bg-white focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/15 outline-none transition-all'
+								placeholder='Enter email address'
+								className='h-13 text-base'
 								onChange={(e) => handleEmailChange(e.target.value)}
 							/>
 						</div>
 
 						{/* Single Job Vacancy Dropdown with absolute popover portal */}
-						<div className='space-y-1.5 sm:col-span-2'>
-							<Label htmlFor='vacancy-select' className='text-xs font-bold text-slate-600'>
-								Select Available Job Vacancy
+						<div className='space-y-2 sm:col-span-2'>
+							<Label htmlFor='vacancy-select' className='flex items-center gap-1.5 text-base'>
+								<Briefcase className='h-4 w-4 text-muted-foreground' />
+								Select Available Job Vacancy <span className='text-red-500'>*</span>
 							</Label>
 							<Select
 								value={form.vacancyId}
@@ -326,21 +333,15 @@ export function CandidateForm({
 									}
 								}}
 							>
-								<SelectTrigger id='vacancy-select' className='h-10 rounded-xl border-slate-200 bg-white w-full text-xs font-semibold text-slate-700 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500'>
-									<SelectValue placeholder='Select active vacancy…' />
+								<SelectTrigger id='vacancy-select' className='h-13 w-full text-base'>
+									<SelectValue placeholder='Select active vacancy...' />
 								</SelectTrigger>
-								<SelectContent
-									className='rounded-2xl border-slate-200 shadow-xl p-1 bg-white'
-									position='popper'
-									sideOffset={6}>
+								<SelectContent position='popper' sideOffset={6}>
 									{vacanciesList.map((v) => {
 										const rObj = rolesList.find((r) => r.value === v.role);
 										const eObj = experienceList.find((e) => e.value === v.experience);
 										return (
-											<SelectItem
-												key={v.id}
-												value={v.id}
-												className='rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 focus:bg-indigo-50 focus:text-indigo-700 data-[state=checked]:bg-indigo-50 data-[state=checked]:text-indigo-700'>
+											<SelectItem key={v.id} value={v.id}>
 												{rObj?.label || v.role} ({eObj?.label || v.experience} Years Experience)
 											</SelectItem>
 										);
@@ -350,33 +351,27 @@ export function CandidateForm({
 						</div>
 
 						{/* Dependent Location Selection with absolute popover portal */}
-						<div className='space-y-1.5 sm:col-span-2'>
-							<Label htmlFor='test-location-select' className='flex items-center gap-1.5 text-xs font-bold text-slate-600'>
-								<MapPin className='h-3.5 w-3.5 text-slate-400' />
-								Assessment Location
+						<div className='space-y-2 sm:col-span-2'>
+							<Label htmlFor='test-location-select' className='flex items-center gap-1.5 text-base'>
+								<MapPin className='h-4 w-4 text-muted-foreground' />
+								Assessment Location <span className='text-red-500'>*</span>
 							</Label>
 							<Select
 								value={form.testLocation}
 								onValueChange={(v) => handleChange("testLocation", v)}
 								disabled={!form.vacancyId}>
-								<SelectTrigger id='test-location-select' className='h-10 rounded-xl border-slate-200 bg-white w-full text-xs font-semibold text-slate-700 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:bg-slate-50'>
+								<SelectTrigger id='test-location-select' className='h-13 w-full text-base disabled:opacity-50'>
 									<SelectValue
 										placeholder={
 											form.vacancyId ?
-												"Select location…"
+												"Select assessment location..."
 												: "Select vacancy first"
 										}
 									/>
 								</SelectTrigger>
-								<SelectContent
-									className='rounded-2xl border-slate-200 shadow-xl p-1 bg-white'
-									position='popper'
-									sideOffset={6}>
+								<SelectContent position='popper' sideOffset={6}>
 									{activeVacancyLocations.map((loc) => (
-										<SelectItem
-											key={loc.value}
-											value={loc.value}
-											className='rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 focus:bg-indigo-50 data-[state=checked]:bg-indigo-50 data-[state=checked]:text-indigo-700'>
+										<SelectItem key={loc.value} value={loc.value}>
 											{loc.label}
 										</SelectItem>
 									))}
@@ -386,11 +381,12 @@ export function CandidateForm({
 					</div>
 
 					{/* Action Buttons */}
-					<div className='flex flex-col gap-4 border-t border-slate-100 pt-6 mt-6'>
+					<div className='pt-2'>
 						<Button
 							type='submit'
 							disabled={isSubmitting}
-							className='w-full h-11 bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-slate-800 hover:to-indigo-900 text-white rounded-xl text-xs font-bold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-1.5 cursor-pointer'>
+							size='lg'
+							className='w-full h-14 text-base bg-gradient-to-r from-[#0a0847] to-[#3d0f96] text-white hover:opacity-95 flex items-center justify-center gap-1.5'>
 							{isSubmitting ? (
 								<span className='flex items-center gap-2'>
 									<span className='h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
@@ -399,12 +395,17 @@ export function CandidateForm({
 							) : (
 								<>
 									Start Your Assessment
-									<ChevronRight className='h-3.5 w-3.5' />
+									<ChevronRight className='h-5 w-5' />
 								</>
 							)}
 						</Button>
 					</div>
 				</form>
+
+				<p className='mt-6 flex items-center justify-center gap-1.5 text-sm text-muted-foreground'>
+					<ShieldCheck className='h-4 w-4' />
+					All information you provide is secure and confidential.
+				</p>
 			</CardContent>
 		</Card>
 	);

@@ -10,10 +10,11 @@ export * from "./status-filter";
 export * from "./role-filter";
 
 export interface FilterOptions {
-  status?: string | null;
+  evaluation?: string | null;
   role?: string | null;
   round?: string | null;
-  testLocation?: string | null;
+  hiringStatus?: string | null;
+  hiringLocation?: string | null;
   searchTerm?: string | null;
   dateRange?: string | null;
   startDate?: string | null;
@@ -80,18 +81,27 @@ export function filterResults(
   // 3. Role Filter
   filtered = filterResultsByRole(filtered, options.role);
 
-  // 4. Status Filter
-  filtered = filterResultsByStatus(filtered, options.status);
+  // 4. Evaluation Status Filter
+  filtered = filterResultsByStatus(filtered, options.evaluation);
+
+  // 4b. Hiring Status Filter
+  if (options.hiringStatus && options.hiringStatus !== "all") {
+    filtered = filtered.filter((r) => {
+      const computed = computeCandidateStatus(r);
+      const filterVal = options.hiringStatus === "hold" ? "on_hold" : options.hiringStatus;
+      return computed === filterVal;
+    });
+  }
 
   // 5. Round Filter
   if (options.round && options.round !== "all") {
     filtered = filtered.filter((r) => getCurrentRoundKey(r) === options.round);
   }
 
-  // 6. Test Location Filter
-  if (options.testLocation && options.testLocation !== "all") {
+  // 6. Hiring Location Filter
+  if (options.hiringLocation && options.hiringLocation !== "all") {
     filtered = filtered.filter(
-      (r) => (r.candidate.testLocation ?? "home") === options.testLocation
+      (r) => r.candidate.hiringLocation === options.hiringLocation
     );
   }
 

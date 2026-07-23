@@ -22,7 +22,7 @@ const AddCandidateDialog = nextDynamic(
 );
 
 import { ResultsFilterBar } from "@/components/admin/dashboard/results-filter-bar";
-import { filterResults, computeCandidateStatus, getCurrentRoundKey } from "@/lib/filters";
+import { filterResults, computeCandidateStatus } from "@/lib/filters";
 import { logger } from "@/lib/logger";
 import { ROLES } from "@/constants/roles";
 import { EXPERIENCE_LEVELS } from "@/constants/experience";
@@ -36,8 +36,8 @@ import { ExportExcelButton } from "@/components/admin/dashboard/export-excel-but
 import {
 	UsersRound,
 	Route,
-	ClipboardCheck,
 	BadgeCheck,
+	UserX,
 } from "lucide-react";
 import { PageContainer, PageHeader, EmptyState } from "@/components/ui/layout-primitives";
 import { MetricCard, InfoGrid } from "@/components/ui/enterprise-primitives";
@@ -50,10 +50,11 @@ export default async function AdminPage({
 	searchParams,
 }: {
 	searchParams: Promise<{
-		status?: string;
+		search?: string;
+		evaluation?: string;
 		role?: string;
 		round?: string;
-		testLocation?: string;
+		hiringStatus?: string;
 		hiringLocation?: string;
 		dateRange?: string;
 		startDate?: string;
@@ -75,10 +76,11 @@ async function CandidateDashboardContent({
 	admin,
 }: {
 	searchParams: Promise<{
-		status?: string;
+		search?: string;
+		evaluation?: string;
 		role?: string;
 		round?: string;
-		testLocation?: string;
+		hiringStatus?: string;
 		hiringLocation?: string;
 		dateRange?: string;
 		startDate?: string;
@@ -143,36 +145,61 @@ async function CandidateDashboardContent({
 			)
 		:	results;
 	const {
-		status = "all",
+		search = "",
+		evaluation = "all",
 		role = "all",
 		round = "all",
-		testLocation = "all",
-		hiringLocation = "",
+		hiringStatus = "all",
+		hiringLocation = "all",
 		dateRange = "all",
 		startDate = "",
 		endDate = "",
 	} = await searchParams;
-	const pendingResults = scopedResults.filter(
-		(result) => result.totalMarksAwarded === undefined,
-	);
-	const evaluatedResults = scopedResults.filter(
-		(result) => result.totalMarksAwarded !== undefined,
-	);
-	const statusResults =
-		status === "pending" ? pendingResults
-		: status === "evaluated" ? evaluatedResults
-		: scopedResults;
 
 	const visibleResults = filterResults(scopedResults, {
-		status,
+		evaluation,
 		role,
 		round,
-		testLocation,
-		searchTerm: hiringLocation,
+		hiringStatus,
+		hiringLocation,
+		searchTerm: search,
 		dateRange,
 		startDate,
 		endDate,
 	});
+
+	// Dynamic counts calculations for selector dropdown options
+	const filteredForCounts = scopedResults.filter(r => {
+		if (evaluation !== "all") {
+			const isEvaluated = r.totalMarksAwarded !== undefined;
+			if (evaluation === "pending" && isEvaluated) return false;
+			if (evaluation === "evaluated" && !isEvaluated) return false;
+		}
+		if (hiringStatus !== "all") {
+			const computed = computeCandidateStatus(r);
+			const filterVal = hiringStatus === "hold" ? "on_hold" : hiringStatus;
+			if (computed !== filterVal) return false;
+		}
+		if (hiringLocation !== "all") {
+			if (r.candidate.hiringLocation !== hiringLocation) return false;
+		}
+		return true;
+	});
+
+	const roleCounts = Object.fromEntries([
+		["all", filteredForCounts.length],
+		...activeRoles.map((r) => [
+			r.value,
+			filteredForCounts.filter((result) => result.candidate.role === r.value).length,
+		]),
+	]);
+
+	const evaluationCounts = {
+		all: scopedResults.length,
+		pending: scopedResults.filter((result) => result.totalMarksAwarded === undefined).length,
+		evaluated: scopedResults.filter((result) => result.totalMarksAwarded !== undefined).length,
+	};
+
 	const metrics: Array<{
 		label: string;
 		value: number;
@@ -183,30 +210,31 @@ async function CandidateDashboardContent({
 			label: "Total Candidates",
 			value: scopedResults.length,
 			Icon: UsersRound,
-			tone: "bg-indigo-50 text-indigo-600",
+			tone: "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400",
 		},
 		{
 			label: "In Interview",
 			value: scopedResults.filter(
-				(r) => getCurrentRoundKey(r) !== "face_to_face" && computeCandidateStatus(r) !== "rejected",
+				(r) => computeCandidateStatus(r) === "in_interview"
 			).length,
 			Icon: Route,
-			tone: "bg-sky-50 text-sky-600",
-		},
-		{
-			label: "Awaiting Evaluation",
-			value: pendingResults.filter(
-				(r) => computeCandidateStatus(r) !== "rejected",
-			).length,
-			Icon: ClipboardCheck,
-			tone: "bg-amber-50 text-amber-600",
+			tone: "bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400",
 		},
 		{
 			label: "Hired",
-			value: scopedResults.filter((r) => r.candidate.hiringStatus === "hired")
-				.length,
+			value: scopedResults.filter(
+				(r) => computeCandidateStatus(r) === "hired"
+			).length,
 			Icon: BadgeCheck,
-			tone: "bg-emerald-50 text-emerald-600",
+			tone: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400",
+		},
+		{
+			label: "Rejected",
+			value: scopedResults.filter(
+				(r) => computeCandidateStatus(r) === "rejected"
+			).length,
+			Icon: UserX,
+			tone: "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400",
 		},
 	];
 
@@ -237,43 +265,33 @@ async function CandidateDashboardContent({
 			/>
 
 			{/* Metric Cards Grid */}
-			<InfoGrid cols={4}>
-				{metrics.map(({ label, value, Icon }) => (
+			<InfoGrid cols={4} className="gap-6 my-6 md:my-8">
+				{metrics.map(({ label, value, Icon, tone }) => (
 					<MetricCard
 						key={label}
 						title={label}
 						value={value}
 						icon={Icon}
+						iconClassName={tone}
 					/>
 				))}
 			</InfoGrid>
 
 			{/* Filter & Search Toolbar */}
 			<ResultsFilterBar
-				status={status}
+				evaluation={evaluation}
 				role={role}
-				statusCounts={{
-					all: scopedResults.length,
-					pending: pendingResults.length,
-					evaluated: evaluatedResults.length,
-				}}
-				roleCounts={Object.fromEntries([
-					["all", statusResults.length],
-					...activeRoles.map((role) => [
-						role.value,
-						statusResults.filter(
-							(result) => result.candidate.role === role.value,
-						).length,
-					]),
-				])}
 				round={round}
-				testLocation={testLocation}
+				hiringStatus={hiringStatus}
 				hiringLocation={hiringLocation}
+				search={search}
 				rolesList={activeRoles}
-				testLocationsList={activeTestLocations}
+				hiringLocationsList={activeHiringLocations}
 				dateRange={dateRange}
 				startDate={startDate}
 				endDate={endDate}
+				roleCounts={roleCounts}
+				evaluationCounts={evaluationCounts}
 			/>
 
 			{/* Candidate Grid */}
@@ -292,7 +310,6 @@ async function CandidateDashboardContent({
 								result={r}
 								activeRoles={activeRoles}
 								activeExperiences={activeExperiences}
-								activeTestLocations={activeTestLocations}
 								activeHiringLocations={activeHiringLocations}
 							/>
 						))}

@@ -27,10 +27,6 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -50,6 +46,15 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-navy-footer: var(--brand-navy-footer);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-gold-dark: var(--brand-gold-dark);
+  --color-brand-gold-light: var(--brand-gold-light);
+  --color-brand-indigo-icon: var(--brand-indigo-icon);
+  --color-brand-indigo-icon-bg: var(--brand-indigo-icon-bg);
 }
 
 :root {
@@ -68,10 +73,6 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --success: oklch(0.627 0.194 149.21);
-  --success-foreground: oklch(0.985 0 0);
-  --warning: oklch(0.768 0.184 81.36);
-  --warning-foreground: oklch(0.205 0 0);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -89,6 +90,18 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Sthapatya / SCIPL brand tokens (sampled from reference portal UI) */
+  --brand-navy: #10193a;
+  --brand-navy-footer: #142236;
+  --brand-blue: #24509c;
+  --brand-gold: #b9840f;
+  --brand-gold-dark: #9c6e0b;
+  --brand-gold-light: #fdf3e0;
+  --brand-indigo-icon: #4f46e5;
+  --brand-indigo-icon-bg: #f1eefe;
+  --brand-grad-from: #0a0847;
+  --brand-grad-to: #3d0f96;
 }
 
 .dark {
@@ -107,10 +120,6 @@
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --success: oklch(0.627 0.194 149.21);
-  --success-foreground: oklch(0.205 0 0);
-  --warning: oklch(0.768 0.184 81.36);
-  --warning-foreground: oklch(0.985 0 0);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
@@ -157,12 +166,12 @@
     /* typography */
     font-size: 0.75rem;       /* text-xs */
     font-weight: 600;
-    color: var(--foreground);
+    color: #334155;           /* slate-700 */
     line-height: 1.25;
 
     /* surface */
-    background-color: var(--background);
-    border: 1px solid var(--border);
+    background-color: #fff;
+    border: 1.5px solid #e2e8f0;  /* slate-200 */
 
     /* custom chevron arrow */
     appearance: none;
@@ -180,21 +189,21 @@
   }
 
   .select-field:hover {
-    border-color: var(--ring);
-    background-color: var(--muted);
+    border-color: #a5b4fc;    /* indigo-300 */
+    background-color: #fafafa;
   }
 
   .select-field:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--ring);
-    background-color: var(--background);
+    border-color: #6366f1;    /* indigo-500 */
+    box-shadow: 0 0 0 3px rgb(99 102 241 / 0.12);
+    background-color: #fff;
   }
 
   .select-field:disabled {
     opacity: 0.5;
-    background-color: var(--muted);
+    background-color: #f8fafc;
     cursor: not-allowed;
-    border-color: var(--border);
+    border-color: #e2e8f0;
   }
 
   /* Compact variant — for filter bars & table rows */
@@ -212,16 +221,16 @@
     display: block;
     width: 100%;
     font-weight: 600;
-    color: var(--foreground);
-    background-color: var(--background);
-    border: 1px solid var(--border);
+    color: #334155;
+    background-color: #fff;
+    border: 1.5px solid #e2e8f0;
     cursor: pointer;
     outline: none;
     box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.04);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
-  .select-field-sm:hover  { border-color: var(--ring); background-color: var(--muted); }
-  .select-field-sm:focus  { border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring); }
-  .select-field-sm:disabled { opacity: 0.5; background-color: var(--muted); cursor: not-allowed; border-color: var(--border); }
+  .select-field-sm:hover  { border-color: #a5b4fc; }
+  .select-field-sm:focus  { border-color: #6366f1; box-shadow: 0 0 0 3px rgb(99 102 241 / 0.12); }
+  .select-field-sm:disabled { opacity: 0.5; cursor: not-allowed; }
 }

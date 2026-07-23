@@ -15,7 +15,8 @@ export type StatusVariant =
 	| "draft" 
 	| "active" 
 	| "inactive"
-	| "on_hold";
+	| "on_hold"
+	| "evaluated";
 
 export interface StatusBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 	variant: StatusVariant;
@@ -24,21 +25,40 @@ export interface StatusBadgeProps extends React.HTMLAttributes<HTMLSpanElement> 
 
 export const StatusBadge = React.forwardRef<HTMLSpanElement, StatusBadgeProps>(
 	({ className, variant, label, ...props }, ref) => {
-		const labelText = label || variant.replace("_", " ");
+		let labelText = label || variant.replace("_", " ");
+		if (variant === "interviewing") {
+			labelText = "In Interview";
+		} else if (variant === "on_hold") {
+			labelText = "On Hold";
+		} else if (variant === "evaluated") {
+			labelText = "Evaluated";
+		} else if (variant === "pending") {
+			labelText = "Pending";
+		} else if (variant === "screening") {
+			labelText = "Screening";
+		}
 		
-		const colorClass = 
-			variant === "hired" || variant === "active" || variant === "completed"
-				? "bg-emerald-600 text-white font-bold text-xs uppercase px-3 py-1 rounded-full shadow-sm"
-				: variant === "rejected" || variant === "inactive"
-				? "bg-rose-600 text-white font-bold text-xs uppercase px-3 py-1 rounded-full shadow-sm"
-				: variant === "on_hold"
-				? "bg-amber-600 text-white font-bold text-xs uppercase px-3 py-1 rounded-full shadow-sm"
-				: "bg-indigo-600 text-white font-bold text-xs uppercase px-3 py-1 rounded-full shadow-sm";
+		let colorClass = "";
+		if (variant === "hired" || variant === "active" || variant === "completed" || variant === "evaluated") {
+			colorClass = "bg-emerald-50 text-emerald-700 border border-emerald-200/60 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/40";
+		} else if (variant === "rejected" || variant === "inactive") {
+			colorClass = "bg-rose-50 text-rose-700 border border-rose-200/60 dark:bg-rose-950/20 dark:text-rose-300 dark:border-rose-900/40";
+		} else if (variant === "on_hold" || variant === "pending") {
+			colorClass = "bg-amber-50 text-amber-700 border border-amber-200/60 dark:bg-amber-950/20 dark:text-amber-300 dark:border-amber-900/40";
+		} else if (variant === "interviewing") {
+			colorClass = "bg-sky-50 text-sky-700 border border-sky-200/60 dark:bg-sky-950/20 dark:text-sky-300 dark:border-sky-900/40";
+		} else {
+			colorClass = "bg-slate-50 text-slate-700 border border-slate-200/60 dark:bg-slate-900/60 dark:text-slate-300 dark:border-slate-800";
+		}
 
 		return (
 			<span
 				ref={ref}
-				className={cn("inline-flex items-center shrink-0 tracking-wider", colorClass, className)}
+				className={cn(
+					"inline-flex items-center shrink-0 tracking-wide font-bold text-[10px] uppercase px-2.5 py-0.5 rounded-full select-none shadow-3xs",
+					colorClass,
+					className
+				)}
 				{...props}
 			>
 				{labelText}
@@ -55,6 +75,7 @@ export interface MetricCardProps extends React.HTMLAttributes<HTMLDivElement> {
 	value: string | number;
 	description?: string;
 	icon?: LucideIcon;
+	iconClassName?: string;
 	trend?: {
 		value: string | number;
 		isPositive?: boolean;
@@ -62,26 +83,29 @@ export interface MetricCardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export const MetricCard = React.forwardRef<HTMLDivElement, MetricCardProps>(
-	({ className, title, value, description, icon: Icon, trend, ...props }, ref) => {
+	({ className, title, value, description, icon: Icon, iconClassName, trend, ...props }, ref) => {
 		return (
 			<div
 				ref={ref}
 				className={cn(
-					"rounded-xl border border-border bg-card p-5 shadow-xs text-card-foreground flex flex-col justify-between hover:border-indigo-200 dark:hover:border-indigo-900 transition-colors duration-200",
+					"rounded-2xl border border-slate-100 dark:border-slate-800 bg-card p-6 shadow-xs text-card-foreground flex flex-col justify-between hover:border-slate-200 dark:hover:border-slate-700 hover:shadow-md transition-all duration-300",
 					className
 				)}
 				{...props}
 			>
 				<div>
 					<div className="flex items-center justify-between gap-2">
-						<span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{title}</span>
+						<span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{title}</span>
 						{Icon && (
-							<div className="h-8 w-8 rounded-lg bg-primary/5 text-primary flex items-center justify-center shrink-0">
+							<div className={cn(
+								"h-9 w-9 rounded-xl flex items-center justify-center shrink-0",
+								iconClassName || "bg-primary/5 text-primary"
+							)}>
 								<Icon className="h-4.5 w-4.5" />
 							</div>
 						)}
 					</div>
-					<div className="mt-2 flex items-baseline gap-2">
+					<div className="mt-3 flex items-baseline gap-2">
 						<span className="text-3xl font-extrabold tracking-tight text-foreground">{value}</span>
 						{trend && (
 							<span className={cn(

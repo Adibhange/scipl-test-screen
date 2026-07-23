@@ -11,53 +11,55 @@ import {
   SelectValue,
   SelectSeparator,
 } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
+
 import { DatePicker } from "@/components/ui/date-picker"
 import { Search, Calendar, X, AlertCircle } from "lucide-react"
 
 const itemCls = "rounded-xl py-2 px-3 cursor-pointer text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 focus:bg-indigo-50 data-[state=checked]:bg-indigo-50 data-[state=checked]:text-indigo-700"
-const triggerCls = "h-8 rounded-lg border-slate-200 bg-white text-xs font-semibold text-slate-700 focus:ring-1 focus:ring-indigo-500 shrink-0"
+const triggerCls = "h-9 rounded-lg border-slate-200/80 bg-white text-xs font-semibold text-slate-750 focus-visible:ring-2 focus-visible:ring-indigo-500 shrink-0 shadow-2xs hover:border-slate-300 transition-colors"
 const contentCls = "rounded-2xl border-slate-200 shadow-xl p-1"
 
 export function ResultsFilterBar({
-  status,
+  evaluation,
   role,
-  statusCounts,
-  roleCounts,
   round,
-  testLocation,
+  hiringStatus,
   hiringLocation,
+  search,
   rolesList = [],
-  testLocationsList = [],
+  hiringLocationsList = [],
   dateRange = "all",
   startDate = "",
   endDate = "",
+  roleCounts,
+  evaluationCounts,
 }: {
-  status: string
+  evaluation: string
   role: string
-  statusCounts: Record<string, number>
-  roleCounts: Record<string, number>
   round: string
-  testLocation: string
+  hiringStatus: string
   hiringLocation: string
+  search: string
   rolesList?: Array<{ value: string; label: string }>
-  testLocationsList?: Array<{ value: string; label: string }>
+  hiringLocationsList?: Array<{ value: string; label: string }>
   dateRange?: string
   startDate?: string
   endDate?: string
+  roleCounts: Record<string, number>
+  evaluationCounts: Record<string, number>
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const setIsSyncing = useUiStore((state) => state.setIsSyncing)
 
   // Local state for debounced search input
-  const [localSearch, setLocalSearch] = useState(hiringLocation || "")
-  const [prevHiringLocation, setPrevHiringLocation] = useState(hiringLocation)
+  const [localSearch, setLocalSearch] = useState(search || "")
+  const [prevSearch, setPrevSearch] = useState(search)
 
   // Sync state during render if props change to avoid useEffect set-state warning
-  if (hiringLocation !== prevHiringLocation) {
-    setPrevHiringLocation(hiringLocation)
-    setLocalSearch(hiringLocation || "")
+  if (search !== prevSearch) {
+    setPrevSearch(search)
+    setLocalSearch(search || "")
   }
 
   // Local states for custom date range picker
@@ -96,22 +98,24 @@ export function ResultsFilterBar({
     const params = new URLSearchParams()
     
     const current = {
-      status,
+      evaluation,
       role,
       round,
-      testLocation,
-      hiringLocation: localSearch,
+      hiringStatus,
+      hiringLocation,
+      search: localSearch,
       dateRange,
       startDate,
       endDate,
       ...newParams
     }
 
-    if (current.status !== "all") params.set("status", current.status)
+    if (current.evaluation !== "all") params.set("evaluation", current.evaluation)
     if (current.role !== "all") params.set("role", current.role)
     if (current.round !== "all") params.set("round", current.round)
-    if (current.testLocation !== "all") params.set("testLocation", current.testLocation)
-    if (current.hiringLocation) params.set("hiringLocation", current.hiringLocation)
+    if (current.hiringStatus !== "all") params.set("hiringStatus", current.hiringStatus)
+    if (current.hiringLocation !== "all") params.set("hiringLocation", current.hiringLocation)
+    if (current.search) params.set("search", current.search)
     
     if (current.dateRange !== "all") {
       params.set("dateRange", current.dateRange)
@@ -125,17 +129,17 @@ export function ResultsFilterBar({
     startTransition(() => {
       router.push(query ? `/admin?${query}` : "/admin")
     })
-  }, [status, role, round, testLocation, localSearch, dateRange, startDate, endDate, router])
+  }, [evaluation, role, round, hiringStatus, hiringLocation, localSearch, dateRange, startDate, endDate, router])
 
   // Debounce search input changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (localSearch !== hiringLocation) {
-        updateParams({ hiringLocation: localSearch || null })
+      if (localSearch !== search) {
+        updateParams({ search: localSearch || null })
       }
     }, 400)
     return () => clearTimeout(timer)
-  }, [localSearch, hiringLocation, updateParams])
+  }, [localSearch, search, updateParams])
 
   // Custom date validation
   const validateDates = (start: string, end: string) => {
@@ -174,10 +178,11 @@ export function ResultsFilterBar({
 
   // Determine if any filters differ from default settings
   const isAnyFilterActive =
-    status !== "all" ||
+    evaluation !== "all" ||
     role !== "all" ||
     round !== "all" ||
-    testLocation !== "all" ||
+    hiringStatus !== "all" ||
+    hiringLocation !== "all" ||
     localSearch !== "" ||
     localDateRange !== "all"
 
@@ -193,50 +198,24 @@ export function ResultsFilterBar({
     : "Custom Range"
 
   return (
-    <div className={`relative mb-6 rounded-2xl border border-slate-200 bg-white shadow-sm p-4 transition-all duration-200 ${isPending ? "opacity-60 pointer-events-none" : ""}`}>
+    <div className={`relative mb-6 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white shadow-xs p-5 transition-all duration-200 ${isPending ? "opacity-60 pointer-events-none" : ""}`}>
       {isPending && (
         <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-600 animate-pulse rounded-t-2xl" />
       )}
       
       <div className="flex flex-col gap-4">
-        {/* Top Row: Status pills, search, and clear filters */}
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+        {/* Top Row: Search and clear filters */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
           
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-grow">
-            {/* Status Tabs */}
-            <div className="flex items-center gap-0.5 rounded-lg bg-slate-100 p-0.5 shrink-0 select-none">
-              {[
-                ["all", "All"],
-                ["pending", "Pending"],
-                ["evaluated", "Evaluated"],
-              ].map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => updateParams({ status: value })}
-                  className={`flex-1 sm:flex-none rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                    status === value
-                      ? "bg-white text-indigo-600 shadow-xs font-bold"
-                      : "text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  {label} <span className="ml-0.5 text-slate-400 text-[10px]">{statusCounts[value]}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="hidden sm:block w-px h-5 bg-slate-200 shrink-0" />
-
-            {/* Search Input Box */}
-            <div className="relative flex-grow max-w-md">
-              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-              <input
-                value={localSearch}
-                onChange={(e) => setLocalSearch(e.target.value)}
-                placeholder="Search by candidate name, email, or location…"
-                className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-400 focus:bg-white focus:ring-1 focus:ring-indigo-200 transition-all placeholder:text-slate-400"
-              />
-            </div>
+          {/* Search Input Box (visually prioritized, 60-70% of the filter row width on large screen) */}
+          <div className="relative flex-grow max-w-2xl lg:max-w-3xl">
+            <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
+            <input
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              placeholder="Search candidate by name, email or phone..."
+              className="h-10 w-full rounded-xl border border-slate-200/80 bg-slate-50 pl-11 pr-4 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-400"
+            />
           </div>
 
           {/* Clear Filters Button */}
@@ -253,9 +232,9 @@ export function ResultsFilterBar({
                   router.push("/admin")
                 })
               }}
-              className="h-8 rounded-lg border border-slate-200 px-3 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 select-none shadow-xs shrink-0 self-stretch sm:self-auto"
+              className="h-10 rounded-xl border border-slate-200/80 px-4 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors flex items-center justify-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 select-none shadow-2xs shrink-0 self-stretch sm:self-auto cursor-pointer"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
               Clear Filters
             </button>
           )}
@@ -264,11 +243,11 @@ export function ResultsFilterBar({
 
         <div className="w-full h-px bg-slate-100" />
 
-        {/* Bottom Row: Selector drop-downs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Bottom Row: Selector drop-downs (6 filters grid layout) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
           
           {/* Role Dropdown */}
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5 select-none">Role</span>
             <Select value={role} onValueChange={v => updateParams({ role: v })}>
               <SelectTrigger className={`${triggerCls} w-full`}>
@@ -276,7 +255,7 @@ export function ResultsFilterBar({
               </SelectTrigger>
               <SelectContent className={contentCls} position="popper" sideOffset={6}>
                 <SelectItem value="all" className={itemCls}>
-                  All Roles <span className="ml-1 text-slate-400 text-[10px]">({roleCounts["all"] ?? 0})</span>
+                  All <span className="ml-1 text-slate-400 text-[10px]">({roleCounts["all"] ?? 0})</span>
                 </SelectItem>
                 {rolesList.map(item => (
                   <SelectItem key={item.value} value={item.value} className={itemCls}>
@@ -288,14 +267,14 @@ export function ResultsFilterBar({
           </div>
 
           {/* Round Dropdown */}
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5 select-none">Round</span>
             <Select value={round} onValueChange={v => updateParams({ round: v })}>
               <SelectTrigger className={`${triggerCls} w-full`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className={contentCls} position="popper" sideOffset={6}>
-                <SelectItem value="all" className={itemCls}>All Rounds</SelectItem>
+                <SelectItem value="all" className={itemCls}>All</SelectItem>
                 <SelectItem value="face_to_face" className={itemCls}>Round 1 · F2F</SelectItem>
                 <SelectItem value="assessment" className={itemCls}>Round 2 · Assessment</SelectItem>
                 <SelectItem value="director" className={itemCls}>Round 3 · Director</SelectItem>
@@ -303,16 +282,54 @@ export function ResultsFilterBar({
             </Select>
           </div>
 
-          {/* Test Location Dropdown */}
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5 select-none">Test Location</span>
-            <Select value={testLocation} onValueChange={v => updateParams({ testLocation: v })}>
+          {/* Evaluation Dropdown */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5 select-none">Evaluation</span>
+            <Select value={evaluation} onValueChange={v => updateParams({ evaluation: v })}>
               <SelectTrigger className={`${triggerCls} w-full`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className={contentCls} position="popper" sideOffset={6}>
-                <SelectItem value="all" className={itemCls}>All Locations</SelectItem>
-                {testLocationsList.map(loc => (
+                <SelectItem value="all" className={itemCls}>
+                  All <span className="ml-1 text-slate-400 text-[10px]">({evaluationCounts["all"] ?? 0})</span>
+                </SelectItem>
+                <SelectItem value="pending" className={itemCls}>
+                  Pending <span className="ml-1 text-slate-400 text-[10px]">({evaluationCounts["pending"] ?? 0})</span>
+                </SelectItem>
+                <SelectItem value="evaluated" className={itemCls}>
+                  Evaluated <span className="ml-1 text-slate-400 text-[10px]">({evaluationCounts["evaluated"] ?? 0})</span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Hiring Status Dropdown */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5 select-none">Hiring Status</span>
+            <Select value={hiringStatus} onValueChange={v => updateParams({ hiringStatus: v })}>
+              <SelectTrigger className={`${triggerCls} w-full`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className={contentCls} position="popper" sideOffset={6}>
+                <SelectItem value="all" className={itemCls}>All</SelectItem>
+                <SelectItem value="in_interview" className={itemCls}>In Interview</SelectItem>
+                <SelectItem value="hired" className={itemCls}>Hired</SelectItem>
+                <SelectItem value="rejected" className={itemCls}>Rejected</SelectItem>
+                <SelectItem value="hold" className={itemCls}>On Hold</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Hiring Location Dropdown */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5 select-none">Hiring Location</span>
+            <Select value={hiringLocation} onValueChange={v => updateParams({ hiringLocation: v })}>
+              <SelectTrigger className={`${triggerCls} w-full`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className={contentCls} position="popper" sideOffset={6}>
+                <SelectItem value="all" className={itemCls}>All</SelectItem>
+                {hiringLocationsList.map(loc => (
                   <SelectItem key={loc.value} value={loc.value} className={itemCls}>{loc.label}</SelectItem>
                 ))}
               </SelectContent>
@@ -320,7 +337,7 @@ export function ResultsFilterBar({
           </div>
 
           {/* Date Filter Dropdown */}
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5 select-none">Date Range</span>
             <Select value={localDateRange} onValueChange={v => {
               setLocalDateRange(v)
@@ -329,7 +346,7 @@ export function ResultsFilterBar({
               }
             }}>
               <SelectTrigger className={`${triggerCls} w-full flex items-center gap-2`}>
-                <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
                 <SelectValue>{dateDisplayValue}</SelectValue>
               </SelectTrigger>
               <SelectContent className={contentCls} position="popper" sideOffset={6}>
@@ -393,7 +410,7 @@ export function ResultsFilterBar({
                 type="button"
                 disabled={!!dateError || !localStartDate || !localEndDate}
                 onClick={handleApplyCustomDates}
-                className="h-8 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-4 flex items-center justify-center gap-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600 shadow-xs cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                className="h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-4 flex items-center justify-center gap-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600 shadow-xs cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
                 Apply Range
               </button>
