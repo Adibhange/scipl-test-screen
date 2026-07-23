@@ -368,9 +368,9 @@ export function CandidateDetailWrapper({
 	const badgeVariant: StatusVariant = 
 		computedStatus === "in_interview" ? "interviewing" : (computedStatus as StatusVariant);
 
-	// MASTER_ACTOR (lib/write-actor.ts) always has userId "master" — a real
-	// Supabase admin's userId is always a UUID, so this never false-positives.
-	const dashboardBasePath = admin.userId === "master" ? "/master" : "/admin";
+	// Master sessions now use /admin directly (see middleware.ts + lib/write-actor.ts),
+	// so the pipeline is always at /admin regardless of who's viewing.
+	const dashboardBasePath = "/admin";
 
 	const sortedRounds = [
 		{ key: "face_to_face" as const, label: "Round 1 · Face-to-Face Interview", round: result.interviewRounds?.face_to_face, defaultOrder: 1 },

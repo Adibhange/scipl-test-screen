@@ -37,6 +37,10 @@ import {
 } from "lucide-react";
 import { PageContainer, PageHeader, EmptyState } from "@/components/ui/layout-primitives";
 import { MetricCard, InfoGrid } from "@/components/ui/enterprise-primitives";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link2 } from "lucide-react";
+import { listActiveShares } from "@/repositories/candidate-share.repository";
+import { MasterSharedLinksList } from "@/components/master/master-shared-links-list";
 
 export type CandidateDashboardSearchParams = {
 	search?: string;
@@ -69,6 +73,7 @@ export async function CandidateDashboard({
 }) {
 	const rawResults = await getAllResults();
 	const dbAdapter = getDatabaseAdapter();
+	const activeSharesPromise = listActiveShares();
 	const results = await Promise.all(
 		rawResults.map(async (res) => {
 			if (!res.candidate.id) return res;
@@ -217,6 +222,8 @@ export async function CandidateDashboard({
 		},
 	];
 
+	const activeShares = await activeSharesPromise;
+
 	return (
 		<PageContainer>
 			{/* Page Header */}
@@ -255,6 +262,19 @@ export async function CandidateDashboard({
 					/>
 				))}
 			</InfoGrid>
+
+			{/* Shared Candidate Links */}
+			<Card className="my-6 md:my-8">
+				<CardHeader className="pb-3">
+					<CardTitle className="flex items-center gap-2 text-base">
+						<Link2 className="h-4 w-4 text-indigo-600" strokeWidth={1.8} />
+						Shared Candidate Links
+					</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<MasterSharedLinksList shares={activeShares} />
+				</CardContent>
+			</Card>
 
 			{/* Filter & Search Toolbar */}
 			<ResultsFilterBar

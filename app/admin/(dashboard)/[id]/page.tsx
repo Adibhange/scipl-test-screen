@@ -3,7 +3,7 @@ import { getResultById } from "@/repositories/result.repository";
 import { getQuestionsByIds } from "@/repositories/question.repository";
 import { getCandidateDocumentStatusMap } from "@/repositories/candidate-document.repository";
 import { CandidateDetailWrapper } from "@/components/admin/candidates/candidate-detail-wrapper";
-import { getCurrentAdmin, type AdminUser } from "@/repositories/admin.repository";
+import { resolveWriteActor, type WriteActor } from "@/lib/write-actor";
 import { Suspense } from "react";
 import CandidateDetailLoading from "./loading";
 
@@ -14,7 +14,7 @@ export default async function CandidateResultPage({
 }: {
 	params: Promise<{ id: string }>;
 }) {
-	const admin = await getCurrentAdmin();
+	const admin = await resolveWriteActor();
 	if (!admin) notFound();
 
 	return (
@@ -29,7 +29,7 @@ async function CandidateResultContent({
 	admin,
 }: {
 	params: Promise<{ id: string }>;
-	admin: AdminUser;
+	admin: WriteActor;
 }) {
 	const { id } = await params;
 	const result = await getResultById(id);

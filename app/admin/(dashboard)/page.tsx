@@ -1,8 +1,8 @@
-import { getCurrentAdmin, type AdminUser } from "@/repositories/admin.repository";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import AdminLoading from "./loading";
 import { CandidateDashboard, type CandidateDashboardSearchParams } from "@/components/admin/dashboard/candidate-dashboard";
+import { resolveWriteActor, type WriteActor } from "@/lib/write-actor";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +11,7 @@ export default async function AdminPage({
 }: {
 	searchParams: Promise<CandidateDashboardSearchParams>;
 }) {
-	const admin = await getCurrentAdmin();
+	const admin = await resolveWriteActor();
 	if (!admin) redirect("/admin/login");
 
 	return (
@@ -26,7 +26,7 @@ async function AdminDashboardContent({
 	admin,
 }: {
 	searchParams: Promise<CandidateDashboardSearchParams>;
-	admin: AdminUser;
+	admin: WriteActor;
 }) {
 	return <CandidateDashboard searchParams={searchParams} admin={admin} basePath="/admin" />;
 }

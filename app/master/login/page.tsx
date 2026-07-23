@@ -16,7 +16,7 @@ function isSafeRedirect(path: string | null): path is string {
 function MasterLoginForm() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
-	const redirectTo = isSafeRedirect(searchParams.get("redirect")) ? searchParams.get("redirect")! : "/master";
+	const redirectTo = isSafeRedirect(searchParams.get("redirect")) ? searchParams.get("redirect")! : "/admin";
 
 	const [code, setCode] = useState("");
 	const [error, setError] = useState("");

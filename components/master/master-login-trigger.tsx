@@ -58,7 +58,7 @@ export function MasterLoginTrigger() {
 			}
 
 			setOpen(false);
-			router.replace("/master");
+			router.replace("/admin");
 			router.refresh();
 		} catch {
 			setError("Something went wrong. Please try again.");

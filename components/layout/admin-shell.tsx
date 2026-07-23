@@ -13,9 +13,12 @@ import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 export function AdminShell({
 	children,
 	admin,
+	isMaster = false,
 }: {
 	children: React.ReactNode;
 	admin: { name: string; email: string; role: AdminRole };
+	/** True when this session is a Master session rather than a real Supabase Admin session — changes how logout works. */
+	isMaster?: boolean;
 }) {
 	const pathname = usePathname();
 	const router = useRouter();
@@ -41,6 +44,7 @@ export function AdminShell({
 			.toUpperCase() || "A";
 
 	useEffect(() => {
+		if (isMaster) return;
 		const supabase = createSupabaseBrowserClient();
 		let active = true;
 		const checkSession = async () => {
@@ -57,9 +61,14 @@ export function AdminShell({
 			active = false;
 			window.clearInterval(interval);
 		};
-	}, []);
+	}, [isMaster]);
 
 	async function handleLogout() {
+		if (isMaster) {
+			await fetch("/api/auth/master", { method: "DELETE" });
+			router.replace("/");
+			return;
+		}
 		const supabase = createSupabaseBrowserClient();
 		await supabase.auth.signOut();
 		window.localStorage.clear();
@@ -68,6 +77,11 @@ export function AdminShell({
 	}
 
 	async function handleLogoutWithRedirect() {
+		if (isMaster) {
+			await fetch("/api/auth/master", { method: "DELETE" });
+			router.replace("/?inactive=true");
+			return;
+		}
 		const supabase = createSupabaseBrowserClient();
 		await supabase.auth.signOut();
 		window.localStorage.clear();

@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
-import { getCurrentAdmin } from "@/repositories/admin.repository";
+import { resolveWriteActor } from "@/lib/write-actor";
 import { SlidersHorizontal } from "lucide-react";
 import { PageContainer, PageHeader, EmptyState } from "@/components/ui/layout-primitives";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-	const admin = await getCurrentAdmin();
+	const admin = await resolveWriteActor();
 	if (!admin) redirect("/admin/login");
 
 	return (

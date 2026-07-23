@@ -57,7 +57,15 @@ export async function middleware(request: NextRequest) {
 	const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
 	const isAdminLoginRoute = request.nextUrl.pathname === "/admin/login";
 
-	if (isAdminRoute && !isAdminLoginRoute && !user) {
+	const masterToken = request.cookies.get(MASTER_SESSION_COOKIE)?.value;
+	const hasValidMasterSession = env.MASTER_SESSION_SECRET
+		? await verifyMasterSessionToken(masterToken, env.MASTER_SESSION_SECRET)
+		: false;
+
+	// A valid Master session is treated as equivalent to an Admin session for
+	// /admin/* — Master genuinely uses the same admin area, not a lookalike
+	// page at a different URL.
+	if (isAdminRoute && !isAdminLoginRoute && !user && !hasValidMasterSession) {
 		const redirectResponse = NextResponse.redirect(new URL("/admin/login", request.url));
 		// Apply security headers to redirect response too
 		redirectResponse.headers.set("X-Frame-Options", "DENY");
@@ -77,15 +85,12 @@ export async function middleware(request: NextRequest) {
 	}
 
 	// Master authentication is completely independent from Admin (Supabase) auth above.
+	// Only /master/login and the share-link route (/master/admin/[token]) live here now —
+	// the Master "home" is /admin itself, guarded above.
 	const isMasterRoute = request.nextUrl.pathname.startsWith("/master");
 	const isMasterLoginRoute = request.nextUrl.pathname === "/master/login";
 
 	if (isMasterRoute && !isMasterLoginRoute) {
-		const masterToken = request.cookies.get(MASTER_SESSION_COOKIE)?.value;
-		const hasValidMasterSession = env.MASTER_SESSION_SECRET
-			? await verifyMasterSessionToken(masterToken, env.MASTER_SESSION_SECRET)
-			: false;
-
 		if (!hasValidMasterSession) {
 			const loginUrl = new URL("/master/login", request.url);
 			loginUrl.searchParams.set("redirect", request.nextUrl.pathname + request.nextUrl.search);
