@@ -116,6 +116,18 @@ export async function assignInterviewerAndDetails(
 		interviewerEmail = interviewer.email;
 	}
 
+	// A request that doesn't mention interviewer fields at all (e.g. a
+	// hiring-status-only bulk update) must leave the existing assignment
+	// untouched — only an explicit interviewerId/interviewerName/interviewerEmail
+	// key (even an empty string, meaning "clear it") should change it.
+	const interviewerFieldsProvided =
+		body.interviewerId !== undefined || body.interviewerName !== undefined || body.interviewerEmail !== undefined;
+	if (!interviewerFieldsProvided) {
+		interviewerId = result.assignedInterviewerId;
+		interviewerName = result.assignedInterviewerName;
+		interviewerEmail = result.assignedInterviewerEmail;
+	}
+
 	const updated = await updateResult(resultId, (current) => ({
 		...current,
 		candidate: {

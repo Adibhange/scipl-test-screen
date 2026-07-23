@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, LogOut, UsersRound, Settings, Menu, Clock } from "lucide-react";
+import { LayoutDashboard, LogOut, UsersRound, Settings, Menu, Clock, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AdminRole } from "@/types";
 import { createSupabaseBrowserClient } from "@/database/adapters/browser-client";
@@ -30,6 +30,7 @@ export function AdminShell({
 
 	const navItems = [
 		{ href: "/admin", label: "Candidates Dashboard", icon: LayoutDashboard },
+		{ href: "/admin/shared-candidates", label: "Shared Candidates", icon: Link2 },
 		{ href: "/admin/team", label: "Admin Team", icon: UsersRound },
 		...(admin.role === "hr" ? [{ href: "/admin/config", label: "Configurations", icon: Settings }] : []),
 	];
