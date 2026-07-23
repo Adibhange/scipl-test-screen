@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
@@ -50,6 +51,7 @@ export default function InterviewPage() {
 	const [mounted, setMounted] = useState(false);
 
 	useEffect(() => {
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setMounted(true);
 	}, []);
 

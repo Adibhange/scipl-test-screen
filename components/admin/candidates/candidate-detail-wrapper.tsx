@@ -376,7 +376,6 @@ export function CandidateDetailWrapper({
 						<div className="flex flex-wrap items-center justify-between gap-4">
 							<PageHeader
 								title={result.candidate.name}
-								description={`Details, logs, and interview rounds evaluation track for ${result.candidate.name}`}
 								className="py-0 space-y-0.5"
 							/>
 							<div className="flex items-center gap-3">
@@ -401,17 +400,13 @@ export function CandidateDetailWrapper({
 										<SheetContent className="w-full max-w-xl bg-white border-l border-slate-100 flex flex-col h-full p-0">
 											<SheetHeader className="p-6 pb-4 border-b border-slate-100 shrink-0">
 												<SheetTitle className="text-xl font-bold tracking-tight text-slate-900">Manage Candidate Details</SheetTitle>
-												<SheetDescription className="text-xs text-slate-500 mt-1 leading-relaxed">
-													Configure applicant status, role, location, assigned interviewer, compensation, and notes.
-												</SheetDescription>
 											</SheetHeader>
 
 											<div className="flex-1 overflow-y-auto p-6 space-y-6">
 												{/* Pipeline Section */}
-												<FormSection title="Pipeline" description="Manage status and evaluator tracking">
+												<FormSection title="Current Status">
 													<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 														<div className="space-y-1.5">
-															<label className="text-xs font-bold text-slate-600 block">Hiring Status</label>
 															<Select
 																value={form.hiringStatus}
 																onValueChange={(val) => setForm({ ...form, hiringStatus: val })}
@@ -639,7 +634,6 @@ export function CandidateDetailWrapper({
 							{/* SectionCard: Profile Header & Details */}
 							<SectionCard
 								title="Candidate Profile"
-								description="Consolidated details and status tracking"
 							>
 								<div className="flex items-center gap-4 mb-5 pb-4 border-b border-border/40">
 									<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 text-lg font-bold border border-indigo-100 dark:border-indigo-900/30">
@@ -753,8 +747,7 @@ export function CandidateDetailWrapper({
 						<div className="lg:col-span-2 space-y-6">
 							{/* Card: Workflow Timeline */}
 							<div className="rounded-2xl border border-border bg-card p-5 lg:p-6 shadow-xs overflow-hidden relative">
-								<h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Assessment Workflow Timeline</h2>
-								<p className="text-xs text-slate-500 mt-1">Track rounds progress and feedback records chronologically.</p>
+								<h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Assessment Workflow</h2>
 
 								<div className="mt-7 relative pl-6 ml-4 space-y-6">
 									{sortedRounds.map(({ key, label, round }, idx) => {

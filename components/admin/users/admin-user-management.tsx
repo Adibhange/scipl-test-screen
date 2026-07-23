@@ -203,12 +203,8 @@ export function AdminUserManagement({
 				<div className="lg:col-span-2">
 					<SectionCard
 						title="Authorized Users"
-						description="Current staff members with access to review, evaluate, or administer interviews."
 						headerActions={
 							<div className="flex items-center gap-2">
-								<Button variant="outline" size="sm" className="h-8 px-3 rounded-lg border-slate-205 text-slate-700 hover:bg-slate-50 cursor-pointer font-semibold gap-1.5 text-xs">
-									<ShieldCheck className="h-3.5 w-3.5" /> Access policy
-								</Button>
 								{currentAdmin.role === "hr" && (
 									<Dialog open={open} onOpenChange={setOpen}>
 										<DialogTrigger asChild>
@@ -219,10 +215,6 @@ export function AdminUserManagement({
 										<DialogContent className="sm:max-w-xl">
 											<DialogHeader>
 												<DialogTitle>Add staff user</DialogTitle>
-												<DialogDescription>
-													Create a secure Supabase Auth login and assign an
-													interview role.
-												</DialogDescription>
 											</DialogHeader>
 											<form onSubmit={submit} className="space-y-4 pt-1">
 												<div className="grid sm:grid-cols-2 gap-3">
@@ -433,28 +425,24 @@ export function AdminUserManagement({
 						title="Total Active Team"
 						value={totalActive}
 						icon={Users}
-						description="Total staff accounts authorized to log in to the ATS admin panel."
 					/>
 
 					<MetricCard
 						title="HR Managers"
 						value={hrCount}
 						icon={Shield}
-						description="Users permitted to configure vacancies, adjust master settings, and manage authorization keys."
 					/>
 
 					<MetricCard
 						title="Directors"
 						value={directorCount}
 						icon={ShieldCheck}
-						description="High-level stakeholders with cross-team view access and permissions to manage members."
 					/>
 
 					<MetricCard
 						title="Interviewers"
 						value={interviewerCount}
 						icon={UserRound}
-						description="Team members responsible for screening submissions, writing evaluations, and grading questions."
 					/>
 				</div>
 			</div>

@@ -9,15 +9,6 @@ import type { AdminRole } from "@/types";
 import { createSupabaseBrowserClient } from "@/database/adapters/browser-client";
 import { useIsMutating } from "@tanstack/react-query";
 import { useIdleTimeout } from "@/hooks/useIdleTimeout";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 
 export function AdminShell({
 	children,
@@ -35,7 +26,7 @@ export function AdminShell({
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
 	const navItems = [
-		{ href: "/admin", label: "Candidate Pipeline", icon: LayoutDashboard },
+		{ href: "/admin", label: "Candidates Dashboard", icon: LayoutDashboard },
 		{ href: "/admin/team", label: "Admin Team", icon: UsersRound },
 		...(admin.role === "hr" ? [{ href: "/admin/config", label: "Configurations", icon: Settings }] : []),
 	];
@@ -105,8 +96,8 @@ export function AdminShell({
 						S
 					</div>
 					<div>
-						<p className='text-sm font-bold tracking-tight'>SCIPL</p>
-						<p className='text-[11px] text-slate-500'>Interview Portal</p>
+						<p className='text-xl font-bold tracking-tight'>SCIPL</p>
+						{/* <p className='text-[11px] text-slate-500'>Interview Portal</p> */}
 					</div>
 				</div>
 				<nav className='flex-1 space-y-1 p-4'>
@@ -148,7 +139,7 @@ export function AdminShell({
 							</div>
 							<div>
 								<p className='text-sm font-bold tracking-tight'>SCIPL</p>
-								<p className='text-[11px] text-slate-500'>Interview Portal</p>
+								{/* <p className='text-[11px] text-slate-500'>Interview Portal</p> */}
 							</div>
 						</div>
 						<nav className='flex-1 space-y-1 p-4'>
@@ -194,15 +185,6 @@ export function AdminShell({
 						>
 							<Menu className='h-5 w-5' />
 						</button>
-						<div>
-							<h1 className='text-sm font-bold tracking-tight text-slate-900'>
-								SCIPL Interview Question Portal
-							</h1>
-							<div className='mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700'>
-								<span className='h-1.5 w-1.5 rounded-full bg-emerald-500' />
-								Assessment System Online
-							</div>
-						</div>
 					</div>
 
 

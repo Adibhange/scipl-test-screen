@@ -112,6 +112,7 @@ export function CandidateForm({
 
 	useEffect(() => {
 		if (submitError && submitError.includes("already completed")) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setIsLocked(true);
 		}
 	}, [submitError]);

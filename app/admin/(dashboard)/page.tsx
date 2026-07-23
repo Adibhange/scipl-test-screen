@@ -176,14 +176,12 @@ async function CandidateDashboardContent({
 	const metrics: Array<{
 		label: string;
 		value: number;
-		hint: string;
 		Icon: typeof UsersRound;
 		tone: string;
 	}> = [
 		{
 			label: "Total Candidates",
 			value: scopedResults.length,
-			hint: "All submitted applications",
 			Icon: UsersRound,
 			tone: "bg-indigo-50 text-indigo-600",
 		},
@@ -192,7 +190,6 @@ async function CandidateDashboardContent({
 			value: scopedResults.filter(
 				(r) => getCurrentRoundKey(r) !== "face_to_face" && computeCandidateStatus(r) !== "rejected",
 			).length,
-			hint: "Moved beyond round one",
 			Icon: Route,
 			tone: "bg-sky-50 text-sky-600",
 		},
@@ -201,7 +198,6 @@ async function CandidateDashboardContent({
 			value: pendingResults.filter(
 				(r) => computeCandidateStatus(r) !== "rejected",
 			).length,
-			hint: "Assessment still needs review",
 			Icon: ClipboardCheck,
 			tone: "bg-amber-50 text-amber-600",
 		},
@@ -209,7 +205,6 @@ async function CandidateDashboardContent({
 			label: "Hired",
 			value: scopedResults.filter((r) => r.candidate.hiringStatus === "hired")
 				.length,
-			hint: "Final hiring decisions",
 			Icon: BadgeCheck,
 			tone: "bg-emerald-50 text-emerald-600",
 		},
@@ -220,7 +215,6 @@ async function CandidateDashboardContent({
 			{/* Page Header */}
 			<PageHeader
 				title="Candidate Results"
-				description={`Intake pipeline tracking ${visibleResults.length} submitted assessments`}
 				actions={
 					<div className="flex items-center gap-3">
 						<ExportExcelButton
@@ -244,12 +238,11 @@ async function CandidateDashboardContent({
 
 			{/* Metric Cards Grid */}
 			<InfoGrid cols={4}>
-				{metrics.map(({ label, value, hint, Icon }) => (
+				{metrics.map(({ label, value, Icon }) => (
 					<MetricCard
 						key={label}
 						title={label}
 						value={value}
-						description={hint}
 						icon={Icon}
 					/>
 				))}
