@@ -186,6 +186,16 @@ supabase/migrations/20260726_share_validity_1_12_24.sql
 - [ ] Delete asks for confirmation, then removes the file and flips the row back to "Not uploaded".
 - [ ] A non-HR admin role (interviewer/director) can View but has no Upload/Delete controls; Master (and HR) can do both.
 
+**Shared Candidates page**
+- [ ] Sidebar shows "Shared Candidates" between "Candidates Dashboard" and "Admin Team."
+- [ ] The main Candidate Pipeline screen no longer shows a shared-links card.
+- [ ] Ticking rows shows a bulk action bar with Hire/Reject/Revoke Selected; unticking the last row hides it.
+- [ ] "Select all on this page" only affects the current page's rows, not the whole list.
+- [ ] Hire Selected / Reject Selected updates hiring status only — check that HR notes, salary, and assigned interviewer on those candidates are unchanged afterward.
+- [ ] Revoke Selected revokes every selected link; re-generating one afterward gets a fresh token.
+- [ ] Changing rows-per-page (10/20/30/50/100) resets to page 1 and shows the right count.
+- [ ] Editing a candidate's HR notes or salary from their detail page no longer clears their assigned interviewer (this was a pre-existing bug, now fixed as a side effect of this work — worth a regression check).
+
 ## Phase 5 — Fixes from real-world setup (env bug, dashboard reuse, validity change)
 
 - **Critical fix: `env.ts` wiring bug.** `MASTER_CODE_HASH` and
@@ -243,6 +253,41 @@ Per a follow-up requirement: Master Login should land on the *actual*
   candidate's profile once authenticated. Only the *look* changed — from a
   separate shell to the real admin UI.
 
+## Phase 7 — Shared Candidates moved to its own page, with bulk actions
+
+- **New page: `/admin/shared-candidates`**, with its own sidebar entry
+  between "Candidates Dashboard" and "Admin Team" — accessible to both
+  Admin and Master, same as every other admin page. Removed from the main
+  Candidate Pipeline dashboard entirely, per request.
+- **Checkbox selection**: tick individual rows, or "select all on this
+  page." A bulk action bar appears once anything is selected:
+  - **Revoke Selected** — revokes the share link for every selected candidate
+  - **Hire Selected** / **Reject Selected** — sets hiring status in bulk
+  - Each action fires in parallel across the selection and reports partial
+    failures (e.g. "Hired 4 of 5 — 1 failed") rather than silently
+    succeeding or failing as a block.
+- **Pagination**: 10/20/30/50/100 rows per page, Prev/Next, and a page
+  indicator. Verified the math against empty lists, exact-division counts,
+  and the case where shrinking the page size leaves you on a now-invalid
+  page number.
+- **New minimal endpoint**: `PATCH /api/candidates/[id]/hiring-status`.
+  Deliberately touches *only* `hiring_status` — nothing else on the
+  candidate record — specifically so bulk hire/reject can't have side
+  effects on interviewer assignment, salary, or notes.
+- **Bug fix surfaced while building this**: the existing single-candidate
+  assignment endpoint (`assignInterviewerAndDetails`, used by the "Manage
+  Candidate Details" sheet) was unconditionally overwriting
+  `assigned_interviewer_id/name/email` with `null` on *any* partial update
+  that didn't explicitly include interviewer fields — e.g. editing just HR
+  notes would silently un-assign the candidate's interviewer. Fixed to
+  preserve the existing assignment unless interviewer fields are explicitly
+  part of the request (an empty string still means "clear it," as before —
+  only *omitting* the fields now means "leave it alone"). This bug predates
+  the Master Login work; it surfaced from reasoning through what the new
+  bulk-hire action needed to be safe to reuse.
+
+## Known limitations (honest gaps, not oversights)
+
 
 
 - **Feature 6's exact Edit Mode UX isn't built.** The spec asked for
@@ -266,6 +311,7 @@ Per a follow-up requirement: Master Login should land on the *actual*
   this code. `tsc --noEmit` and `eslint .` are clean; please run
   `npm run build` once in your own environment to confirm the full pipeline.
 
+## What's next (not in this patch)
 
 - Access-count/last-accessed analytics are tracked and stored now; a dedicated analytics view beyond the dashboard's share list isn't built.
 - Audit log currently goes to the existing `logger` (console/stdout) like the rest of the app — no separate persisted audit table was added since none existed for Admin actions either.
