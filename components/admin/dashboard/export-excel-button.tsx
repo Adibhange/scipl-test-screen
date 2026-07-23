@@ -16,6 +16,13 @@ interface MetadataOption {
 	label: string;
 }
 
+interface VacancyOption {
+	id: string;
+	role: string;
+	experience: string;
+	hiring_location: string;
+}
+
 interface ExportExcelButtonProps {
 	visibleResults: CandidateResult[];
 	allResults: CandidateResult[];
@@ -23,6 +30,7 @@ interface ExportExcelButtonProps {
 	activeExperiences: MetadataOption[];
 	activeTestLocations: MetadataOption[];
 	activeHiringLocations: MetadataOption[];
+	activeVacancies: VacancyOption[];
 }
 
 export function ExportExcelButton({
@@ -32,6 +40,7 @@ export function ExportExcelButton({
 	activeExperiences,
 	activeTestLocations,
 	activeHiringLocations,
+	activeVacancies,
 }: ExportExcelButtonProps) {
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [isExporting, setIsExporting] = useState(false);
@@ -57,6 +66,7 @@ export function ExportExcelButton({
 					activeExperiences,
 					activeTestLocations,
 					activeHiringLocations,
+					activeVacancies,
 				});
 				return targets.length;
 			} finally {

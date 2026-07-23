@@ -7,12 +7,20 @@ interface MetadataOption {
 	label: string;
 }
 
+interface VacancyOption {
+	id: string;
+	role: string;
+	experience: string;
+	hiring_location: string;
+}
+
 interface ExportExcelParams {
 	results: CandidateResult[];
 	activeRoles: MetadataOption[];
 	activeExperiences: MetadataOption[];
 	activeTestLocations: MetadataOption[];
 	activeHiringLocations: MetadataOption[];
+	activeVacancies: VacancyOption[];
 }
 
 export async function exportToExcel({
@@ -21,7 +29,28 @@ export async function exportToExcel({
 	activeExperiences,
 	activeTestLocations,
 	activeHiringLocations,
+	activeVacancies,
 }: ExportExcelParams): Promise<void> {
+	// Resolve each vacancy's role/experience/hiring-location codes to their
+	// human-readable labels once, so the "Vacancy" column shows a real title
+	// (e.g. "SQL Developer (3-5 Years) - Pune Office") instead of the raw
+	// internal UUID.
+	const roleLabelByValue = new Map(activeRoles.map((r) => [r.value, r.label]));
+	const experienceLabelByValue = new Map(activeExperiences.map((e) => [e.value, e.label]));
+	const hiringLocationLabelByValue = new Map(activeHiringLocations.map((h) => [h.value, h.label]));
+
+	const vacancyTitleById = new Map<string, string>(
+		activeVacancies.map((v) => {
+			const roleLabel = roleLabelByValue.get(v.role) || v.role || "Unknown role";
+			const experienceLabel = experienceLabelByValue.get(v.experience) || v.experience || "";
+			const hiringLocationLabel = hiringLocationLabelByValue.get(v.hiring_location) || v.hiring_location || "";
+			const title = experienceLabel && hiringLocationLabel
+				? `${roleLabel} (${experienceLabel}) - ${hiringLocationLabel}`
+				: roleLabel;
+			return [v.id, title];
+		}),
+	);
+
 	// Create Workbook
 	const workbook = new ExcelJS.Workbook();
 	workbook.creator = "Candidate Assessment Portal";
@@ -204,7 +233,7 @@ export async function exportToExcel({
 			hiringStatus: formatStatus(computedStatus),
 			currentRound: getRoundLabel(res),
 			submittedAt: res.submittedAt ? res.submittedAt.slice(0, 10) : "—",
-			vacancy: res.candidate.vacancyId || "—",
+			vacancy: (res.candidate.vacancyId && vacancyTitleById.get(res.candidate.vacancyId)) || "—",
 			finalScore: res.totalMarksAwarded !== undefined ? res.totalMarksAwarded : "Pending Evaluation",
 			marksAwarded: rawScore !== undefined ? rawScore : "Pending Evaluation",
 			totalMarks: res.totalMarksPossible !== undefined ? res.totalMarksPossible : "—",

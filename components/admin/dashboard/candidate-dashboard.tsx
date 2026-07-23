@@ -26,7 +26,7 @@ import { logger } from "@/lib/logger";
 import { ROLES } from "@/constants/roles";
 import { EXPERIENCE_LEVELS } from "@/constants/experience";
 import type { AdminUser } from "@/repositories/admin.repository";
-import { getMetadata } from "@/repositories/metadata.repository";
+import { getMetadata, getVacancies } from "@/repositories/metadata.repository";
 import { getDatabaseAdapter } from "@/database/client";
 import { ExportExcelButton } from "@/components/admin/dashboard/export-excel-button";
 import {
@@ -115,6 +115,25 @@ export async function CandidateDashboard({
 		if (meta.hiringLocations.length > 0) activeHiringLocations = meta.hiringLocations;
 	} catch (err) {
 		logger.warn("Failed to fetch metadata in CandidateDashboard, using defaults", { error: String(err) });
+	}
+
+	// A candidate's vacancy may reference a role/experience/hiring-location
+	// that's since been deactivated, or the vacancy itself may be closed —
+	// resolve against the FULL (not active-only) metadata so the export's
+	// "Vacancy" column still shows a real title instead of falling back to
+	// the raw value code for anything no longer active.
+	let allRoles = activeRoles;
+	let allExperiences = activeExperiences;
+	let allHiringLocations = activeHiringLocations;
+	let vacancies: Array<{ id: string; role: string; experience: string; hiring_location: string }> = [];
+	try {
+		const [fullMeta, vacancyList] = await Promise.all([getMetadata(false), getVacancies(false)]);
+		if (fullMeta.roles.length > 0) allRoles = fullMeta.roles;
+		if (fullMeta.experience.length > 0) allExperiences = fullMeta.experience;
+		if (fullMeta.hiringLocations.length > 0) allHiringLocations = fullMeta.hiringLocations;
+		vacancies = vacancyList;
+	} catch (err) {
+		logger.warn("Failed to fetch full metadata/vacancies for export in CandidateDashboard", { error: String(err) });
 	}
 	const scopedResults =
 		admin?.role === "interviewer" ?
@@ -234,10 +253,11 @@ export async function CandidateDashboard({
 						<ExportExcelButton
 							visibleResults={visibleResults}
 							allResults={scopedResults}
-							activeRoles={activeRoles}
-							activeExperiences={activeExperiences}
+							activeRoles={allRoles}
+							activeExperiences={allExperiences}
 							activeTestLocations={activeTestLocations}
-							activeHiringLocations={activeHiringLocations}
+							activeHiringLocations={allHiringLocations}
+							activeVacancies={vacancies}
 						/>
 						{admin.role === "hr" && (
 							<AddCandidateDialog
