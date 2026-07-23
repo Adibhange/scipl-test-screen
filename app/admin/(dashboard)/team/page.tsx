@@ -11,7 +11,7 @@ export default async function AdminTeamPage() {
 	if (admin.role !== "hr") redirect("/admin");
 
 	return (
-		<PageContainer className="max-w-6xl">
+		<PageContainer>
 			<AdminUserManagement currentAdmin={admin} />
 		</PageContainer>
 	);

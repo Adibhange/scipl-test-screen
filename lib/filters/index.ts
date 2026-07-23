@@ -21,37 +21,27 @@ export interface FilterOptions {
   endDate?: string | null;
 }
 
+import { getCurrentRound, calculateCandidateWorkflowStatus } from "@/lib/interview-workflow";
+
 export function getCurrentRoundKey(
 	result: CandidateResult,
 ): "face_to_face" | "assessment" | "director" {
-	const rounds = result.interviewRounds;
-	if (!rounds || rounds.face_to_face.status !== "pass") return "face_to_face";
-	if (rounds.assessment.status !== "pass") return "assessment";
-	return "director";
+	const round = getCurrentRound(result);
+	return round === "completed" ? "director" : round;
 }
 
 export function computeCandidateStatus(r: CandidateResult): "rejected" | "hired" | "on_hold" | "in_interview" | "screening" {
-	const rounds = (r.interviewRounds || {}) as Record<string, { status?: string } | undefined>;
-	const hasFail = Object.values(rounds).some((roundVal) => roundVal?.status === "fail");
+	// Score zero represents direct failure/rejection
 	const isScoreZero = r.totalMarksAwarded !== undefined && r.totalMarksAwarded === 0;
-
-	if (hasFail || isScoreZero) {
+	if (isScoreZero) {
 		return "rejected";
 	}
-	if (r.candidate.hiringStatus === "hired") {
-		return "hired";
-	}
-	if (r.candidate.hiringStatus === "on_hold") {
-		return "on_hold";
-	}
-
-	const hasPassedFaceToFace = rounds.face_to_face?.status === "pass";
-	const isExamSubmitted = r.totalMarksAwarded !== undefined;
-	if (hasPassedFaceToFace || isExamSubmitted || r.candidate.hiringStatus === "interviewing") {
+	
+	const status = calculateCandidateWorkflowStatus(r);
+	if (status === "interviewing") {
 		return "in_interview";
 	}
-
-	return "screening";
+	return status;
 }
 
 /**
@@ -88,7 +78,7 @@ export function filterResults(
   if (options.hiringStatus && options.hiringStatus !== "all") {
     filtered = filtered.filter((r) => {
       const computed = computeCandidateStatus(r);
-      const filterVal = options.hiringStatus === "hold" ? "on_hold" : options.hiringStatus;
+      const filterVal = (options.hiringStatus === "hold" || options.hiringStatus === "on_hold") ? "on_hold" : options.hiringStatus;
       return computed === filterVal;
     });
   }

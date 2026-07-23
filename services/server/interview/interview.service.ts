@@ -3,7 +3,7 @@ import { getResultById, updateResult } from "@/repositories/result.repository";
 import { canReviewRound } from "@/repositories/admin.repository";
 import { updateCandidate } from "@/repositories/candidate.repository";
 import { getDatabaseAdapter } from "@/database/client";
-import { ensureInterviewRounds } from "@/lib/interview-rounds";
+import { ensureInterviewRounds, canSubmitFeedback } from "@/lib/interview-workflow";
 import { ValidationError, NotFoundError, AuthorizationError, ConflictError } from "@/lib/errors";
 import type { InterviewDecision, InterviewRoundKey } from "@/types";
 
@@ -13,12 +13,21 @@ import type { InterviewDecision, InterviewRoundKey } from "@/types";
 export async function submitRoundFeedback(
 	resultId: string,
 	round: InterviewRoundKey,
-	status: InterviewDecision,
-	remarks: string | undefined,
-	admin: { userId: string; name: string; email: string; role: string },
+	status?: InterviewDecision,
+	remarks?: string,
+	admin?: any,
+	decision?: "hire" | "reject" | "hold" | null,
 ) {
-	if (!["face_to_face", "assessment", "director"].includes(round) || !["pending", "pass", "fail"].includes(status)) {
+	if (!["face_to_face", "assessment", "director"].includes(round)) {
 		throw new ValidationError("Invalid round review");
+	}
+
+	if (round !== "director" && (!status || !["pending", "pass", "fail"].includes(status))) {
+		throw new ValidationError("Evaluation status is required for this round.");
+	}
+
+	if (decision && !["hire", "reject", "hold"].includes(decision)) {
+		throw new ValidationError("Invalid decision value");
 	}
 
 	if (!canReviewRound(admin.role as any, round)) {
@@ -34,34 +43,33 @@ export async function submitRoundFeedback(
 		throw new AuthorizationError("Candidate is not assigned to you");
 	}
 
-	const rounds = ensureInterviewRounds(result);
-	const sequence: InterviewRoundKey[] = ["face_to_face", "assessment", "director"];
-	const index = sequence.indexOf(round);
-
-	for (let i = 0; i < index; i++) {
-		if (rounds[sequence[i]].status === "fail") {
-			throw new ValidationError("Cannot update feedback: a previous round in the sequence is marked as FAIL.");
-		}
+	if (!canSubmitFeedback(result, round, decision)) {
+		throw new ConflictError("The workflow progression requirements for this round are not met.");
 	}
 
-	if (index > 0 && rounds[sequence[index - 1]].status !== "pass") {
-		throw new ConflictError("The previous round must be passed first");
-	}
-
-	const updated = await updateResult(resultId, (current) => ({
-		...current,
-		interviewRounds: {
+	const updated = await updateResult(resultId, (current) => {
+		const nextRounds = {
 			...ensureInterviewRounds(current),
 			[round]: {
-				status,
+				...(round !== "director" ? { status: status! } : {}),
 				remarks: remarks?.trim(),
 				interviewerId: admin.userId,
 				interviewerName: admin.name,
 				interviewerEmail: admin.email,
 				updatedAt: new Date().toISOString(),
 			},
-		},
-	}));
+		};
+
+		if (round === "director" && nextRounds.director) {
+			delete (nextRounds.director as any).status;
+		}
+
+		return {
+			...current,
+			interviewRounds: nextRounds,
+			directorDecision: round === "director" ? (decision || null) : current.directorDecision,
+		};
+	});
 
 	// Reload the latest result from the database to ensure we get the updated hiring status (which is updated by PostgreSQL triggers)
 	const fresh = await getResultById(resultId);

@@ -10,7 +10,7 @@ export const PageContainer = React.forwardRef<HTMLDivElement, PageContainerProps
 			<div
 				ref={ref}
 				className={cn(
-					"w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 animate-fade-in",
+					"w-full max-w-[1600px] mx-auto px-6 lg:px-8 py-6 space-y-6 animate-fade-in",
 					className
 				)}
 				{...props}

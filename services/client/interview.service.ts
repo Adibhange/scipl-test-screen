@@ -7,6 +7,7 @@ export async function submitRoundFeedback(payload: {
 	round: InterviewRoundKey;
 	status: InterviewDecision;
 	remarks: string;
+	decision?: "hire" | "reject" | "hold" | null;
 }): Promise<CandidateResult> {
 	return apiRequest<CandidateResult>("/api/admin/round", {
 		method: "PATCH",

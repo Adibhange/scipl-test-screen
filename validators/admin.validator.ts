@@ -121,6 +121,7 @@ export const AssignInterviewerSchema = z.object({
 export const SubmitRoundFeedbackSchema = z.object({
 	resultId: z.string().trim().min(1, "Result ID is required"),
 	round: z.enum(["face_to_face", "assessment", "director"]),
-	status: z.enum(["pending", "pass", "fail"]),
+	status: z.enum(["pending", "pass", "fail"]).optional(),
 	remarks: z.string().trim().optional(),
+	decision: z.enum(["hire", "reject", "hold"]).nullable().optional(),
 });

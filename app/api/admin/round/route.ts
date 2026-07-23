@@ -30,6 +30,7 @@ export async function PATCH(request: NextRequest) {
 			validated.status,
 			validated.remarks,
 			admin,
+			validated.decision,
 		);
 
 		logSecurityEvent({

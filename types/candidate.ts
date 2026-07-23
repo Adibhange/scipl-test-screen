@@ -90,6 +90,7 @@ export type CandidateResult = {
 	assignedInterviewerName?: string;
 	assignedInterviewerEmail?: string;
 	interviewRounds?: Record<InterviewRoundKey, InterviewRoundReview>;
+	directorDecision?: "hire" | "reject" | "hold" | null;
 };
 
 export type SavedAttempt = {

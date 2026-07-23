@@ -312,10 +312,11 @@ export function ResultsFilterBar({
               </SelectTrigger>
               <SelectContent className={contentCls} position="popper" sideOffset={6}>
                 <SelectItem value="all" className={itemCls}>All</SelectItem>
+                <SelectItem value="screening" className={itemCls}>Screening</SelectItem>
                 <SelectItem value="in_interview" className={itemCls}>In Interview</SelectItem>
+                <SelectItem value="on_hold" className={itemCls}>On Hold</SelectItem>
                 <SelectItem value="hired" className={itemCls}>Hired</SelectItem>
                 <SelectItem value="rejected" className={itemCls}>Rejected</SelectItem>
-                <SelectItem value="hold" className={itemCls}>On Hold</SelectItem>
               </SelectContent>
             </Select>
           </div>

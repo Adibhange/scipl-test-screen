@@ -8,6 +8,7 @@ import { submitRoundFeedback, assignInterviewerAndMetadata } from "@/services/cl
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { computeCandidateStatus } from "@/lib/filters";
+import { canAccessRound } from "@/lib/interview-workflow";
 import { ArrowLeft, BookOpen, Mail, Phone, Settings, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -261,7 +262,12 @@ export function CandidateDetailWrapper({
 	const [savingRound, setSavingRound] = useState(false);
 	const [roundMessage, setRoundMessage] = useState("");
 
-	async function saveRound(round: "face_to_face" | "assessment" | "director", status: "pass" | "fail", remarks: string) {
+	async function saveRound(
+		round: "face_to_face" | "assessment" | "director",
+		status: "pass" | "fail",
+		remarks: string,
+		decision?: "hire" | "reject" | "hold" | null,
+	) {
 		const oldResult = result;
 		const updatedRounds = {
 			...(result.interviewRounds ?? {}),
@@ -275,6 +281,7 @@ export function CandidateDetailWrapper({
 		const updatedResult: CandidateResult = {
 			...result,
 			interviewRounds: updatedRounds as any,
+			directorDecision: round === "director" ? (decision ?? result.directorDecision ?? null) : result.directorDecision,
 		};
 
 		// Optimistic Update
@@ -288,6 +295,7 @@ export function CandidateDetailWrapper({
 				round,
 				status,
 				remarks,
+				decision,
 			});
 			setResult(nextResult);
 			setRoundMessage(`Round marked ${status} successfully`);
@@ -751,19 +759,27 @@ export function CandidateDetailWrapper({
 
 								<div className="mt-7 relative pl-6 ml-4 space-y-6">
 									{sortedRounds.map(({ key, label, round }, idx) => {
-										const status = round?.status ?? "pending";
+										const isDirector = key === "director";
+										const status = isDirector
+											? (result.directorDecision ? result.directorDecision.toUpperCase() : "pending")
+											: (round?.status ?? "pending");
 										const remarks = round?.remarks ?? "";
-										const isPass = status === "pass";
-										const isFail = status === "fail";
+										const isPass = isDirector
+											? result.directorDecision === "hire"
+											: status === "pass";
+										const isFail = isDirector
+											? result.directorDecision === "reject"
+											: status === "fail";
 										const canEdit = admin.role === "hr" || result.assignedInterviewerId === admin.userId;
 
-										// Check if sequential preceding rounds have passed
-										const isLocked = idx > 0 && sortedRounds[idx - 1].round?.status !== "pass";
+										// Check workflow locks
+										const isLocked = !canAccessRound(result, key);
 
 										const borderStatusClass = 
 											isLocked ? "border-l-4 border-l-slate-200 dark:border-l-slate-800"
 											: isPass ? "border-l-4 border-l-emerald-500"
 											: isFail ? "border-l-4 border-l-rose-500"
+											: isDirector && result.directorDecision === "hold" ? "border-l-4 border-l-amber-500"
 											: "border-l-4 border-l-amber-500";
 
 										return (
@@ -784,6 +800,7 @@ export function CandidateDetailWrapper({
 													isLocked ? "bg-slate-350 dark:bg-slate-700"
 													: isPass ? "bg-emerald-500"
 													: isFail ? "bg-rose-500"
+													: isDirector && result.directorDecision === "hold" ? "bg-amber-500"
 													: "bg-amber-400 animate-pulse"
 												}`} />
 
@@ -805,13 +822,19 @@ export function CandidateDetailWrapper({
 																"text-xs leading-relaxed font-semibold whitespace-pre-wrap",
 																isLocked ? "text-slate-400"
 																: isPass ? "text-emerald-800 dark:text-emerald-300" 
-																: isFail ? "text-rose-800 dark:text-rose-300" 
+																: isFail ? "text-rose-850 dark:text-rose-300" 
 																: "text-slate-700 dark:text-slate-300"
 															)}>
 																&ldquo;{remarks}&rdquo;
 															</p>
 														) : (
 															<p className="text-xs italic text-slate-400 font-semibold">No feedback submitted yet</p>
+														)}
+														{key === "assessment" && status === "fail" && (
+															<div className="mt-3 p-3 rounded-xl bg-amber-50/60 dark:bg-amber-955/10 border border-amber-200/50 text-amber-800 dark:text-amber-300 text-xs font-bold leading-relaxed flex items-start gap-2 shadow-2xs select-none">
+																<span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0 mt-1.5 animate-pulse" />
+																<span>Technical Assessment completed with result: FAIL. Candidate remains eligible for Round 3 (Director Review).</span>
+															</div>
 														)}
 													</div>
 
@@ -891,10 +914,12 @@ export function CandidateDetailWrapper({
 															<div className="flex justify-end">
 																<RoundFeedbackDialog
 																	label={label}
-																	status={status}
+																	status={isDirector ? "pending" : (status as "pending" | "pass" | "fail")}
 																	remarks={remarks}
-																	onSave={(newStatus, newRemarks) => saveRound(key, newStatus, newRemarks)}
+																	onSave={(newStatus, newRemarks, decision) => saveRound(key, newStatus, newRemarks, decision)}
 																	saving={savingRound}
+																	roundKey={key}
+																	currentDecision={result.directorDecision}
 																/>
 															</div>
 														</div>
@@ -933,36 +958,87 @@ function RoundFeedbackDialog({
 	onSave,
 	saving,
 	disabled,
+	roundKey,
+	currentDecision,
 }: {
 	label: string;
 	status: "pending" | "pass" | "fail";
 	remarks: string;
-	onSave: (status: "pass" | "fail", remarks: string) => void;
+	onSave: (status: "pass" | "fail", remarks: string, decision?: "hire" | "reject" | "hold" | null) => void;
 	saving: boolean;
 	disabled?: boolean;
+	roundKey: string;
+	currentDecision?: "hire" | "reject" | "hold" | null;
 }) {
 	const [note, setNote] = useState(remarks);
+	const [decision, setDecision] = useState<"hire" | "reject" | "hold" | null>(currentDecision || null);
 
 	useEffect(() => {
-		Promise.resolve().then(() => setNote(remarks));
-	}, [remarks]);
+		Promise.resolve().then(() => {
+			setNote(remarks);
+			setDecision(currentDecision || null);
+		});
+	}, [remarks, currentDecision]);
 
 	const isFeedbackEmpty = !note || !note.trim();
+	const isSubmitDisabled = saving || isFeedbackEmpty || (roundKey === "director" && !decision);
 
 	return (
 		<Dialog>
 			<DialogTrigger asChild>
 				<Button disabled={disabled} className="h-9 px-4 text-xs font-bold cursor-pointer rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-xs transition-all w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
-					{status === "pending" ? "Give Feedback" : "Edit Feedback"}
+					{status === "pending" && roundKey !== "director" ? "Give Feedback" : roundKey === "director" && !currentDecision ? "Make Decision" : "Edit Review"}
 				</Button>
 			</DialogTrigger>
 			<DialogContent className="w-full max-w-2xl bg-white rounded-2xl border p-6">
 				<DialogHeader className="pb-2">
 					<DialogTitle className="text-base font-extrabold text-slate-900">{label}</DialogTitle>
 					<DialogDescription className="text-xs text-slate-500 mt-1">
-						Submit your interview evaluation and remarks for this round.
+						{roundKey === "director" ? "Record your final hiring decision and review notes." : "Submit your interview evaluation and remarks for this round."}
 					</DialogDescription>
 				</DialogHeader>
+
+				{roundKey === "director" && (
+					<div className="mt-4 flex flex-col gap-2 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+						<span className="text-xs font-bold text-slate-700 dark:text-slate-300">Final Decision</span>
+						<div className="flex gap-2">
+							<button
+								type="button"
+								onClick={() => setDecision("hire")}
+								className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all ${
+									decision === "hire"
+										? "bg-indigo-50 border-indigo-300 text-indigo-800 dark:bg-indigo-950/20 dark:border-indigo-800 dark:text-indigo-300"
+										: "bg-white border-slate-200 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 hover:bg-slate-50"
+								}`}
+							>
+								HIRE
+							</button>
+							<button
+								type="button"
+								onClick={() => setDecision("reject")}
+								className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all ${
+									decision === "reject"
+										? "bg-rose-50 border-rose-300 text-rose-805 dark:bg-rose-955/20 dark:border-rose-800 dark:text-rose-300"
+										: "bg-white border-slate-200 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 hover:bg-slate-50"
+								}`}
+							>
+								REJECT
+							</button>
+							<button
+								type="button"
+								onClick={() => setDecision("hold")}
+								className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all ${
+									decision === "hold"
+										? "bg-amber-50 border-amber-300 text-amber-800 dark:bg-amber-955/10 dark:border-amber-800 dark:text-amber-300"
+										: "bg-white border-slate-200 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 hover:bg-slate-50"
+								}`}
+							>
+								HOLD
+							</button>
+						</div>
+					</div>
+				)}
+
 				<div className="mt-4">
 					<Textarea
 						className="min-h-36 resize-none rounded-xl border-slate-200 text-sm leading-relaxed placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
@@ -972,22 +1048,38 @@ function RoundFeedbackDialog({
 					/>
 				</div>
 				<DialogFooter className="mt-6 flex flex-col sm:flex-row gap-2 sm:justify-end">
-					<DialogClose asChild>
-						<Button
-							disabled={saving || isFeedbackEmpty}
-							onClick={() => onSave("fail", note)}
-							className="h-10 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-800 font-bold text-xs cursor-pointer shadow-none w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
-							Fail Round
-						</Button>
-					</DialogClose>
-					<DialogClose asChild>
-						<Button
-							disabled={saving || isFeedbackEmpty}
-							onClick={() => onSave("pass", note)}
-							className="h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs cursor-pointer shadow-md w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
-							Pass Round
-						</Button>
-					</DialogClose>
+					{roundKey === "director" ? (
+						<DialogClose asChild>
+							<Button
+								disabled={isSubmitDisabled}
+								onClick={() => onSave("pass", note, decision)}
+								className="h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs cursor-pointer shadow-md w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed px-6"
+							>
+								Save Review
+							</Button>
+						</DialogClose>
+					) : (
+						<>
+							<DialogClose asChild>
+								<Button
+									disabled={isSubmitDisabled}
+									onClick={() => onSave("fail", note)}
+									className="h-10 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-800 font-bold text-xs cursor-pointer shadow-none w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+								>
+									Fail Round
+								</Button>
+							</DialogClose>
+							<DialogClose asChild>
+								<Button
+									disabled={isSubmitDisabled}
+									onClick={() => onSave("pass", note)}
+									className="h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs cursor-pointer shadow-md w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+								>
+									Pass Round
+								</Button>
+							</DialogClose>
+						</>
+					)}
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

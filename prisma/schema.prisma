@@ -1,5 +1,5 @@
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
 }
 
 generator client {
@@ -7,53 +7,68 @@ generator client {
 }
 
 model Candidate {
-  id             String                @id @default(uuid())
-  firstName      String                @map("first_name")
-  lastName       String                @map("last_name")
-  mobile         String
-  email          String                @unique
-  role           String
-  experience     String
-  testLocation   String?               @map("test_location")
-  hiringLocation String?               @map("hiring_location")
-  hiringStatus   String                @default("screening") @map("hiring_status")
-  expectedSalary Decimal?              @map("expected_salary")
-  offerSalary    Decimal?              @map("offer_salary")
-  hrNotes        String?               @map("hr_notes")
-  vacancyId      String?               @map("vacancy_id")
-  createdAt      DateTime              @default(now()) @map("created_at")
+  id                 String                @id @default(uuid())
+  firstName          String                @map("first_name")
+  lastName           String                @map("last_name")
+  mobile             String?
+  email              String                @unique
+  createdAt          DateTime              @default(now()) @map("created_at")
+  hiringStatus       String                @default("screening") @map("hiring_status")
+  expectedSalary     Decimal?              @map("expected_salary")
+  offerSalary        Decimal?              @map("offer_salary")
+  hrNotes            String?               @map("hr_notes")
+  roleId             String                @map("role")
+  experienceId       String?               @map("experience")
+  testLocationId     String                @map("test_location")
+  hiringLocationId   String?               @map("hiring_location")
+  vacancyId          String?               @map("vacancy_id")
+  passportPhotoUrl   String?               @map("passport_photo_url")
+  resumeUrl          String?               @map("resume_url")
+  applicationFormUrl String?               @map("application_form_url")
 
   // Relations
-  experiences    CandidateExperience[]
-  references     CandidateReference[]
+  role               MasterRole            @relation(fields: [roleId], references: [id])
+  experience         MasterExperience?     @relation(fields: [experienceId], references: [id])
+  testLocation       MasterTestLocation    @relation(fields: [testLocationId], references: [id])
+  hiringLocation     MasterHiringLocation? @relation(fields: [hiringLocationId], references: [id])
+  vacancy            JobVacancy?           @relation(fields: [vacancyId], references: [id])
+  experiences        CandidateExperience[]
+  references         CandidateReference[]
+  shares             CandidateShare[]
 
   @@map("candidates")
 }
 
 model ExamSession {
-  id              String    @id @default(uuid())
-  candidateId     String    @unique @map("candidate_id")
-  candidateEmail  String    @map("candidate_email")
-  sessionToken    String?   @map("session_token")
-  expiresAt       DateTime? @map("expires_at")
-  isExamSubmitted Boolean   @default(false) @map("is_exam_submitted")
-  createdAt       DateTime  @default(now()) @map("created_at")
+  id                 String            @id @default(uuid())
+  candidateId        String            @unique @map("candidate_id")
+  activeSessionToken String?           @map("active_session_token")
+  secondsUsed        Int               @default(0) @map("seconds_used")
+  startedAt          DateTime?         @map("started_at")
+  expiresAt          DateTime?         @map("expires_at")
+  submittedAt        DateTime?         @map("submitted_at")
+  roleId             String            @map("role")
+  experienceId       String?           @map("experience")
+  isExamStarted      Boolean           @default(false) @map("is_exam_started")
+  isExamSubmitted    Boolean           @default(false) @map("is_exam_submitted")
+
+  // Relations
+  role               MasterRole        @relation(fields: [roleId], references: [id])
+  experience         MasterExperience? @relation(fields: [experienceId], references: [id])
 
   @@map("exam_sessions")
 }
 
 model QuestionDocument {
-  id        String   @id @default(uuid())
-  payload   Json
-  createdAt DateTime @default(now()) @map("created_at")
+  id        String   @id
+  payload   Json?
+  updatedAt DateTime @default(now()) @map("updated_at")
 
   @@map("question_documents")
 }
 
 model Result {
   id                      String   @id @default(uuid())
-  candidateId             String   @map("candidate_id")
-  tabSwitches             Int      @default(0) @map("tab_switches")
   secondsUsed             Int      @default(0) @map("seconds_used")
   submittedAt             DateTime @default(now()) @map("submitted_at")
   totalMarksPossible      Int?     @map("total_marks_possible")
@@ -63,26 +78,29 @@ model Result {
   assignedInterviewerName String?  @map("assigned_interviewer_name")
   assignedInterviewerEmail String?  @map("assigned_interviewer_email")
   interviewRounds         Json?    @map("interview_rounds")
+  directorDecision        String?  @map("director_decision")
+  createdAt               DateTime @default(now()) @map("created_at")
 
   @@map("results")
 }
 
 model CandidateAnswer {
-  id           String   @id @default(uuid())
-  sessionId    String   @map("session_id")
-  questionId   String   @map("question_id")
-  answerValue  Json     @map("answer_value")
-  isCorrect    Boolean? @map("is_correct")
-  adminGrade   String?  @map("admin_grade")
-  marksAwarded Int?     @map("marks_awarded")
+  id            String   @id @default(uuid())
+  examSessionId String   @map("exam_session_id")
+  questionId    String   @map("question_id")
+  answerValue   Json     @map("answer_value")
+  isCorrect     Boolean? @map("is_correct")
+  adminGrade    String?  @map("admin_grade")
+  marksAwarded  Decimal  @default(0) @map("marks_awarded")
+  createdAt     DateTime @default(now()) @map("created_at")
 
   @@map("candidate_answers")
 }
 
 model ProctoringLog {
   id            String   @id @default(uuid())
-  sessionId     String   @map("session_id")
-  violationType String   @map("violation_type")
+  examSessionId String   @map("exam_session_id")
+  violationType String   @default("tab_switch") @map("violation_type")
   createdAt     DateTime @default(now()) @map("created_at")
 
   @@map("proctoring_logs")
@@ -99,28 +117,92 @@ model AdminUser {
 }
 
 model JobVacancy {
-  id             String   @id @default(uuid())
-  role           String
-  experience     String
-  hiringLocation String   @map("hiring_location")
-  testLocations  Json     @map("test_locations")
-  openings       Int      @default(1)
-  isActive       Boolean  @default(true) @map("is_active")
-  createdAt      DateTime @default(now()) @map("created_at")
+  id               String               @id @default(uuid())
+  roleId           String               @map("role")
+  experienceId     String               @map("experience")
+  hiringLocationId String               @map("hiring_location")
+  testLocations    String[]             @default([]) @map("test_locations")
+  openings         Int                  @default(1)
+  isActive         Boolean              @default(true) @map("is_active")
+  createdAt        DateTime             @default(now()) @map("created_at")
+
+  // Relations
+  role             MasterRole           @relation(fields: [roleId], references: [id])
+  experience       MasterExperience     @relation(fields: [experienceId], references: [id])
+  hiringLocation   MasterHiringLocation @relation(fields: [hiringLocationId], references: [id])
+  candidates       Candidate[]
 
   @@map("job_vacancies")
 }
 
-model MasterItem {
+model MasterRole {
+  id        String   @id @default(uuid())
+  value     String   @unique
+  label     String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  candidates Candidate[]
+  vacancies  JobVacancy[]
+  sessions   ExamSession[]
+
+  @@map("master_roles")
+}
+
+model MasterExperience {
+  id         String   @id @default(uuid())
+  value      String   @unique
+  label      String
+  filledDots Int      @default(1) @map("filled_dots")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  candidates Candidate[]
+  vacancies  JobVacancy[]
+  sessions   ExamSession[]
+
+  @@map("master_experiences")
+}
+
+model MasterHiringLocation {
+  id        String   @id @default(uuid())
+  value     String   @unique
+  label     String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  candidates Candidate[]
+  vacancies  JobVacancy[]
+
+  @@map("master_hiring_locations")
+}
+
+model MasterTestLocation {
+  id        String   @id @default(uuid())
+  value     String   @unique
+  label     String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  candidates Candidate[]
+
+  @@map("master_test_locations")
+}
+
+model AssessmentMetadata {
   id        String   @id @default(uuid())
   type      String
   value     String
   label     String
-  isActive  Boolean  @default(true) @map("is_active")
   metadata  Json?
+  isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
 
-  @@map("master_items")
+  @@map("assessment_metadata")
 }
 
 model CandidateExperience {
@@ -131,7 +213,7 @@ model CandidateExperience {
   joiningDate  DateTime  @map("start_date")
   leavingDate  DateTime? @map("end_date")
   salary       Decimal?  @map("current_salary")
-  noticePeriod Int       @map("notice_period")
+  noticePeriod Int       @default(0) @map("notice_period")
   isCurrent    Boolean   @default(false) @map("is_current")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
@@ -150,10 +232,6 @@ model Employee {
   email        String               @unique
   isActive     Boolean              @default(true) @map("is_active")
   createdAt    DateTime             @default(now()) @map("created_at")
-  updatedAt    DateTime             @updatedAt @map("updated_at")
-  
-  // Relations
-  references   CandidateReference[]
 
   @@map("employees")
 }
@@ -173,9 +251,31 @@ model CandidateReference {
 
   // Relations
   candidate       Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  employee        Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
 
   @@index([candidateId])
-  @@index([employeeId])
   @@map("candidate_references")
+}
+
+model CandidateShare {
+  id                  String    @id @default(uuid())
+  candidateId         String    @map("candidate_id")
+  token               String    @unique
+  pinHash             String    @map("pin_hash")
+  expiresAt           DateTime  @map("expires_at")
+  createdBy           String    @map("created_by")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  revoked             Boolean   @default(false)
+  revokedAt           DateTime? @map("revoked_at")
+  revokedBy           String?   @map("revoked_by")
+  lastAccessedAt      DateTime? @map("last_accessed_at")
+  lastAccessedIp      String?   @map("last_accessed_ip")
+  lastAccessedUserAgent String? @map("last_accessed_user_agent")
+  viewCount           Int       @default(0) @map("view_count")
+  failedAttempts      Int       @default(0) @map("failed_attempts")
+  lockedUntil         DateTime? @map("locked_until")
+
+  // Relations
+  candidate           Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@map("candidate_shares")
 }

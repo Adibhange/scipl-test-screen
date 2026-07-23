@@ -19,3 +19,20 @@ export function canEnterRound(result: CandidateResult, round: InterviewRoundKey)
   const index = ROUND_ORDER.indexOf(round)
   return ensureInterviewRounds(result)[ROUND_ORDER[index - 1]].status === "pass"
 }
+
+export function getFirstRoundCompletionDate(result: CandidateResult): string | undefined {
+  const rounds = result.interviewRounds;
+  if (!rounds) return undefined;
+  return rounds.face_to_face?.updatedAt;
+}
+
+export function formatCompletionDate(dateStr?: string): string {
+  if (!dateStr) return "";
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "";
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  } catch {
+    return "";
+  }
+}

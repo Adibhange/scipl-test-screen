@@ -401,6 +401,7 @@ export const supabaseAdapter: IDatabaseAdapter = {
 					total_marks_possible: result.totalMarksPossible ?? null,
 					score_breakdown: result.scoreBreakdown ?? null,
 					interview_rounds: result.interviewRounds ?? null,
+					director_decision: result.directorDecision ?? null,
 					assigned_interviewer_id: result.assignedInterviewerId ?? null,
 					assigned_interviewer_name: result.assignedInterviewerName ?? null,
 					assigned_interviewer_email: result.assignedInterviewerEmail ?? null,

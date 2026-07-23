@@ -38,6 +38,7 @@ import {
 	Route,
 	BadgeCheck,
 	UserX,
+	Clock,
 } from "lucide-react";
 import { PageContainer, PageHeader, EmptyState } from "@/components/ui/layout-primitives";
 import { MetricCard, InfoGrid } from "@/components/ui/enterprise-primitives";
@@ -177,7 +178,7 @@ async function CandidateDashboardContent({
 		}
 		if (hiringStatus !== "all") {
 			const computed = computeCandidateStatus(r);
-			const filterVal = hiringStatus === "hold" ? "on_hold" : hiringStatus;
+			const filterVal = (hiringStatus === "hold" || hiringStatus === "on_hold") ? "on_hold" : hiringStatus;
 			if (computed !== filterVal) return false;
 		}
 		if (hiringLocation !== "all") {
@@ -229,6 +230,14 @@ async function CandidateDashboardContent({
 			tone: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400",
 		},
 		{
+			label: "On Hold",
+			value: scopedResults.filter(
+				(r) => computeCandidateStatus(r) === "on_hold"
+			).length,
+			Icon: Clock,
+			tone: "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400",
+		},
+		{
 			label: "Rejected",
 			value: scopedResults.filter(
 				(r) => computeCandidateStatus(r) === "rejected"
@@ -265,7 +274,7 @@ async function CandidateDashboardContent({
 			/>
 
 			{/* Metric Cards Grid */}
-			<InfoGrid cols={4} className="gap-6 my-6 md:my-8">
+			<InfoGrid cols={5} className="gap-6 my-6 md:my-8">
 				{metrics.map(({ label, value, Icon, tone }) => (
 					<MetricCard
 						key={label}

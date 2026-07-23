@@ -183,6 +183,15 @@ export async function exportToExcel({
 		const expectedSalVal = res.candidate.expectedSalary !== undefined ? Number(res.candidate.expectedSalary) : null;
 		const offerSalVal = res.candidate.offerSalary !== undefined ? Number(res.candidate.offerSalary) : null;
 
+		const formatStatus = (s: string) => {
+			if (s === "in_interview") return "In Interview";
+			if (s === "on_hold") return "On Hold";
+			if (s === "screening") return "Screening";
+			if (s === "hired") return "Hired";
+			if (s === "rejected") return "Rejected";
+			return s;
+		};
+
 		const row = s1.addRow({
 			candidateId: res.candidate.id || "—",
 			name: res.candidate.name,
@@ -192,7 +201,7 @@ export async function exportToExcel({
 			experience: displayExp,
 			testLocation: displayTestLoc,
 			hiringLocation: displayHiringLoc,
-			hiringStatus: computedStatus,
+			hiringStatus: formatStatus(computedStatus),
 			currentRound: getRoundLabel(res),
 			submittedAt: res.submittedAt ? res.submittedAt.slice(0, 10) : "—",
 			vacancy: res.candidate.vacancyId || "—",
@@ -208,7 +217,7 @@ export async function exportToExcel({
 			assignedInterviewer: res.assignedInterviewerName || "Unassigned",
 			round1: res.interviewRounds?.face_to_face?.status ?? "pending",
 			round2: res.interviewRounds?.assessment?.status ?? "pending",
-			round3: res.interviewRounds?.director?.status ?? "pending",
+			round3: res.directorDecision ?? "pending",
 			expectedSalary: expectedSalVal,
 			offerSalary: offerSalVal,
 			hrNotes: res.candidate.hrNotes || "",
@@ -423,7 +432,7 @@ export async function exportToExcel({
 		const r2 = res.interviewRounds?.assessment;
 		const r3 = res.interviewRounds?.director;
 
-		const isCompleted = r3?.status === "pass" || r3?.status === "fail" || computedStatus === "hired" || computedStatus === "rejected";
+		const isCompleted = !!res.directorDecision || computedStatus === "hired" || computedStatus === "rejected" || computedStatus === "on_hold";
 		const completionStatus = isCompleted ? "Completed" : (computedStatus === "screening" ? "Screening" : "In Progress");
 
 		const finalDecision = computedStatus === "hired" ? "Hired"
@@ -431,10 +440,19 @@ export async function exportToExcel({
 			: computedStatus === "on_hold" ? "On Hold"
 			: "Pending";
 
+		const formatStatus = (s: string) => {
+			if (s === "in_interview") return "In Interview";
+			if (s === "on_hold") return "On Hold";
+			if (s === "screening") return "Screening";
+			if (s === "hired") return "Hired";
+			if (s === "rejected") return "Rejected";
+			return s;
+		};
+
 		s5.addRow({
 			candidateId: res.candidate.id || "—",
 			name: res.candidate.name,
-			hiringStatus: computedStatus,
+			hiringStatus: formatStatus(computedStatus),
 			currentRound: getRoundLabel(res),
 			assignedInterviewer: res.assignedInterviewerName || "Unassigned",
 			completion: completionStatus,
@@ -447,7 +465,7 @@ export async function exportToExcel({
 			r2Name: r2?.interviewerName || "Unassigned",
 			r2Date: r2?.updatedAt ? r2.updatedAt.slice(0, 10) : "—",
 			r2Remarks: r2?.remarks || "",
-			r3Status: r3?.status ?? "pending",
+			r3Status: res.directorDecision ? res.directorDecision.toUpperCase() : "pending",
 			r3Name: r3?.interviewerName || "Unassigned",
 			r3Date: r3?.updatedAt ? r3.updatedAt.slice(0, 10) : "—",
 			r3Remarks: r3?.remarks || "",

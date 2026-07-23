@@ -1,11 +1,9 @@
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import { 
 	Mail, 
 	Phone, 
 	MapPin, 
 	Clock, 
-	AlertTriangle, 
 	ChevronRight, 
 	Calendar, 
 	UserCheck 
@@ -14,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import type { CandidateResult } from "@/types";
 import { StatusBadge, DetailRow, type StatusVariant } from "@/components/ui/enterprise-primitives";
 import { computeCandidateStatus, getCurrentRoundKey } from "@/lib/filters";
+import { getFirstRoundCompletionDate, formatCompletionDate } from "@/lib/interview-rounds";
 
 interface CandidateCardProps {
 	result: CandidateResult;
@@ -55,7 +54,8 @@ export function CandidateCard({
 	const gradable = result.answers.filter((a) => a.isCorrect !== undefined);
 	const correctCount = gradable.filter((a) => a.isCorrect).length;
 
-	const durationMins = Math.round(result.secondsUsed / 60);
+	const firstRoundDate = getFirstRoundCompletionDate(result);
+	const formattedDate = formatCompletionDate(firstRoundDate);
 
 	return (
 		<Link href={`/admin/${result.id}`} className="group block h-full animate-fade-in focus:outline-none">
@@ -71,7 +71,7 @@ export function CandidateCard({
 							<h3 className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight truncate">
 								{result.candidate.name}
 							</h3>
-							<p className="text-[11px] font-medium text-slate-400 dark:text-slate-450 capitalize truncate mt-0.5">
+							<p className="text-[11px] font-medium text-slate-400 dark:text-slate-455 capitalize truncate mt-0.5">
 								{displayRole} • {displayExp}
 							</p>
 						</div>
@@ -86,34 +86,8 @@ export function CandidateCard({
 					<DetailRow label="Hiring Location" value={displayHiringLoc} icon={MapPin} className="py-0.5 border-b-0 text-slate-600 dark:text-slate-400 font-semibold" />
 				</div>
 
-				{/* 3. Performance & Proctoring Metrics Row */}
-				<div className="flex flex-wrap items-center gap-2 mt-4 select-none">
-					{/* Duration Pill */}
-					<span className="inline-flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-semibold px-2.5 py-1 text-[10px] rounded-lg border border-slate-100/60 dark:border-slate-800/80 shadow-3xs">
-						<Clock className="h-3 w-3 text-slate-400" />
-						{durationMins}m
-					</span>
-
-					{/* Proctoring Warning Pill */}
-					<span className={cn(
-						"inline-flex items-center gap-1.5 font-bold px-2.5 py-1 text-[10px] rounded-lg border transition-colors shadow-3xs",
-						result.tabSwitches > 0 
-							? "bg-rose-50 dark:bg-rose-955/20 text-rose-700 dark:text-rose-300 border-rose-100 dark:border-rose-900/40" 
-							: "bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-semibold border-slate-100/60 dark:border-slate-800/80"
-					)}>
-						<AlertTriangle className="h-3 w-3" />
-						{result.tabSwitches} switches
-					</span>
-
-					{/* Date Pill */}
-					<span className="inline-flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-semibold px-2.5 py-1 text-[10px] rounded-lg border border-slate-100/60 dark:border-slate-800/80 ml-auto shadow-3xs">
-						<Calendar className="h-3 w-3 text-slate-450" />
-						{new Date(result.submittedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-					</span>
-				</div>
-
-				{/* 4. Recruitment Status details section */}
-				<div className="my-4 space-y-1.5 border-t border-slate-100 dark:border-slate-800 pt-3.5">
+				{/* 3. Recruitment Status details section */}
+				<div className="mt-4 space-y-1.5 border-t border-slate-100 dark:border-slate-800 pt-3.5">
 					<div className="flex items-center justify-between text-xs font-semibold">
 						<span className="text-slate-400 flex items-center gap-1.5"><UserCheck className="h-3.5 w-3.5 text-slate-400" /> Recruiter</span>
 						<span className="text-slate-700 dark:text-slate-300 font-bold truncate max-w-[150px]">{result.assignedInterviewerName || "Unassigned"}</span>
@@ -132,16 +106,24 @@ export function CandidateCard({
 							<StatusBadge variant="pending" label="Pending" />
 						)}
 					</div>
+					{formattedDate && (
+						<div className="flex items-center justify-between text-xs font-semibold">
+							<span className="text-slate-400 flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-slate-400" /> Round 1 Completed</span>
+							<span className="text-slate-750 dark:text-slate-300 font-bold">
+								{formattedDate}
+							</span>
+						</div>
+					)}
 				</div>
 
-				{/* 5. Footer Action Button */}
+				{/* 4. Footer Action Button */}
 				<div className="mt-auto border-t border-slate-100 dark:border-slate-800 pt-4 flex items-center justify-end">
 					<Button 
 						variant="outline" 
 						size="sm" 
 						className="h-9.5 w-full text-indigo-650 dark:text-indigo-400 font-bold border-indigo-200/80 bg-indigo-50/20 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 group-hover:border-indigo-400 cursor-pointer shadow-3xs"
 					>
-						View Submission
+						View Details
 						<ChevronRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5 duration-200" />
 					</Button>
 				</div>

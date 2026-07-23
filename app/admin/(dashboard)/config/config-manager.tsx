@@ -606,24 +606,8 @@ export function ConfigManager() {
                         {r.label}
                       </SelectItem>
                     ))}
-                    <SelectItem value="custom" className="rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-indigo-505 hover:bg-indigo-50 focus:bg-indigo-50">
-                      + Type Custom Role
-                    </SelectItem>
                   </SelectContent>
                 </Select>
-                {vacancyForm.role === "custom" && (
-                  <Input
-                    aria-invalid={invalidFields.includes("vacancyRole")}
-                    className="mt-1 h-8 text-xs rounded-lg border-input bg-background"
-                    value={vacancyForm.customRole}
-                    onChange={e => {
-                      setVacancyForm({ ...vacancyForm, customRole: e.target.value });
-                      setInvalidFields(prev => prev.filter(f => f !== "vacancyRole"));
-                    }}
-                    placeholder="e.g. ReactJS Developer"
-                    aria-label="Custom role title input"
-                  />
-                )}
               </div>
 
               {/* Experience */}
@@ -653,24 +637,8 @@ export function ConfigManager() {
                         </div>
                       </SelectItem>
                     ))}
-                    <SelectItem value="custom" className="rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-indigo-505 hover:bg-indigo-50 focus:bg-indigo-50">
-                      + Type Custom Experience
-                    </SelectItem>
                   </SelectContent>
                 </Select>
-                {vacancyForm.experience === "custom" && (
-                  <Input
-                    aria-invalid={invalidFields.includes("vacancyExperience")}
-                    className="mt-1 h-8 text-xs rounded-lg border-input bg-background"
-                    value={vacancyForm.customExperience}
-                    onChange={e => {
-                      setVacancyForm({ ...vacancyForm, customExperience: e.target.value });
-                      setInvalidFields(prev => prev.filter(f => f !== "vacancyExperience"));
-                    }}
-                    placeholder="e.g. 1-3 Years"
-                    aria-label="Custom experience input"
-                  />
-                )}
               </div>
 
               {/* Hiring Location */}
@@ -695,24 +663,8 @@ export function ConfigManager() {
                         {h.label}
                       </SelectItem>
                     ))}
-                    <SelectItem value="custom" className="rounded-xl py-2.5 px-3 cursor-pointer text-xs font-semibold text-indigo-505 hover:bg-indigo-50 focus:bg-indigo-50">
-                      + Type Custom Location
-                    </SelectItem>
                   </SelectContent>
                 </Select>
-                {vacancyForm.hiringLocation === "custom" && (
-                  <Input
-                    aria-invalid={invalidFields.includes("vacancyHiringLocation")}
-                    className="mt-1 h-8 text-xs rounded-lg border-input bg-background"
-                    value={vacancyForm.customHiringLocation}
-                    onChange={e => {
-                      setVacancyForm({ ...vacancyForm, customHiringLocation: e.target.value });
-                      setInvalidFields(prev => prev.filter(f => f !== "vacancyHiringLocation"));
-                    }}
-                    placeholder="e.g. Pune"
-                    aria-label="Custom hiring location input"
-                  />
-                )}
               </div>
 
               {/* Test Location Array Checkbox selection */}

@@ -332,7 +332,7 @@ DetailRow.displayName = "DetailRow";
 
 // 7. InfoGrid
 export interface InfoGridProps extends React.HTMLAttributes<HTMLDivElement> {
-	cols?: 1 | 2 | 3 | 4;
+	cols?: 1 | 2 | 3 | 4 | 5;
 }
 
 export const InfoGrid = React.forwardRef<HTMLDivElement, InfoGridProps>(
@@ -341,7 +341,8 @@ export const InfoGrid = React.forwardRef<HTMLDivElement, InfoGridProps>(
 			cols === 1 ? "grid-cols-1"
 			: cols === 2 ? "grid-cols-1 sm:grid-cols-2"
 			: cols === 3 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-			: "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
+			: cols === 4 ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+			: "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5";
 
 		return (
 			<div
