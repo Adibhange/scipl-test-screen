@@ -155,10 +155,11 @@ supabase/migrations/20260726_share_validity_1_12_24.sql
 - [ ] `/` shows a small "Master Login" button, top-right.
 - [ ] Modal has only a 6-digit code field.
 - [ ] Wrong code → inline error, no cookie set; 6 wrong attempts in 5 min → `429`.
-- [ ] Correct code → redirect to `/master`, `scipl_master_session` cookie set `HttpOnly` (+`Secure` in prod).
-- [ ] `/master` or any `/master/...` path with no cookie → redirected to `/master/login?redirect=<path>`, and login returns you to that exact path.
-- [ ] Logout clears the cookie and returns to `/`.
-- [ ] Existing `/admin/login` / `/admin` flows are untouched — Admin and Master sessions don't affect each other.
+- [ ] Correct code → redirect to **`/admin`** (the real dashboard — candidate grid, metrics, filters), `scipl_master_session` cookie set `HttpOnly` (+`Secure` in prod).
+- [ ] Any `/admin/...` path with no session at all → redirected to `/admin/login` (unchanged, real-admin login).
+- [ ] Any `/master/...` path (login page aside) with no Master cookie → redirected to `/master/login?redirect=<path>`, and login returns you to that exact path.
+- [ ] Logout (sidebar) clears the Master cookie and returns to `/`.
+- [ ] Existing Admin login/dashboard still works exactly as before — a real Supabase Admin session is unaffected by any of this.
 
 **Share links**
 - [ ] Share button appears on the Admin candidate detail page for every admin role.
@@ -170,7 +171,8 @@ supabase/migrations/20260726_share_validity_1_12_24.sql
 - [ ] Master dashboard's "Shared Candidate Links" card lists it, with working Copy/Revoke.
 
 **Shared view + edit mode**
-- [ ] Opening `/master/admin/<token>` while logged out redirects to login and back to that same URL after auth.
+- [ ] Opening `/master/admin/<token>` while logged out asks for the 6-digit passcode, then lands directly on that one candidate's profile — not a generic dashboard.
+- [ ] That profile page looks identical to opening the same candidate from `/admin` — same sidebar, same header, same layout (not a separate-looking page).
 - [ ] Once in, the candidate view matches what Admin sees: personal/contact info, experience, role, hiring status, salary, HR notes, test results, coding/MCQ answers, proctoring/tab-switch logs, interview timeline.
 - [ ] Master can edit hiring status, salary, HR notes, role/experience/location, and submit interview round feedback — changes persist (check `/admin` sees the same updated values).
 - [ ] Existing Admin edit flows on the same candidate still work exactly as before.
@@ -210,7 +212,38 @@ supabase/migrations/20260726_share_validity_1_12_24.sql
   migration (`20260726_share_validity_1_12_24.sql`) rather than an edit to
   migration history — run it after the first one.
 
-## Known limitations (honest gaps, not oversights)
+## Phase 6 — Master genuinely uses /admin (no separate lookalike page)
+
+Per a follow-up requirement: Master Login should land on the *actual*
+`/admin` page, not a separately-routed page that merely looks the same.
+
+- `middleware.ts`: `/admin/*` now accepts **either** a real Supabase Admin
+  session **or** a valid Master session — both treated as equally
+  authorized to enter.
+- All six `/admin` entry points (dashboard layout, dashboard page,
+  candidate detail, config, settings, team) now resolve the current actor
+  via `resolveWriteActor()` instead of `getCurrentAdmin()`, so a Master
+  session passes through the same gates a real admin does.
+- `AdminShell` gained an `isMaster` flag — logout now correctly calls
+  `DELETE /api/auth/master` and sends Master to `/` instead of attempting a
+  no-op Supabase sign-out and sending them to `/admin/login`. Idle-timeout
+  logout does the same.
+- `/master` (the bare route) is now just a redirect to `/admin` — kept only
+  so an old bookmark or the literal URL doesn't 404.
+- `/master/(protected)/layout.tsx` now renders the **same** `AdminShell`
+  used at `/admin`, not a separate shell — so a candidate profile opened
+  via a share link looks visually identical to opening it from the real
+  admin dashboard.
+- Removed the now-redundant `/master/candidates/[id]` route and the unused
+  `MasterShell` component — Master browses via `/admin/[id]` directly now,
+  exactly like any admin would.
+- The **share-link flow itself did not change**: the URL format is still
+  `domain/master/admin/<token>`, it still asks for the Master passcode via
+  the same middleware + layout guard, and it still shows only that one
+  candidate's profile once authenticated. Only the *look* changed — from a
+  separate shell to the real admin UI.
+
+
 
 - **Feature 6's exact Edit Mode UX isn't built.** The spec asked for
   top-right `Edit / Save / Cancel` buttons that flip the *entire* profile
