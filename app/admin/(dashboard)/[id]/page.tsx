@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getResultById } from "@/repositories/result.repository";
 import { getQuestionsByIds } from "@/repositories/question.repository";
+import { getCandidateDocumentStatusMap } from "@/repositories/candidate-document.repository";
 import { CandidateDetailWrapper } from "@/components/admin/candidates/candidate-detail-wrapper";
 import { getCurrentAdmin, type AdminUser } from "@/repositories/admin.repository";
 import { Suspense } from "react";
@@ -38,13 +39,17 @@ async function CandidateResultContent({
 	// Fetch only the specific questions answered by this candidate for optimal performance
 	const answerIds = result.answers.map((ans) => ans.questionId);
 	const questions = await getQuestionsByIds(answerIds);
-	
+
 	const items = result.answers.map((answer) => ({
 		answer,
 		question: questions.find((q) => q.id === answer.questionId) ?? null,
 	}));
 
+	const documentStatus = result.candidate.id
+		? await getCandidateDocumentStatusMap(result.candidate.id)
+		: { resume: { uploaded: false, uploadedAt: null }, application_form: { uploaded: false, uploadedAt: null }, passport_photo: { uploaded: false, uploadedAt: null } };
+
 	return (
-		<CandidateDetailWrapper result={result} items={items} admin={admin} />
+		<CandidateDetailWrapper result={result} items={items} admin={admin} documentStatus={documentStatus} />
 	);
 }

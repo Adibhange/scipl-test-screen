@@ -11,6 +11,7 @@ import {
 
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
+import { MasterLoginTrigger } from "@/components/master/master-login-trigger";
 import {
 	DotGrid,
 	DiamondGrid,
@@ -29,8 +30,9 @@ export default function RootPage() {
 			<BuildingSilhouette className="pointer-events-none absolute -left-24 top-8 -z-10 h-[480px] w-[480px] text-slate-400/50" />
 
 			{/* header */}
-			<header className="relative z-10 shrink-0 border-b border-border bg-white/80 px-8 py-4 sm:px-14">
+			<header className="relative z-10 flex shrink-0 items-center justify-between border-b border-border bg-white/80 px-8 py-4 sm:px-14">
 				<Logo size="sm" />
+				<MasterLoginTrigger />
 			</header>
 
 			{/* hero */}

@@ -78,6 +78,17 @@ export async function getResultById(id: string): Promise<CandidateResult | undef
 	);
 }
 
+/**
+ * Resolves a candidate's assessment result from their candidate id rather
+ * than the result/session id. Used by the Master share flow, where the
+ * `candidate_shares` row only stores `candidate_id`.
+ */
+export async function getResultByCandidateId(candidateId: string): Promise<CandidateResult | undefined> {
+	const session = await getDatabaseAdapter().examSessions.getByCandidateId(candidateId);
+	if (!session?.id) return undefined;
+	return getResultById(session.id);
+}
+
 export async function saveResult(result: CandidateResult): Promise<void> {
 	await getDatabaseAdapter().results.save(result);
 }

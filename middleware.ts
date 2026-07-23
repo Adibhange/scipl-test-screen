@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { env } from "@/env";
+import { MASTER_SESSION_COOKIE, verifyMasterSessionToken } from "@/lib/master-session";
 
 export async function middleware(request: NextRequest) {
 	let response = NextResponse.next({ request });
@@ -75,6 +76,42 @@ export async function middleware(request: NextRequest) {
 		return redirectResponse;
 	}
 
+	// Master authentication is completely independent from Admin (Supabase) auth above.
+	const isMasterRoute = request.nextUrl.pathname.startsWith("/master");
+	const isMasterLoginRoute = request.nextUrl.pathname === "/master/login";
+
+	if (isMasterRoute && !isMasterLoginRoute) {
+		const masterToken = request.cookies.get(MASTER_SESSION_COOKIE)?.value;
+		const hasValidMasterSession = env.MASTER_SESSION_SECRET
+			? await verifyMasterSessionToken(masterToken, env.MASTER_SESSION_SECRET)
+			: false;
+
+		if (!hasValidMasterSession) {
+			const loginUrl = new URL("/master/login", request.url);
+			loginUrl.searchParams.set("redirect", request.nextUrl.pathname + request.nextUrl.search);
+			const redirectResponse = NextResponse.redirect(loginUrl);
+			redirectResponse.headers.set("X-Frame-Options", "DENY");
+			redirectResponse.headers.set("X-Content-Type-Options", "nosniff");
+			redirectResponse.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+			redirectResponse.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+			redirectResponse.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+			redirectResponse.headers.set(
+				"Content-Security-Policy",
+				"default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co;"
+			);
+			redirectResponse.headers.set(
+				"Cache-Control",
+				"no-store, no-cache, must-revalidate, private",
+			);
+			return redirectResponse;
+		}
+
+		response.headers.set(
+			"Cache-Control",
+			"no-store, no-cache, must-revalidate, private",
+		);
+	}
+
 	if (
 		request.nextUrl.pathname.startsWith("/interview") ||
 		request.nextUrl.pathname.startsWith("/api/interview") ||
@@ -92,6 +129,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
 	matcher: [
 		"/admin/:path*",
+		"/master/:path*",
 		"/interview",
 		"/api/interview/:path*",
 		"/api/auth/:path*",

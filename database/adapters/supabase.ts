@@ -187,6 +187,19 @@ export const supabaseAdapter: IDatabaseAdapter = {
 			if (error) handleDatabaseError(error, "Could not fetch candidate role-experience list.");
 			return data || [];
 		},
+
+		async getDocuments(id: string) {
+			const { data, error } = await getSupabaseServerClient()
+				.from("candidates")
+				.select(
+					"id, resume_path, resume_uploaded_at, application_form_path, application_form_uploaded_at, passport_photo_path, passport_photo_uploaded_at",
+				)
+				.eq("id", id)
+				.maybeSingle();
+
+			if (error) handleDatabaseError(error, "Could not load candidate documents.");
+			return data;
+		},
 	},
 
 	examSessions: {
@@ -962,6 +975,114 @@ export const supabaseAdapter: IDatabaseAdapter = {
 				createdAt: row.created_at,
 				updatedAt: row.updated_at,
 			}));
+		},
+	},
+
+	candidateShares: {
+		async getActiveByCandidateId(candidateId: string) {
+			const { data, error } = await getSupabaseServerClient()
+				.from("candidate_shares")
+				.select("*")
+				.eq("candidate_id", candidateId)
+				.eq("status", "active")
+				.maybeSingle();
+
+			if (error) handleDatabaseError(error, "Could not load the active share link for this candidate.");
+			return data;
+		},
+
+		async getByToken(token: string) {
+			const { data, error } = await getSupabaseServerClient()
+				.from("candidate_shares")
+				.select("*")
+				.eq("share_token", token)
+				.maybeSingle();
+
+			if (error) handleDatabaseError(error, "Could not load the share link.");
+			return data;
+		},
+
+		async create(data: { candidate_id: string; validity_hours: 1 | 6 | 12; created_by: string; expires_at: string }) {
+			const { data: record, error } = await getSupabaseServerClient()
+				.from("candidate_shares")
+				.insert({
+					candidate_id: data.candidate_id,
+					validity_hours: data.validity_hours,
+					created_by: data.created_by,
+					expires_at: data.expires_at,
+					status: "active",
+				})
+				.select()
+				.single();
+
+			if (error) handleDatabaseError(error, "Failed to generate share link.");
+			return record;
+		},
+
+		async revoke(id: string, data: { revoked_by: string; revoke_reason?: string }) {
+			const { data: record, error } = await getSupabaseServerClient()
+				.from("candidate_shares")
+				.update({
+					status: "revoked",
+					revoked_by: data.revoked_by,
+					revoked_at: new Date().toISOString(),
+					revoke_reason: data.revoke_reason ?? null,
+				})
+				.eq("id", id)
+				.eq("status", "active")
+				.select()
+				.maybeSingle();
+
+			if (error) handleDatabaseError(error, "Failed to revoke share link.");
+			return record;
+		},
+
+		async markExpired(id: string) {
+			const { error } = await getSupabaseServerClient()
+				.from("candidate_shares")
+				.update({ status: "expired" })
+				.eq("id", id)
+				.eq("status", "active");
+
+			if (error) handleDatabaseError(error, "Failed to mark share link as expired.");
+		},
+
+		async recordAccess(id: string) {
+			const client = getSupabaseServerClient();
+			const { data: current, error: readError } = await client
+				.from("candidate_shares")
+				.select("access_count")
+				.eq("id", id)
+				.maybeSingle();
+
+			if (readError) {
+				logger.error("Failed to read share access count", { detail: String(readError) });
+				return;
+			}
+
+			const { error } = await client
+				.from("candidate_shares")
+				.update({
+					access_count: (current?.access_count ?? 0) + 1,
+					last_accessed_at: new Date().toISOString(),
+				})
+				.eq("id", id);
+
+			if (error) {
+				// Non-fatal: access-count tracking should never block a legitimate view.
+				logger.error("Failed to record share access", { detail: String(error) });
+			}
+		},
+
+		async listActiveWithCandidate() {
+			const { data, error } = await getSupabaseServerClient()
+				.from("candidate_shares")
+				.select("*, candidates(id, first_name, last_name, email)")
+				.eq("status", "active")
+				.order("created_at", { ascending: false });
+
+			if (error) handleDatabaseError(error, "Could not load active share links.");
+			return data || [];
 		},
 	},
 };

@@ -5,6 +5,16 @@ const serverSchema = z.object({
 	DATABASE_URL: z.string().optional().or(z.literal("")),
 	SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required on server"),
 	NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+	MASTER_CODE_HASH: z
+		.string()
+		.regex(/^[a-f0-9]{64}$/i, "MASTER_CODE_HASH must be a 64-character SHA-256 hex digest")
+		.optional()
+		.or(z.literal("")),
+	MASTER_SESSION_SECRET: z
+		.string()
+		.min(32, "MASTER_SESSION_SECRET must be at least 32 characters")
+		.optional()
+		.or(z.literal("")),
 });
 
 const clientSchema = z.object({

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getCurrentAdmin } from "@/repositories/admin.repository";
+import { resolveWriteActor } from "@/lib/write-actor";
 import { assignInterviewerAndDetails } from "@/services/server/interview/interview.service";
 import { handleApiError } from "@/lib/api-handler";
 import * as apiResponse from "@/lib/api-response";
@@ -13,7 +13,7 @@ export async function PATCH(request: NextRequest) {
 	const limiter = rateLimit(ip, { limit: 60, windowMs: 60000, keyPrefix: "rl:assignment" });
 	if (limiter.isBlocked) return limiter.response!;
 
-	const admin = await getCurrentAdmin();
+	const admin = await resolveWriteActor();
 	if (!admin || admin.role !== "hr") {
 		return apiResponse.forbidden("HR access required", "FORBIDDEN");
 	}

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getCurrentAdmin } from "@/repositories/admin.repository";
+import { resolveWriteActor } from "@/lib/write-actor";
 import { gradeCandidateAnswer } from "@/services/server/grading/grading.service";
 import { handleApiError } from "@/lib/api-handler";
 import * as apiResponse from "@/lib/api-response";
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 	const limiter = rateLimit(ip, { limit: 60, windowMs: 60000, keyPrefix: "rl:grade" });
 	if (limiter.isBlocked) return limiter.response!;
 
-	const admin = await getCurrentAdmin();
+	const admin = await resolveWriteActor();
 	if (!admin) {
 		return apiResponse.unauthorized("Authentication required", "UNAUTHORIZED");
 	}

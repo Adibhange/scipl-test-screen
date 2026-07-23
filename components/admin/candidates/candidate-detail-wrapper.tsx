@@ -45,6 +45,8 @@ import { PageContainer, PageHeader } from "@/components/ui/layout-primitives";
 import { FormSection, DetailRow, StatusBadge, SectionCard, type StatusVariant } from "@/components/ui/enterprise-primitives";
 import { ExperienceFormSection } from "./experience-form-section";
 import { ReferenceFormSection } from "./reference-form-section";
+import { ShareCandidateDialog } from "@/components/master/share-candidate-dialog";
+import { CandidateDocumentManager, type DocumentStatusMap } from "./candidate-document-manager";
 import dynamic from "next/dynamic";
 import { AdminQuestionReviewSkeleton } from "@/components/admin/review/admin-question-review-skeleton";
 import type { AdminRole, CandidateResult, CandidateExperienceType, CandidateReferenceType } from "@/types";
@@ -71,10 +73,12 @@ export function CandidateDetailWrapper({
 	result: initialResult,
 	items,
 	admin,
+	documentStatus,
 }: {
 	result: CandidateResult;
 	items: Item[];
 	admin: { userId: string; name: string; email: string; role: AdminRole };
+	documentStatus: DocumentStatusMap;
 }) {
 	const router = useRouter();
 	const [view, setView] = useState<"details" | "assessment">("details");
@@ -387,6 +391,10 @@ export function CandidateDetailWrapper({
 								className="py-0 space-y-0.5"
 							/>
 							<div className="flex items-center gap-3">
+								<ShareCandidateDialog
+									candidateId={result.candidate.id ?? ""}
+									candidateName={result.candidate.name}
+								/>
 								{admin.role === "hr" ? (
 									<>
 										<Button
@@ -750,6 +758,12 @@ export function CandidateDetailWrapper({
 									{result.candidate.hrNotes || "No HR notes recorded"}
 								</p>
 							</SectionCard>
+
+							<CandidateDocumentManager
+								candidateId={result.candidate.id ?? ""}
+								initialStatus={documentStatus}
+								canManage={admin.role === "hr"}
+							/>
 						</div>
 						{/* Right Side Panel (66% Width on Desktop) */}
 						<div className="lg:col-span-2 space-y-6">

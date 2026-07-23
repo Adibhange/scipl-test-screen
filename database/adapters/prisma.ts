@@ -42,6 +42,7 @@ export const prismaAdapter: IDatabaseAdapter = {
 			months?: number,
 		) => notImplemented("candidates.checkReapplicationLockout"),
 		getRoleExperienceList: () => notImplemented("candidates.getRoleExperienceList"),
+		getDocuments: (id: string) => notImplemented("candidates.getDocuments"),
 	},
 
 	examSessions: {
@@ -107,5 +108,14 @@ export const prismaAdapter: IDatabaseAdapter = {
 		update: (id: string, data: Partial<CandidateReferenceType>) => notImplemented("candidateReferences.update"),
 		delete: (id: string) => notImplemented("candidateReferences.delete"),
 		getByCandidateId: (candidateId: string) => notImplemented("candidateReferences.getByCandidateId"),
+	},
+	candidateShares: {
+		getActiveByCandidateId: (candidateId: string) => notImplemented("candidateShares.getActiveByCandidateId"),
+		getByToken: (token: string) => notImplemented("candidateShares.getByToken"),
+		create: (data: any) => notImplemented("candidateShares.create"),
+		revoke: (id: string, data: any) => notImplemented("candidateShares.revoke"),
+		markExpired: (id: string) => notImplemented("candidateShares.markExpired"),
+		recordAccess: (id: string) => notImplemented("candidateShares.recordAccess"),
+		listActiveWithCandidate: () => notImplemented("candidateShares.listActiveWithCandidate"),
 	},
 };

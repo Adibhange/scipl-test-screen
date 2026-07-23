@@ -15,6 +15,7 @@ export interface ICandidatesAdapter {
 		months?: number,
 	): Promise<boolean>;
 	getRoleExperienceList(): Promise<any[]>;
+	getDocuments(id: string): Promise<any>;
 }
 
 export interface IExamSessionsAdapter {
@@ -84,6 +85,23 @@ export interface ICandidateReferencesAdapter {
 	getByCandidateId(candidateId: string): Promise<CandidateReferenceType[]>;
 }
 
+export type CandidateShareStatus = "active" | "revoked" | "expired";
+
+export interface ICandidateSharesAdapter {
+	getActiveByCandidateId(candidateId: string): Promise<any>;
+	getByToken(token: string): Promise<any>;
+	create(data: {
+		candidate_id: string;
+		validity_hours: 1 | 6 | 12;
+		created_by: string;
+		expires_at: string;
+	}): Promise<any>;
+	revoke(id: string, data: { revoked_by: string; revoke_reason?: string }): Promise<any>;
+	markExpired(id: string): Promise<void>;
+	recordAccess(id: string): Promise<void>;
+	listActiveWithCandidate(): Promise<any[]>;
+}
+
 export interface IDatabaseAdapter {
 	candidates: ICandidatesAdapter;
 	examSessions: IExamSessionsAdapter;
@@ -93,4 +111,5 @@ export interface IDatabaseAdapter {
 	metadata: IMetadataAdapter;
 	candidateExperiences: ICandidateExperiencesAdapter;
 	candidateReferences: ICandidateReferencesAdapter;
+	candidateShares: ICandidateSharesAdapter;
 }
