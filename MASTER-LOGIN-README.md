@@ -286,7 +286,41 @@ Per a follow-up requirement: Master Login should land on the *actual*
   the Master Login work; it surfaced from reasoning through what the new
   bulk-hire action needed to be safe to reuse.
 
-## Known limitations (honest gaps, not oversights)
+## Phase 8 — Rebased onto upstream V15
+
+`main` had moved forward (V14 → V15) since this branch was created, adding
+a real director-decision workflow: a `director_decision` column on
+`results`, a Postgres trigger that derives `hiring_status` from it, and a
+5th "On Hold" dashboard metric.
+
+Rebased all Master Login commits onto the latest `origin/main` (`git
+rebase --onto origin/main e16d1c9 feature/master-login`) rather than
+cherry-picking or overwriting files, then reconciled by hand:
+
+- Ported V15's 5th metric card ("On Hold," `Clock` icon, 5-column grid)
+  into the shared `CandidateDashboard` component — this file didn't exist
+  on V15's side, so git couldn't auto-merge into it.
+- **Reworked "Hire Selected" / "Reject Selected"** (Phase 7) to go through
+  `submitRoundFeedback`'s director round — the same path V15 uses for a
+  single candidate — instead of writing `hiring_status` directly. Writing
+  it directly would have bypassed the new trigger and left the candidate's
+  interview timeline with no record of the bulk decision. A candidate who
+  hasn't reached the director round yet now correctly fails with a reason
+  instead of being force-hired; the existing partial-failure reporting
+  surfaces this per candidate.
+- **Verified every file V15 touched that this branch didn't is
+  byte-identical to `origin/main`**, and every file both sides touched
+  (`candidate-card.tsx`, `candidate-detail-wrapper.tsx`,
+  `database/adapters/supabase.ts`, `result.repository.ts`,
+  `round/route.ts`, `team/page.tsx`) shows *only* this branch's additions
+  on top of V15's changes — nothing from V15 was overwritten. Checked
+  file-by-file with `git diff origin/main..HEAD -- <file>`, not just "no
+  conflict markers."
+- Confirmed the two pre-existing `tsc`/`eslint` issues
+  (`RouteContext`, `PrismaClient` export) exist on pristine `origin/main`
+  independent of any of this work — nothing new broke.
+
+
 
 
 
