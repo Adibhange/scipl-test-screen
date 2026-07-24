@@ -4,6 +4,7 @@ import type { Candidate, Answer } from "@/types/candidate";
 
 export type SessionResponse = {
 	status: "idle" | "active" | "submitted" | "expired";
+	sessionId: string;
 	sessionToken: string;
 	remainingSeconds: number;
 	secondsUsed: number;
@@ -57,13 +58,18 @@ export async function startAssessmentSession(payload: {
 	});
 }
 
-export async function fetchAssessmentQuestions(role: string, experience: string): Promise<Question[]> {
+export async function fetchAssessmentQuestions(
+	role: string,
+	experience: string,
+	sessionId?: string,
+): Promise<Question[]> {
 	return apiRequest<Question[]>("/api/questions", {
 		method: "GET",
 		queryParams: {
 			role,
 			experience,
 			all: "1",
+			sessionId,
 		},
 	});
 }

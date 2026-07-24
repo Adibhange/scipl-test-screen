@@ -191,15 +191,16 @@ export default function InterviewPage() {
 				force: true,
 			});
 
+			const qs = await fetchAssessmentQuestions(
+				candidate.role,
+				candidate.experience,
+				data.sessionId,
+			);
+
 			sessionStorage.setItem("sessionToken", data.sessionToken);
 			setSessionToken(data.sessionToken);
 			setServerSecondsLeft(data.remainingSeconds);
 			setBlockReason(null);
-
-			const qs = await fetchAssessmentQuestions(
-				candidate.role,
-				candidate.experience,
-			);
 			setQuestions(qs);
 		} catch (err) {
 			console.error("Force restart failed:", err);

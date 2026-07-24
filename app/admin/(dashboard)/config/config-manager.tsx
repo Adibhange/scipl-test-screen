@@ -459,7 +459,7 @@ export function ConfigManager() {
           <SectionCard
             title="Active Job Vacancies"
             description="Current openings published on candidate registration form."
-            className="lg:col-span-2 min-h-[480px]"
+            className="lg:col-span-2 min-h-120"
           >
             <div className="overflow-x-auto w-full">
               {vacancies.length === 0 ? (
@@ -506,7 +506,7 @@ export function ConfigManager() {
                         </td>
                         <td className="px-4 py-3.5 text-center">
                           {editingVacancyId === item.id ? (
-                            <div className="flex items-center justify-center gap-1 max-w-[80px] mx-auto">
+                            <div className="flex items-center justify-center gap-1 max-w-20 mx-auto">
                               <Input
                                 className="h-7 text-xs rounded-md text-center p-1 border-input focus-visible:ring-1 focus-visible:ring-indigo-500 bg-background"
                                 value={editOpenings}
@@ -671,7 +671,7 @@ export function ConfigManager() {
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-350">Exam Test Venues (Select 1 or more)</label>
                 <div className={cn(
-                  "grid grid-cols-2 gap-2.5 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-border max-h-[120px] overflow-y-auto",
+                  "grid grid-cols-2 gap-2.5 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-border max-h-30 overflow-y-auto",
                   invalidFields.includes("vacancyTestLocations") && "border-destructive ring-1 ring-destructive/25"
                 )}>
                   {testLocations.map(tl => (
@@ -934,7 +934,7 @@ export function ConfigManager() {
 
             {/* Right Table: Master List Options */}
             <div className="md:col-span-2 border border-border rounded-xl bg-slate-50/10 dark:bg-slate-900/10 overflow-hidden">
-              <div className="overflow-x-auto w-full max-h-[360px] overflow-y-auto">
+              <div className="overflow-x-auto w-full max-h-90 overflow-y-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-slate-100/50 dark:bg-slate-900/50 text-slate-500 font-bold border-b border-border/80">
@@ -953,7 +953,7 @@ export function ConfigManager() {
                       <tr key={item.id} className="hover:bg-slate-50/45 dark:hover:bg-slate-900/40 transition-colors">
                         <td className="px-4 py-3">
                           {editingId === item.id ? (
-                            <div className="space-y-1.5 max-w-[200px]">
+                            <div className="space-y-1.5 max-w-50">
                               <Input
                                 aria-invalid={invalidFields.includes("editLabel")}
                                 className="h-8 text-xs rounded-md"

@@ -267,11 +267,11 @@ function PaperRow({
 
 	return (
 		<tr className="hover:bg-slate-50/60 transition-colors group">
-			<td className="px-4 py-3 font-medium text-slate-900 max-w-[200px] truncate">{paper.title}</td>
+			<td className="px-4 py-3 font-medium text-slate-900 max-w-50 truncate">{paper.title}</td>
 			<td className="px-4 py-3">
 				<PaperStatusBadge status={paper.status} />
 				{paper.status === "rejected" && paper.rejectionReason && (
-					<p className="text-[10px] text-rose-500 mt-0.5 max-w-[160px] truncate" title={paper.rejectionReason}>
+					<p className="text-[10px] text-rose-500 mt-0.5 max-w-40 truncate" title={paper.rejectionReason}>
 						{paper.rejectionReason}
 					</p>
 				)}

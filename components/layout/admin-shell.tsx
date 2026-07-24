@@ -187,10 +187,10 @@ export function AdminShell({
 			)}
 
 			<div className='lg:pl-64'>
-				<header className='sticky top-0 z-20 flex h-20 items-center justify-between border-b border-slate-200 bg-white/90 px-5 backdrop-blur lg:px-8 relative'>
+				<header className='sticky top-0 z-20 flex h-20 items-center justify-between border-b border-slate-200 bg-white/90 px-5 backdrop-blur lg:px-8'>
 					{/* Ambient Header Glow */}
 					{showFeedback && (
-						<div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 animate-pulse z-30" />
+						<div className="absolute bottom-0 left-0 right-0 h-0.75 bg-linear-to-r from-indigo-500 via-purple-500 to-indigo-500 animate-pulse z-30" />
 					)}
 
 					<div className='flex items-center gap-3'>

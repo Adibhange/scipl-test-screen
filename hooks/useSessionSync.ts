@@ -47,16 +47,13 @@ export function useSessionSync(candidate: Candidate | null, mounted: boolean) {
 		const runSync = async () => {
 			try {
 				const storedToken = sessionStorage.getItem("sessionToken");
-				const [data, qs] = await Promise.all([
-					syncAssessmentSession({
-						candidateId: candidate.id!,
-						candidateEmail: candidate.email,
-						role: candidate.role,
-						experience: candidate.experience,
-						sessionToken: storedToken,
-					}),
-					fetchAssessmentQuestions(candidate.role, candidate.experience),
-				]);
+				const data = await syncAssessmentSession({
+					candidateId: candidate.id!,
+					candidateEmail: candidate.email,
+					role: candidate.role,
+					experience: candidate.experience,
+					sessionToken: storedToken,
+				});
 
 				if (data.status === "submitted") {
 					setBlockReason("submitted");
@@ -68,6 +65,12 @@ export function useSessionSync(candidate: Candidate | null, mounted: boolean) {
 					setLoading(false);
 					return;
 				}
+
+				const qs = await fetchAssessmentQuestions(
+					candidate.role,
+					candidate.experience,
+					data.sessionId,
+				);
 
 				sessionStorage.setItem("sessionToken", data.sessionToken);
 				setSessionToken(data.sessionToken);

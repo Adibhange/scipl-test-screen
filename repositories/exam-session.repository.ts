@@ -46,6 +46,7 @@ export function buildExamSessionResponse(session: any) {
 			: (session.is_exam_started === true && remainingSeconds <= 0) ? "expired"
 			: session.is_exam_started === true ? "active"
 			: "idle",
+		sessionId: session.id,
 		sessionToken: session.active_session_token,
 		startedAt: session.started_at,
 		expiresAt: session.expires_at,
