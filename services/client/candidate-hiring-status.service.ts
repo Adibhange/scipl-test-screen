@@ -1,6 +1,6 @@
 import { apiRequest } from "@/lib/api-client";
 
-export type HiringStatus = "screening" | "interviewing" | "offered" | "hired" | "rejected" | "on_hold";
+export type HiringStatus = "hired" | "rejected";
 
 export async function updateCandidateHiringStatus(candidateId: string, hiringStatus: HiringStatus) {
 	return apiRequest<{ candidateId: string; hiringStatus: HiringStatus }>(

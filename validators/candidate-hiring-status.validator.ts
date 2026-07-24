@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const UpdateHiringStatusSchema = z.object({
-	hiringStatus: z.enum(["screening", "interviewing", "offered", "hired", "rejected", "on_hold"]),
+	hiringStatus: z.enum(["hired", "rejected"]),
 });
 
 export type UpdateHiringStatusInput = z.infer<typeof UpdateHiringStatusSchema>;

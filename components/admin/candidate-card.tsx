@@ -19,7 +19,7 @@ interface CandidateCardProps {
 	activeRoles: Array<{ value: string; label: string }>;
 	activeExperiences: Array<{ value: string; label: string }>;
 	activeHiringLocations: Array<{ value: string; label: string }>;
-	/** Defaults to "/admin" — Master's dashboard passes "/master/candidates" instead. */
+	/** Defaults to "/admin" — both Admin and Master land here now. */
 	basePath?: string;
 }
 
