@@ -14,6 +14,9 @@ import {
 import { getAdminUsers } from "@/repositories/admin.repository";
 import { getDatabaseAdapter } from "@/database/client";
 import { ValidationError } from "@/lib/errors";
+import { hashPassword, hashPin } from "./credential.service";
+import { verifyDirectorPinUniqueness } from "./auth.service";
+import { revokeAllSessionsForUser } from "./session.service";
 
 /**
  * Service to handle administrative operations, team user rosters, vacancies, and configs.
@@ -212,90 +215,113 @@ export async function createAdminAccount(body: {
 	email?: string;
 	name?: string;
 	password?: string;
+	pin?: string;
 	role?: string;
 }) {
 	const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
 	const name = typeof body.name === "string" ? body.name.trim() : "";
-	const password = typeof body.password === "string" ? body.password : "";
 	const role = body.role;
 	
-	if (
-		!email ||
-		!name ||
-		password.length < 8 ||
-		!["hr", "interviewer", "director"].includes(role as any)
-	) {
-		throw new ValidationError("Name, valid email, role and an 8 character password are required.");
+	if (!email || !name || !role || !["hr", "interviewer", "director"].includes(role)) {
+		throw new ValidationError("Name, valid email, and role are required.");
 	}
 
 	const adminsAdapter = getDatabaseAdapter().admins;
-	let userId: string | undefined;
+	const userId = crypto.randomUUID();
 
-	try {
-		const created = await adminsAdapter.authCreateUser(email, password);
-		userId = created.user?.id;
-	} catch (createError: any) {
-		if (!createError.message.toLowerCase().includes("already registered")) {
-			throw createError;
+	const insertData: any = {
+		user_id: userId,
+		email,
+		name,
+		role,
+		active: true,
+	};
+
+	if (role === "director") {
+		const pin = body.pin;
+		if (!pin || !/^\d{6}$/.test(pin)) {
+			throw new ValidationError("A 6-digit PIN is required for Directors.");
 		}
+
+		// Enforce PIN uniqueness
+		const isUnique = await verifyDirectorPinUniqueness(pin);
+		if (!isUnique) {
+			throw new ValidationError("This PIN is already in use by another active Director. Choose a different PIN.");
+		}
+
+		insertData.master_code_hash = await hashPin(pin);
+		insertData.must_change_master_pin = true;
+	} else {
+		const password = body.password;
+		if (!password || password.length < 8) {
+			throw new ValidationError("A password of at least 8 characters is required.");
+		}
+		insertData.password_hash = await hashPassword(password);
 	}
 
-	if (!userId) {
-		const users = await adminsAdapter.authListUsers();
-		userId = users.find(
-			(user: any) => user.email?.toLowerCase() === email,
-		)?.id;
-	}
-
-	if (!userId) {
-		throw new ValidationError("Could not find or create the Auth user.");
-	}
-
-	return adminsAdapter.upsert({ user_id: userId, email, name, role });
+	return adminsAdapter.upsert(insertData);
 }
 
 export async function updateAdminProfile(userId: string, body: {
 	name?: string;
 	email?: string;
 	password?: string;
-	role?: string;
+	pin?: string;
 	adminEmail?: string;
 }) {
 	const name = typeof body.name === "string" ? body.name.trim() : "";
 	const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-	const password = typeof body.password === "string" ? body.password : "";
 
 	if (!name || !email) {
 		throw new ValidationError("Name and email are required.");
 	}
 
-	if (password && password.length < 8) {
-		throw new ValidationError("Password must be at least 8 characters.");
-	}
-
 	const adminsAdapter = getDatabaseAdapter().admins;
-	const updates: Record<string, string> = { name, email };
-	
+	const dbAdmin = await adminsAdapter.getById(userId);
+	if (!dbAdmin) {
+		throw new ValidationError("Admin not found.");
+	}
+
+	const updates: any = { name, email };
+
+	if (dbAdmin.role === "director") {
+		const pin = body.pin;
+		if (pin) {
+			if (!/^\d{6}$/.test(pin)) {
+				throw new ValidationError("PIN must be exactly 6 digits.");
+			}
+			const isUnique = await verifyDirectorPinUniqueness(pin);
+			if (!isUnique) {
+				throw new ValidationError("This PIN is already in use by another active Director. Choose a different PIN.");
+			}
+			updates.master_code_hash = await hashPin(pin);
+			updates.must_change_master_pin = false;
+			updates.master_pin_changed_at = new Date().toISOString();
+			await revokeAllSessionsForUser(userId);
+		}
+	} else {
+		const password = body.password;
+		if (password) {
+			if (password.length < 8) {
+				throw new ValidationError("Password must be at least 8 characters.");
+			}
+			updates.password_hash = await hashPassword(password);
+			await revokeAllSessionsForUser(userId);
+		}
+	}
+
 	await adminsAdapter.update(userId, updates);
-
-	if (email !== body.adminEmail) {
-		await adminsAdapter.authUpdateUser(userId, { email });
-	}
-
-	if (password) {
-		await adminsAdapter.authUpdateUser(userId, { password });
-	}
 }
 
 export async function updateAdminAccount(userId: string, body: {
 	name?: string;
 	email?: string;
 	password?: string;
+	pin?: string;
 	role?: string;
 }) {
 	const name = typeof body.name === "string" ? body.name.trim() : "";
 	const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-	const password = typeof body.password === "string" ? body.password : "";
 	const role = body.role;
 
 	if (!userId) {
@@ -307,21 +333,45 @@ export async function updateAdminAccount(userId: string, body: {
 	if (role && !["hr", "interviewer", "director"].includes(role)) {
 		throw new ValidationError("Invalid role value.");
 	}
-	if (password && password.length < 8) {
-		throw new ValidationError("Password must be at least 8 characters.");
-	}
 
 	const adminsAdapter = getDatabaseAdapter().admins;
-	const updates: Record<string, string> = {
-		name: name.trim(),
-		email: email.trim().toLowerCase(),
-		...(role ? { role } : {}),
+	const dbAdmin = await adminsAdapter.getById(userId);
+	if (!dbAdmin) {
+		throw new ValidationError("Admin not found.");
+	}
+
+	const targetRole = role || dbAdmin.role;
+	const updates: any = {
+		name,
+		email,
+		role: targetRole,
 	};
 
-	await adminsAdapter.update(userId, updates);
-	await adminsAdapter.authUpdateUser(userId, { email: email.trim().toLowerCase() });
-
-	if (password) {
-		await adminsAdapter.authUpdateUser(userId, { password });
+	if (targetRole === "director") {
+		const pin = body.pin;
+		if (pin) {
+			if (!/^\d{6}$/.test(pin)) {
+				throw new ValidationError("PIN must be exactly 6 digits.");
+			}
+			const isUnique = await verifyDirectorPinUniqueness(pin);
+			if (!isUnique) {
+				throw new ValidationError("This PIN is already in use by another active Director. Choose a different PIN.");
+			}
+			updates.master_code_hash = await hashPin(pin);
+			updates.must_change_master_pin = true;
+			updates.master_pin_changed_at = new Date().toISOString();
+			await revokeAllSessionsForUser(userId);
+		}
+	} else {
+		const password = body.password;
+		if (password) {
+			if (password.length < 8) {
+				throw new ValidationError("Password must be at least 8 characters.");
+			}
+			updates.password_hash = await hashPassword(password);
+			await revokeAllSessionsForUser(userId);
+		}
 	}
+
+	await adminsAdapter.update(userId, updates);
 }

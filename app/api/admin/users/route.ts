@@ -91,6 +91,7 @@ export async function PUT(request: NextRequest) {
 			name: validated.name,
 			email: validated.email,
 			password: validated.password,
+			pin: validated.pin,
 			adminEmail: admin.email,
 		});
 

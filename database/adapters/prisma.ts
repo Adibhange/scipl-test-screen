@@ -70,13 +70,11 @@ export const prismaAdapter: IDatabaseAdapter = {
 
 	admins: {
 		getById: (userId: string) => notImplemented("admins.getById"),
+		getByEmail: (email: string) => notImplemented("admins.getByEmail"),
 		getAll: () => notImplemented("admins.getAll"),
 		upsert: (data: any) => notImplemented("admins.upsert"),
 		update: (userId: string, data: any) => notImplemented("admins.update"),
 		delete: (userId: string) => notImplemented("admins.delete"),
-		authCreateUser: (email: string, password: string) => notImplemented("admins.authCreateUser"),
-		authUpdateUser: (userId: string, data: any) => notImplemented("admins.authUpdateUser"),
-		authListUsers: () => notImplemented("admins.authListUsers"),
 	},
 
 	metadata: {
@@ -142,5 +140,13 @@ export const prismaAdapter: IDatabaseAdapter = {
 	assessmentSnapshots: {
 		create: (data: any) => notImplemented("assessmentSnapshots.create"),
 		getBySessionId: (sessionId: string) => notImplemented("assessmentSnapshots.getBySessionId"),
+	},
+	sessions: {
+		create: (data: any) => notImplemented("sessions.create"),
+		getByHash: (hash: string) => notImplemented("sessions.getByHash"),
+		updateLastUsed: (id: string, data: any) => notImplemented("sessions.updateLastUsed"),
+		revoke: (id: string) => notImplemented("sessions.revoke"),
+		revokeAllForUser: (adminUserId: string) => notImplemented("sessions.revokeAllForUser"),
+		deleteExpiredAndRevoked: (cutoff: Date) => notImplemented("sessions.deleteExpiredAndRevoked"),
 	},
 };

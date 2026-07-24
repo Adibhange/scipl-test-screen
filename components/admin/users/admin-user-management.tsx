@@ -77,6 +77,7 @@ export function AdminUserManagement({
 		name: "",
 		email: "",
 		password: "",
+		pin: "",
 		role: "interviewer",
 	});
 
@@ -87,6 +88,7 @@ export function AdminUserManagement({
 		name: "",
 		email: "",
 		password: "",
+		pin: "",
 		role: "interviewer",
 	});
 	const [editMessage, setEditMessage] = useState("");
@@ -97,6 +99,7 @@ export function AdminUserManagement({
 		name: currentAdmin.name,
 		email: currentAdmin.email,
 		password: "",
+		pin: "",
 	});
 	const [message, setMessage] = useState("");
 	const [profileMessage, setProfileMessage] = useState("");
@@ -132,8 +135,14 @@ export function AdminUserManagement({
 		setSaving(true);
 		setMessage("");
 		try {
-			await createUserMutation.mutateAsync(form);
-			setForm({ name: "", email: "", password: "", role: "interviewer" });
+			const payload = {
+				name: form.name,
+				email: form.email,
+				role: form.role,
+				...(form.role === "director" ? { pin: form.pin } : { password: form.password }),
+			};
+			await createUserMutation.mutateAsync(payload);
+			setForm({ name: "", email: "", password: "", pin: "", role: "interviewer" });
 			setMessage("User added");
 			setOpen(false);
 		} catch (err: unknown) {
@@ -147,8 +156,17 @@ export function AdminUserManagement({
 		setProfileSaving(true);
 		setProfileMessage("");
 		try {
-			await updateAdminProfile(profileForm);
-			setProfileForm((existing) => ({ ...existing, password: "" }));
+			const payload: any = {
+				name: profileForm.name,
+				email: profileForm.email,
+			};
+			if (currentAdmin.role === "director") {
+				if (profileForm.pin) payload.pin = profileForm.pin;
+			} else {
+				if (profileForm.password) payload.password = profileForm.password;
+			}
+			await updateAdminProfile(payload);
+			setProfileForm((existing) => ({ ...existing, password: "", pin: "" }));
 			setProfileMessage("Profile updated");
 			setProfileOpen(false);
 		} catch (err: unknown) {
@@ -163,13 +181,18 @@ export function AdminUserManagement({
 		setEditSaving(true);
 		setEditMessage("");
 		try {
-			await updateUserMutation.mutateAsync({
+			const payload: any = {
 				userId: editTarget.user_id,
 				name: editForm.name,
 				email: editForm.email,
-				password: editForm.password || undefined,
 				role: editForm.role,
-			});
+			};
+			if (editForm.role === "director") {
+				if (editForm.pin) payload.pin = editForm.pin;
+			} else {
+				if (editForm.password) payload.password = editForm.password;
+			}
+			await updateUserMutation.mutateAsync(payload);
 			setEditMessage("User updated");
 			setEditOpen(false);
 			setEditTarget(null);
@@ -185,6 +208,7 @@ export function AdminUserManagement({
 			name: user.name,
 			email: user.email,
 			password: "",
+			pin: "",
 			role: user.role,
 		});
 		setEditMessage("");
@@ -240,19 +264,35 @@ export function AdminUserManagement({
 														/>
 													</div>
 												</div>
-												<div className="space-y-1.5">
-													<label className="text-xs font-bold text-slate-600">Password</label>
-													<Input
-														required
-														minLength={8}
-														type="password"
-														placeholder="Temporary password (min 8 chars)"
-														value={form.password}
-														onChange={(e) =>
-															setForm({ ...form, password: e.target.value })
-														}
-													/>
-												</div>
+												{form.role === "director" ? (
+													<div className="space-y-1.5">
+														<label className="text-xs font-bold text-slate-600">6-Digit PIN</label>
+														<Input
+															required
+															maxLength={6}
+															type="password"
+															placeholder="Temporary PIN (6 digits)"
+															value={form.pin || ""}
+															onChange={(e) =>
+																setForm({ ...form, pin: e.target.value.replace(/\D/g, "").slice(0, 6) })
+															}
+														/>
+													</div>
+												) : (
+													<div className="space-y-1.5">
+														<label className="text-xs font-bold text-slate-600">Password</label>
+														<Input
+															required
+															minLength={8}
+															type="password"
+															placeholder="Temporary password (min 8 chars)"
+															value={form.password}
+															onChange={(e) =>
+																setForm({ ...form, password: e.target.value })
+															}
+														/>
+													</div>
+												)}
 												<div className="space-y-1.5">
 													<label className="text-xs font-bold text-slate-600">System Role</label>
 													<Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
@@ -350,6 +390,7 @@ export function AdminUserManagement({
 																	name: user.name,
 																	email: user.email,
 																	password: "",
+																	pin: "",
 																});
 																setProfileOpen(true);
 															}}
@@ -479,19 +520,36 @@ export function AdminUserManagement({
 								placeholder="Email"
 							/>
 						</div>
-						<div className="space-y-1.5">
-							<label className="text-xs font-bold text-slate-600">
-								Password
-							</label>
-							<Input
-								type="password"
-								value={profileForm.password}
-								onChange={(e) =>
-									setProfileForm({ ...profileForm, password: e.target.value })
-								}
-								placeholder="Leave blank to keep current password"
-							/>
-						</div>
+						{currentAdmin.role === "director" ? (
+							<div className="space-y-1.5">
+								<label className="text-xs font-bold text-slate-600">
+									New PIN
+								</label>
+								<Input
+									type="password"
+									maxLength={6}
+									value={profileForm.pin || ""}
+									onChange={(e) =>
+										setProfileForm({ ...profileForm, pin: e.target.value.replace(/\D/g, "").slice(0, 6) })
+									}
+									placeholder="Leave blank to keep current PIN"
+								/>
+							</div>
+						) : (
+							<div className="space-y-1.5">
+								<label className="text-xs font-bold text-slate-600">
+									Password
+								</label>
+								<Input
+									type="password"
+									value={profileForm.password}
+									onChange={(e) =>
+										setProfileForm({ ...profileForm, password: e.target.value })
+									}
+									placeholder="Leave blank to keep current password"
+								/>
+							</div>
+						)}
 						{profileMessage && (
 							<p className="text-sm text-muted-foreground">{profileMessage}</p>
 						)}
@@ -555,19 +613,36 @@ export function AdminUserManagement({
 									/>
 								</div>
 							</div>
-							<div className="space-y-1.5">
-								<label className="text-xs font-bold text-slate-600">
-									New Password
-								</label>
-								<Input
-									type="password"
-									value={editForm.password}
-									onChange={(e) =>
-										setEditForm({ ...editForm, password: e.target.value })
-									}
-									placeholder="Leave blank to keep current password"
-								/>
-							</div>
+							{editForm.role === "director" ? (
+								<div className="space-y-1.5">
+									<label className="text-xs font-bold text-slate-600">
+										New PIN
+									</label>
+									<Input
+										type="password"
+										maxLength={6}
+										value={editForm.pin || ""}
+										onChange={(e) =>
+											setEditForm({ ...editForm, pin: e.target.value.replace(/\D/g, "").slice(0, 6) })
+										}
+										placeholder="Leave blank to keep current PIN"
+									/>
+								</div>
+							) : (
+								<div className="space-y-1.5">
+									<label className="text-xs font-bold text-slate-600">
+										New Password
+									</label>
+									<Input
+										type="password"
+										value={editForm.password}
+										onChange={(e) =>
+											setEditForm({ ...editForm, password: e.target.value })
+										}
+										placeholder="Leave blank to keep current password"
+									/>
+								</div>
+							)}
 							<div className="space-y-1.5">
 								<label className="text-xs font-bold text-slate-600">
 									System Role

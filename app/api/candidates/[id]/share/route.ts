@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import { getCurrentAdmin } from "@/repositories/admin.repository";
-import { getCurrentMaster } from "@/repositories/master.repository";
 import {
 	generateShareLink,
 	getShareStatus,
@@ -14,16 +13,13 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getClientIpFromHeaders, logSecurityEvent } from "@/lib/audit-logger";
 
 /**
- * Resolves who is calling — an Admin (HR/interviewer/director) or a Master
- * session. Both are permitted to manage share links (Feature 14); this route
+ * Resolves who is calling — an Admin (HR/interviewer/director).
+ * Both are permitted to manage share links (Feature 14); this route
  * does not distinguish beyond producing an audit-log actor label.
  */
 async function resolveActor() {
 	const admin = await getCurrentAdmin();
 	if (admin) return { id: admin.userId, label: admin.email, kind: "admin" as const };
-
-	const master = await getCurrentMaster();
-	if (master) return { id: "master", label: "master", kind: "master" as const };
 
 	return null;
 }

@@ -38,14 +38,25 @@ export const PreRegisterCandidateSchema = z.object({
 export const CreateAdminUserSchema = z.object({
 	email: z.string().trim().email("Invalid email format").toLowerCase(),
 	name: z.string().trim().min(1, "Name is required"),
-	password: z.string().min(8, "Password must be at least 8 characters"),
 	role: z.enum(["hr", "interviewer", "director"]),
+	password: z.string().min(8, "Password must be at least 8 characters").optional(),
+	pin: z.string().regex(/^\d{6}$/, "PIN must be exactly 6 digits").optional(),
+}).refine((data) => {
+	if (data.role === "director") {
+		return !!data.pin;
+	} else {
+		return !!data.password;
+	}
+}, {
+	message: "PIN is required for Directors; password is required for HR/Interviewers",
+	path: ["password"],
 });
 
 export const UpdateAdminProfileSchema = z.object({
 	name: z.string().trim().min(1, "Name is required"),
 	email: z.string().trim().email("Invalid email format").toLowerCase(),
 	password: z.string().min(8, "Password must be at least 8 characters").or(z.literal("")).optional(),
+	pin: z.string().regex(/^\d{6}$/, "PIN must be exactly 6 digits").or(z.literal("")).optional(),
 });
 
 export const UpdateAdminUserSchema = z.object({
@@ -54,6 +65,7 @@ export const UpdateAdminUserSchema = z.object({
 	email: z.string().trim().email("Invalid email format").toLowerCase(),
 	password: z.string().min(8, "Password must be at least 8 characters").or(z.literal("")).optional(),
 	role: z.enum(["hr", "interviewer", "director"]).optional(),
+	pin: z.string().regex(/^\d{6}$/, "PIN must be exactly 6 digits").or(z.literal("")).optional(),
 });
 
 export const CreateConfigSchema = z.object({

@@ -107,13 +107,38 @@ model ProctoringLog {
 }
 
 model AdminUser {
-  userId    String   @id @map("user_id")
-  email     String   @unique
-  name      String
-  role      String
-  createdAt DateTime @default(now()) @map("created_at")
+  userId             String   @id @map("user_id")
+  email              String   @unique
+  name               String
+  role               String
+  createdAt          DateTime @default(now()) @map("created_at")
+  passwordHash       String?  @map("password_hash")
+  masterCodeHash     String?  @map("master_code_hash")
+  mustChangeMasterPin Boolean? @default(false) @map("must_change_master_pin")
+  active             Boolean? @default(true) @map("active")
+  masterPinChangedAt DateTime? @map("master_pin_changed_at")
+
+  sessions           AdminSession[]
 
   @@map("admin_users")
+}
+
+model AdminSession {
+  id               String    @id @default(uuid())
+  sessionTokenHash String    @unique @map("session_token_hash")
+  adminUserId      String    @map("admin_user_id")
+  expiresAt        DateTime  @map("expires_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  lastUsedAt       DateTime  @default(now()) @map("last_used_at")
+  ipAddress        String?   @map("ip_address")
+  userAgent        String?   @map("user_agent")
+  revokedAt        DateTime? @map("revoked_at")
+
+  // Relations
+  adminUser        AdminUser @relation(fields: [adminUserId], references: [userId], onDelete: Cascade)
+
+  @@index([sessionTokenHash])
+  @@map("admin_sessions")
 }
 
 model JobVacancy {

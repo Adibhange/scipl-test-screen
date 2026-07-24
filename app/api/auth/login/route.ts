@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authenticateDirector } from "@/services/server/admin/auth.service";
+import { authenticateAdmin } from "@/services/server/admin/auth.service";
 import { getClientIpFromHeaders } from "@/lib/audit-logger";
 import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS } from "@/services/server/admin/session.service";
 
@@ -8,32 +8,25 @@ export async function POST(request: NextRequest) {
 	const userAgent = request.headers.get("user-agent") || "";
 
 	try {
-		const body = await request.json().catch(() => null);
-		const code = body?.code;
-
-		if (!code || !/^\d{6}$/.test(code)) {
+		const body = await request.json();
+		const { email, password } = body;
+		if (!email || !password) {
 			return NextResponse.json(
-				{ success: false, error: { message: "Enter a valid 6-digit PIN", code: "BAD_REQUEST" } },
+				{ success: false, error: { message: "Email and password are required.", code: "BAD_REQUEST" } },
 				{ status: 400 }
 			);
 		}
 
-		const result = await authenticateDirector(code, ip, userAgent);
+		const result = await authenticateAdmin(email, password, ip, userAgent);
 		if (!result) {
 			return NextResponse.json(
-				{ success: false, error: { message: "Invalid PIN.", code: "UNAUTHORIZED" } },
+				{ success: false, error: { message: "Invalid email or password.", code: "UNAUTHORIZED" } },
 				{ status: 401 }
 			);
 		}
 
-		const response = NextResponse.json({
-			success: true,
-			data: {
-				ok: true,
-				mustChangePin: result.mustChangeMasterPin,
-			},
-		});
-
+		const response = NextResponse.json({ success: true, data: { user: { name: result.name, email: result.email, role: result.role } } });
+		
 		response.cookies.set(SESSION_COOKIE_NAME, result.token, {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === "production",

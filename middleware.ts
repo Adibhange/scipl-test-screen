@@ -1,12 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { env } from "@/env";
-import { MASTER_SESSION_COOKIE, verifyMasterSessionToken } from "@/lib/master-session";
+import { checkCredentialStatus } from "@/lib/credential-status";
 
-export async function middleware(request: NextRequest) {
-	let response = NextResponse.next({ request });
-	
-	// Apply security headers
+async function hashTokenEdge(token: string): Promise<string> {
+	const encoder = new TextEncoder();
+	const data = encoder.encode(token);
+	const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+	const hashArray = Array.from(new Uint8Array(hashBuffer));
+	return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function applySecurityHeaders(response: NextResponse) {
 	response.headers.set("X-Frame-Options", "DENY");
 	response.headers.set("X-Content-Type-Options", "nosniff");
 	response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -20,9 +25,20 @@ export async function middleware(request: NextRequest) {
 		"Cache-Control",
 		"no-store, no-cache, must-revalidate, private",
 	);
+}
+
+function createSecureRedirect(url: URL, request: NextRequest): NextResponse {
+	const redirectResponse = NextResponse.redirect(url);
+	applySecurityHeaders(redirectResponse);
+	return redirectResponse;
+}
+
+export async function middleware(request: NextRequest) {
+	let response = NextResponse.next({ request });
+	applySecurityHeaders(response);
 
 	const url = env.NEXT_PUBLIC_SUPABASE_URL;
-	const key = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+	const key = env.SUPABASE_SERVICE_ROLE_KEY;
 	if (!url || !key) return response;
 
 	const supabase = createServerClient(url, key, {
@@ -51,70 +67,64 @@ export async function middleware(request: NextRequest) {
 		},
 	});
 
-	const {
-		data: { user },
-	} = await supabase.auth.getUser();
-	const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
-	const isAdminLoginRoute = request.nextUrl.pathname === "/admin/login";
+	const token = request.cookies.get("scipl_admin_session")?.value;
+	let adminUser: any = null;
 
-	const masterToken = request.cookies.get(MASTER_SESSION_COOKIE)?.value;
-	const hasValidMasterSession = env.MASTER_SESSION_SECRET
-		? await verifyMasterSessionToken(masterToken, env.MASTER_SESSION_SECRET)
-		: false;
+	if (token) {
+		const tokenHash = await hashTokenEdge(token);
+		const { data: sessionData } = await supabase
+			.from("admin_sessions")
+			.select("*, admin_users:admin_users(*)")
+			.eq("session_token_hash", tokenHash)
+			.maybeSingle();
 
-	// A valid Master session is treated as equivalent to an Admin session for
-	// /admin/* — Master genuinely uses the same admin area, not a lookalike
-	// page at a different URL.
-	if (isAdminRoute && !isAdminLoginRoute && !user && !hasValidMasterSession) {
-		const redirectResponse = NextResponse.redirect(new URL("/admin/login", request.url));
-		// Apply security headers to redirect response too
-		redirectResponse.headers.set("X-Frame-Options", "DENY");
-		redirectResponse.headers.set("X-Content-Type-Options", "nosniff");
-		redirectResponse.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-		redirectResponse.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-		redirectResponse.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
-		redirectResponse.headers.set(
-			"Content-Security-Policy",
-			"default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co;"
-		);
-		redirectResponse.headers.set(
-			"Cache-Control",
-			"no-store, no-cache, must-revalidate, private",
-		);
-		return redirectResponse;
+		if (sessionData && !sessionData.revoked_at && new Date(sessionData.expires_at) > new Date()) {
+			const admin = sessionData.admin_users;
+			if (admin && admin.active !== false) {
+				adminUser = {
+					userId: admin.user_id,
+					email: admin.email,
+					name: admin.name,
+					role: admin.role,
+					mustChangeMasterPin: admin.must_change_master_pin,
+				};
+			}
+		}
 	}
 
-	// Master authentication is completely independent from Admin (Supabase) auth above.
-	// Only /master/login and the share-link route (/master/admin/[token]) live here now —
-	// the Master "home" is /admin itself, guarded above.
+	const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
+	const isAdminLoginRoute = request.nextUrl.pathname === "/admin/login";
 	const isMasterRoute = request.nextUrl.pathname.startsWith("/master");
 	const isMasterLoginRoute = request.nextUrl.pathname === "/master/login";
+	const isChangePinRoute = request.nextUrl.pathname === "/master/change-pin";
 
-	if (isMasterRoute && !isMasterLoginRoute) {
-		if (!hasValidMasterSession) {
-			const loginUrl = new URL("/master/login", request.url);
-			loginUrl.searchParams.set("redirect", request.nextUrl.pathname + request.nextUrl.search);
-			const redirectResponse = NextResponse.redirect(loginUrl);
-			redirectResponse.headers.set("X-Frame-Options", "DENY");
-			redirectResponse.headers.set("X-Content-Type-Options", "nosniff");
-			redirectResponse.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-			redirectResponse.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-			redirectResponse.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
-			redirectResponse.headers.set(
-				"Content-Security-Policy",
-				"default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co;"
-			);
-			redirectResponse.headers.set(
-				"Cache-Control",
-				"no-store, no-cache, must-revalidate, private",
-			);
-			return redirectResponse;
+	// If trying to access protected admin/master routes
+	if (
+		(isAdminRoute && !isAdminLoginRoute) ||
+		(isMasterRoute && !isMasterLoginRoute && !isChangePinRoute)
+	) {
+		if (!adminUser) {
+			const loginUrl = new URL(isMasterRoute ? "/master/login" : "/admin/login", request.url);
+			if (isMasterRoute) {
+				loginUrl.searchParams.set("redirect", request.nextUrl.pathname + request.nextUrl.search);
+			}
+			return createSecureRedirect(loginUrl, request);
 		}
 
-		response.headers.set(
-			"Cache-Control",
-			"no-store, no-cache, must-revalidate, private",
-		);
+		// Reusable credential status check
+		const credentialStatus = checkCredentialStatus(adminUser);
+		if (!credentialStatus.valid && !isChangePinRoute) {
+			return createSecureRedirect(new URL(credentialStatus.redirectUrl!, request.url), request);
+		}
+	}
+
+	// Redirect authenticated users trying to access login pages
+	if (adminUser && (isAdminLoginRoute || isMasterLoginRoute)) {
+		const credentialStatus = checkCredentialStatus(adminUser);
+		if (!credentialStatus.valid) {
+			return createSecureRedirect(new URL(credentialStatus.redirectUrl!, request.url), request);
+		}
+		return createSecureRedirect(new URL("/admin", request.url), request);
 	}
 
 	if (

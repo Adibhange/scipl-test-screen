@@ -494,7 +494,7 @@ export const supabaseAdapter: IDatabaseAdapter = {
 		async getById(userId: string) {
 			const { data, error } = await getSupabaseServerClient()
 				.from("admin_users")
-				.select("user_id, email, name, role")
+				.select("user_id, email, name, role, password_hash, master_code_hash, must_change_master_pin, active, master_pin_changed_at")
 				.eq("user_id", userId)
 				.maybeSingle();
 
@@ -502,10 +502,21 @@ export const supabaseAdapter: IDatabaseAdapter = {
 			return data;
 		},
 
+		async getByEmail(email: string) {
+			const { data, error } = await getSupabaseServerClient()
+				.from("admin_users")
+				.select("user_id, email, name, role, password_hash, master_code_hash, must_change_master_pin, active, master_pin_changed_at")
+				.eq("email", email)
+				.maybeSingle();
+
+			if (error) handleDatabaseError(error, "Could not fetch admin user by email.");
+			return data;
+		},
+
 		async getAll() {
 			const { data, error } = await getSupabaseServerClient()
 				.from("admin_users")
-				.select("user_id, email, name, role, created_at")
+				.select("user_id, email, name, role, created_at, password_hash, master_code_hash, must_change_master_pin, active, master_pin_changed_at")
 				.order("created_at", { ascending: false });
 
 			if (error) handleDatabaseError(error, "Could not load admin team roster.");
@@ -516,7 +527,7 @@ export const supabaseAdapter: IDatabaseAdapter = {
 			const { data: record, error } = await getSupabaseServerClient()
 				.from("admin_users")
 				.upsert(data, { onConflict: "user_id" })
-				.select("user_id, email, name, role")
+				.select("user_id, email, name, role, password_hash, master_code_hash, must_change_master_pin, active, master_pin_changed_at")
 				.single();
 
 			if (error) handleDatabaseError(error, "Could not register admin user details.");
@@ -528,7 +539,7 @@ export const supabaseAdapter: IDatabaseAdapter = {
 				.from("admin_users")
 				.update(data)
 				.eq("user_id", userId)
-				.select("user_id, email, name, role")
+				.select("user_id, email, name, role, password_hash, master_code_hash, must_change_master_pin, active, master_pin_changed_at")
 				.single();
 
 			if (error) handleDatabaseError(error, "Could not update admin profile.");
@@ -542,30 +553,6 @@ export const supabaseAdapter: IDatabaseAdapter = {
 				.eq("user_id", userId);
 
 			if (error) handleDatabaseError(error, "Failed to remove admin user.");
-		},
-
-		async authCreateUser(email: string, password: string) {
-			const supabase = getSupabaseServerClient();
-			const { data, error } = await supabase.auth.admin.createUser({
-				email,
-				password,
-				email_confirm: true,
-			});
-			if (error) handleDatabaseError(error, "Failed to create Auth admin account.");
-			return data;
-		},
-
-		async authUpdateUser(userId: string, data: any) {
-			const supabase = getSupabaseServerClient();
-			const { error } = await supabase.auth.admin.updateUserById(userId, data);
-			if (error) handleDatabaseError(error, "Failed to update Auth admin account.");
-		},
-
-		async authListUsers() {
-			const supabase = getSupabaseServerClient();
-			const { data, error } = await supabase.auth.admin.listUsers();
-			if (error) handleDatabaseError(error, "Failed to list Auth admin accounts.");
-			return data.users;
 		},
 	},
 
@@ -1252,6 +1239,80 @@ export const supabaseAdapter: IDatabaseAdapter = {
 				.maybeSingle();
 			if (error) handleDatabaseError(error, "Could not load assessment snapshot.");
 			return data;
+		},
+	},
+
+	sessions: {
+		async create(data: any) {
+			const { data: record, error } = await getSupabaseServerClient()
+				.from("admin_sessions")
+				.insert({
+					session_token_hash: data.sessionTokenHash,
+					admin_user_id: data.adminUserId,
+					expires_at: data.expiresAt.toISOString(),
+					ip_address: data.ipAddress,
+					user_agent: data.userAgent,
+				})
+				.select("*")
+				.single();
+
+			if (error) handleDatabaseError(error, "Could not create admin session.");
+			return record;
+		},
+
+		async getByHash(hash: string) {
+			const { data, error } = await getSupabaseServerClient()
+				.from("admin_sessions")
+				.select("*")
+				.eq("session_token_hash", hash)
+				.maybeSingle();
+
+			if (error) handleDatabaseError(error, "Could not fetch admin session.");
+			return data;
+		},
+
+		async updateLastUsed(id: string, data: { ipAddress?: string | null; userAgent?: string | null }) {
+			const updates: Record<string, any> = {
+				last_used_at: new Date().toISOString(),
+			};
+			if (data.ipAddress) updates.ip_address = data.ipAddress;
+			if (data.userAgent) updates.user_agent = data.userAgent;
+
+			const { error } = await getSupabaseServerClient()
+				.from("admin_sessions")
+				.update(updates)
+				.eq("id", id);
+
+			if (error) handleDatabaseError(error, "Could not update admin session last used.");
+		},
+
+		async revoke(id: string) {
+			const { error } = await getSupabaseServerClient()
+				.from("admin_sessions")
+				.update({ revoked_at: new Date().toISOString() })
+				.eq("id", id);
+
+			if (error) handleDatabaseError(error, "Could not revoke admin session.");
+		},
+
+		async revokeAllForUser(adminUserId: string) {
+			const { error } = await getSupabaseServerClient()
+				.from("admin_sessions")
+				.update({ revoked_at: new Date().toISOString() })
+				.eq("admin_user_id", adminUserId);
+
+			if (error) handleDatabaseError(error, "Could not revoke user sessions.");
+		},
+
+		async deleteExpiredAndRevoked(cutoff: Date) {
+			// Delete sessions that are revoked before the cutoff date, OR expired before the cutoff date
+			const { error, count } = await getSupabaseServerClient()
+				.from("admin_sessions")
+				.delete({ count: "exact" })
+				.or(`revoked_at.lt.${cutoff.toISOString()},expires_at.lt.${cutoff.toISOString()}`);
+
+			if (error) handleDatabaseError(error, "Could not clean up old sessions.");
+			return count || 0;
 		},
 	},
 };

@@ -142,17 +142,26 @@ export default function AdminLoginPage() {
 		event.preventDefault();
 		setLoading(true);
 		setError("");
-		const supabase = createSupabaseBrowserClient();
-		const { error: signInError } = await supabase.auth.signInWithPassword({
-			email,
-			password,
-		});
-		if (signInError) {
-			setError(signInError.message);
-			setLoading(false);
-		} else {
+		try {
+			const res = await fetch("/api/auth/login", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ email, password }),
+			});
+			const json = await res.json().catch(() => null);
+
+			if (!res.ok || !json?.success) {
+				setError(json?.error?.message || "Invalid email or password");
+				setLoading(false);
+				return;
+			}
+
 			window.sessionStorage.clear();
 			router.replace("/admin");
+			router.refresh();
+		} catch {
+			setError("Something went wrong. Please try again.");
+			setLoading(false);
 		}
 	}
 

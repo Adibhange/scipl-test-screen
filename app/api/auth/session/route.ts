@@ -1,61 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { rateLimit } from "@/lib/rate-limit";
-import { getClientIpFromHeaders, logSecurityEvent } from "@/lib/audit-logger";
+import { validateSession, SESSION_COOKIE_NAME } from "@/services/server/admin/session.service";
+import { getClientIpFromHeaders } from "@/lib/audit-logger";
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
+	const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 	const ip = getClientIpFromHeaders(request.headers);
-	const limiter = rateLimit(ip, { limit: 10, windowMs: 60000, keyPrefix: "rl:auth_session_post" });
-	if (limiter.isBlocked) return limiter.response!;
+	const userAgent = request.headers.get("user-agent") || "";
 
-	try {
-		const body = await request.json().catch(() => null);
-		if (!body?.token) {
-			return NextResponse.json({ error: "Token is required" }, { status: 400 });
-		}
-
-		const response = NextResponse.json({ ok: true });
-		response.headers.set(
-			"Cache-Control",
-			"no-store, no-cache, must-revalidate, private",
-		);
-
-		logSecurityEvent({
-			action: "admin_session_refresh",
-			actor: { ip },
-			status: "success"
-		});
-
-		return response;
-	} catch (error) {
-		logSecurityEvent({
-			action: "admin_session_refresh",
-			actor: { ip },
-			status: "failure",
-			details: { error: error instanceof Error ? error.message : String(error) }
-		});
-		return NextResponse.json(
-			{ error: "Could not refresh session" },
-			{ status: 500 },
-		);
+	if (!token) {
+		return NextResponse.json({ success: false, error: { message: "No session found.", code: "UNAUTHORIZED" } }, { status: 401 });
 	}
-}
 
-export async function DELETE(request: NextRequest) {
-	const ip = getClientIpFromHeaders(request.headers);
-	const limiter = rateLimit(ip, { limit: 10, windowMs: 60000, keyPrefix: "rl:auth_session_delete" });
-	if (limiter.isBlocked) return limiter.response!;
+	const sessionUser = await validateSession(token, ip, userAgent);
+	if (!sessionUser) {
+		return NextResponse.json({ success: false, error: { message: "Invalid session.", code: "UNAUTHORIZED" } }, { status: 401 });
+	}
 
-	const response = NextResponse.json({ ok: true });
-	response.headers.set(
-		"Cache-Control",
-		"no-store, no-cache, must-revalidate, private",
-	);
-
-	logSecurityEvent({
-		action: "admin_session_logout",
-		actor: { ip },
-		status: "success"
+	return NextResponse.json({
+		success: true,
+		data: {
+			user: {
+				name: sessionUser.name,
+				email: sessionUser.email,
+				role: sessionUser.role,
+			},
+			expiresAt: sessionUser.expiresAt,
+		},
 	});
-
-	return response;
 }

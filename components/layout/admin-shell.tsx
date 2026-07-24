@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, LogOut, UsersRound, Settings, Menu, Clock, Link2, FileText } from "lucide-react";
+import { LayoutDashboard, LogOut, UsersRound, Settings, Menu, Clock, Link2, FileText, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AdminRole } from "@/types";
-import { createSupabaseBrowserClient } from "@/database/adapters/browser-client";
+import { canAccessConfig, canAccessTeam, canAccessQuestionPapers } from "@/lib/permissions";
 import { useIsMutating } from "@tanstack/react-query";
 import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 
@@ -31,9 +31,9 @@ export function AdminShell({
 	const navItems = [
 		{ href: "/admin", label: "Candidates Dashboard", icon: LayoutDashboard },
 		{ href: "/admin/shared-candidates", label: "Shared Candidates", icon: Link2 },
-		{ href: "/admin/team", label: "Admin Team", icon: UsersRound },
-		...(admin.role !== "director" ? [{ href: "/admin/question-papers", label: "Question Papers", icon: FileText }] : []),
-		...(admin.role === "hr" ? [{ href: "/admin/config", label: "Configurations", icon: Settings }] : []),
+		...(canAccessTeam(admin.role) ? [{ href: "/admin/team", label: "Admin Team", icon: UsersRound }] : []),
+		...(canAccessQuestionPapers(admin.role) ? [{ href: "/admin/question-papers", label: "Question Papers", icon: FileText }] : []),
+		...(canAccessConfig(admin.role) ? [{ href: "/admin/config", label: "Configurations", icon: Settings }] : []),
 	];
 
 	const initials =
@@ -46,16 +46,26 @@ export function AdminShell({
 			.toUpperCase() || "A";
 
 	useEffect(() => {
-		if (isMaster) return;
-		const supabase = createSupabaseBrowserClient();
 		let active = true;
 		const checkSession = async () => {
-			const { data } = await supabase.auth.getSession();
-			if (!active) return;
-			const expiresAt = data.session?.expires_at;
-			if (!expiresAt) return;
-			const remaining = expiresAt * 1000 - Date.now();
-			setSessionWarning(remaining > 0 && remaining < 120_000);
+			try {
+				const res = await fetch("/api/auth/session");
+				if (!res.ok) {
+					if (active) handleLogoutWithRedirect();
+					return;
+				}
+				const json = await res.json().catch(() => null);
+				if (!active || !json?.success) return;
+
+				const expiresAtStr = json?.data?.expiresAt;
+				if (!expiresAtStr) return;
+
+				const expiresAt = new Date(expiresAtStr).getTime();
+				const remaining = expiresAt - Date.now();
+				setSessionWarning(remaining > 0 && remaining < 120_000);
+			} catch {
+				// Ignore fetch errors during navigation
+			}
 		};
 		void checkSession();
 		const interval = window.setInterval(() => void checkSession(), 30_000);
@@ -63,29 +73,17 @@ export function AdminShell({
 			active = false;
 			window.clearInterval(interval);
 		};
-	}, [isMaster]);
+	}, []);
 
 	async function handleLogout() {
-		if (isMaster) {
-			await fetch("/api/auth/master", { method: "DELETE" });
-			router.replace("/");
-			return;
-		}
-		const supabase = createSupabaseBrowserClient();
-		await supabase.auth.signOut();
+		await fetch("/api/auth/logout", { method: "POST" });
 		window.localStorage.clear();
 		window.sessionStorage.clear();
 		router.replace("/admin/login");
 	}
 
 	async function handleLogoutWithRedirect() {
-		if (isMaster) {
-			await fetch("/api/auth/master", { method: "DELETE" });
-			router.replace("/?inactive=true");
-			return;
-		}
-		const supabase = createSupabaseBrowserClient();
-		await supabase.auth.signOut();
+		await fetch("/api/auth/logout", { method: "POST" });
 		window.localStorage.clear();
 		window.sessionStorage.clear();
 		router.replace("/admin/login?inactive=true");
@@ -253,6 +251,15 @@ export function AdminShell({
 										<p className="text-xs font-bold text-slate-900">{admin.name}</p>
 										<p className="text-[10px] capitalize text-slate-500 mt-0.5">{admin.role}</p>
 									</div>
+									{admin.role === "director" && (
+										<Link
+											href="/master/change-pin"
+											onClick={() => setIsDropdownOpen(false)}
+											className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
+											<Lock className="h-3.5 w-3.5" />
+											Change PIN
+										</Link>
+									)}
 									<button
 										type="button"
 										onClick={() => {

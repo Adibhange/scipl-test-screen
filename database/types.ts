@@ -43,13 +43,26 @@ export interface IResultsAdapter {
 
 export interface IAdminsAdapter {
 	getById(userId: string): Promise<any>;
+	getByEmail(email: string): Promise<any>;
 	getAll(): Promise<any[]>;
 	upsert(data: any): Promise<any>;
 	update(userId: string, data: any): Promise<any>;
 	delete(userId: string): Promise<void>;
-	authCreateUser(email: string, password: string): Promise<any>;
-	authUpdateUser(userId: string, data: any): Promise<void>;
-	authListUsers(): Promise<any[]>;
+}
+
+export interface ISessionsAdapter {
+	create(data: {
+		sessionTokenHash: string;
+		adminUserId: string;
+		expiresAt: Date;
+		ipAddress?: string | null;
+		userAgent?: string | null;
+	}): Promise<any>;
+	getByHash(hash: string): Promise<any>;
+	updateLastUsed(id: string, data: { ipAddress?: string | null; userAgent?: string | null }): Promise<void>;
+	revoke(id: string): Promise<void>;
+	revokeAllForUser(adminUserId: string): Promise<void>;
+	deleteExpiredAndRevoked(cutoff: Date): Promise<number>;
 }
 
 export interface IMetadataAdapter {
@@ -108,6 +121,7 @@ export interface IDatabaseAdapter {
 	questions: IQuestionsAdapter;
 	results: IResultsAdapter;
 	admins: IAdminsAdapter;
+	sessions: ISessionsAdapter;
 	metadata: IMetadataAdapter;
 	candidateExperiences: ICandidateExperiencesAdapter;
 	candidateReferences: ICandidateReferencesAdapter;

@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { createSupabaseServerClient } from "@/database/adapters/supabase";
 import { getDatabaseAdapter } from "@/database/client";
+import { cookies } from "next/headers";
+import { validateSession, SESSION_COOKIE_NAME } from "@/services/server/admin/session.service";
+import { canReviewRound as permCanReviewRound } from "@/lib/permissions";
 
 export type AdminRole = "hr" | "interviewer" | "director";
 export type AdminUser = {
@@ -8,27 +9,38 @@ export type AdminUser = {
 	email: string;
 	name: string;
 	role: AdminRole;
+	mustChangeMasterPin?: boolean | null;
+	masterPinChangedAt?: string | null;
+	active?: boolean | null;
 };
 
 import { cache } from "react";
 
 export const getCurrentAdmin = cache(async (): Promise<AdminUser | null> => {
-	const authClient = await createSupabaseServerClient();
-	const { data: { user } } = await authClient.auth.getUser();
-	if (!user?.email) return null;
+	try {
+		const cookieStore = await cookies();
+		const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+		if (!token) return null;
 
-	const data = await getDatabaseAdapter().admins.getById(user.id);
+		const sessionUser = await validateSession(token);
+		if (!sessionUser) return null;
 
-	return data ? {
-		userId: data.user_id,
-		email: data.email,
-		name: data.name,
-		role: data.role as AdminRole,
-	} : null;
+		return {
+			userId: sessionUser.userId,
+			email: sessionUser.email,
+			name: sessionUser.name,
+			role: sessionUser.role as AdminRole,
+			mustChangeMasterPin: sessionUser.mustChangeMasterPin,
+			masterPinChangedAt: sessionUser.masterPinChangedAt,
+			active: sessionUser.active,
+		};
+	} catch {
+		return null;
+	}
 });
 
 export function canReviewRound(role: AdminRole, round: "face_to_face" | "assessment" | "director") {
-	return role === "hr" || (role === "interviewer" && round !== "director") || (role === "director" && round === "director");
+	return permCanReviewRound(role, round);
 }
 
 export async function getAdminUsers() {
