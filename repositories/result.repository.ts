@@ -47,6 +47,8 @@ function mapToCandidateResult(row: any, session: any, candidate: any, answers: a
 		assignedInterviewerName: row.assigned_interviewer_name ?? undefined,
 		assignedInterviewerEmail: row.assigned_interviewer_email ?? undefined,
 		directorDecision: row.director_decision ?? null,
+		isExamStarted: session?.is_exam_started ?? false,
+		isExamSubmitted: session?.is_exam_submitted ?? false,
 	};
 }
 

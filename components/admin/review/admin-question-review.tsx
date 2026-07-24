@@ -58,6 +58,10 @@ export function AdminQuestionReview({
 		items.map((item) => item.answer),
 	);
 
+	const isTestSubmitted = !!result.submittedAt;
+	const isFinalized = result.totalMarksAwarded !== undefined;
+	const isGradingDisabled = isFinalized || !isTestSubmitted;
+
 	function handleGradeChange(questionId: string, grade: AdminGrade) {
 		setAnswers((currentAnswers) =>
 			currentAnswers.map((currentAnswer) =>
@@ -189,6 +193,14 @@ export function AdminQuestionReview({
 			</div>
 
 			<EvaluationBreakdown result={result} />
+
+			{/* Submission warning alert */}
+			{!isTestSubmitted && (
+				<div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-250 text-amber-800 text-xs font-bold leading-relaxed flex items-start gap-2 shadow-2xs select-none">
+					<span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0 mt-1.5 animate-pulse" />
+					<span>The candidate has not submitted the assessment yet. Score calculation and finalization are unavailable.</span>
+				</div>
+			)}
 
 			{/* Round Tab Card header */}
 			<div className="rounded-2xl border border-slate-200 bg-white p-5 lg:p-6 shadow-xs overflow-hidden relative">
@@ -479,7 +491,7 @@ export function AdminQuestionReview({
 													resultId={result.id}
 													questionId={item.answer.questionId}
 													initialGrade={item.answer.adminGrade}
-													disabled={result.totalMarksAwarded !== undefined}
+													disabled={isGradingDisabled}
 													onGradeChange={(grade: AdminGrade) =>
 														handleGradeChange(item.answer.questionId, grade)
 													}
@@ -553,7 +565,7 @@ export function AdminQuestionReview({
 													resultId={result.id}
 													questionId={item.answer.questionId}
 													initialGrade={item.answer.adminGrade}
-													disabled={result.totalMarksAwarded !== undefined}
+													disabled={isGradingDisabled}
 													onGradeChange={(grade: AdminGrade) =>
 														handleGradeChange(item.answer.questionId, grade)
 													}
@@ -613,7 +625,8 @@ export function AdminQuestionReview({
 				<CalculateResultsButton
 					resultId={result.id}
 					tabSwitches={result.tabSwitches}
-					disabled={result.totalMarksAwarded !== undefined}
+					disabled={!isTestSubmitted}
+					isFinalized={isFinalized}
 					onCalculate={onCalculate}
 				/>
 			</div>

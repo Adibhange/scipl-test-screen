@@ -3,7 +3,7 @@ import { getResultById, updateResult } from "@/repositories/result.repository";
 import { canReviewRound } from "@/repositories/admin.repository";
 import { updateCandidate } from "@/repositories/candidate.repository";
 import { getDatabaseAdapter } from "@/database/client";
-import { ensureInterviewRounds, canSubmitFeedback } from "@/lib/interview-workflow";
+import { ensureInterviewRounds, canSubmitFeedback, calculateCandidateWorkflowStatus } from "@/lib/interview-workflow";
 import { ValidationError, NotFoundError, AuthorizationError, ConflictError } from "@/lib/errors";
 import type { InterviewDecision, InterviewRoundKey } from "@/types";
 
@@ -17,6 +17,8 @@ export async function submitRoundFeedback(
 	remarks?: string,
 	admin?: any,
 	decision?: "hire" | "reject" | "hold" | null,
+	directorId?: string,
+	reopenReason?: string,
 ) {
 	if (!["face_to_face", "assessment", "director"].includes(round)) {
 		throw new ValidationError("Invalid round review");
@@ -47,21 +49,89 @@ export async function submitRoundFeedback(
 		throw new ConflictError("The workflow progression requirements for this round are not met.");
 	}
 
+	const rounds = ensureInterviewRounds(result);
+
+	// Immutability checks for Round 1 & Round 2 feedback
+	if (round === "face_to_face" || round === "assessment") {
+		const existingStatus = rounds[round]?.status;
+		if (existingStatus === "pass" || existingStatus === "fail") {
+			throw new ConflictError(`Cannot modify feedback: ${round === "face_to_face" ? "Face-to-Face" : "Technical Assessment"} review is already submitted and locked.`);
+		}
+	}
+
+	// Director Decision attribution and reopening check
+	let decisionByDirectorId: string | undefined = undefined;
+	let decisionByDirectorName: string | undefined = undefined;
+	let decisionByDirectorEmail: string | undefined = undefined;
+	let recordedBy: any = undefined;
+	let isReopening = false;
+
+	if (round === "director") {
+		// Reopen check
+		if (result.directorDecision && ["hire", "reject", "hold"].includes(result.directorDecision)) {
+			if (admin.role !== "hr") {
+				throw new AuthorizationError("Only HR administrators can reopen a finalized Director decision.");
+			}
+			if (!reopenReason || !reopenReason.trim()) {
+				throw new ValidationError("A reopen reason is required to modify a finalized Director decision.");
+			}
+			isReopening = true;
+		}
+
+		if (admin.role === "director") {
+			decisionByDirectorId = admin.userId;
+			decisionByDirectorName = admin.name;
+			decisionByDirectorEmail = admin.email;
+			recordedBy = { id: admin.userId, name: admin.name, email: admin.email, role: admin.role };
+		} else if (admin.role === "hr") {
+			if (!directorId) {
+				throw new ValidationError("A Director must be selected when HR records the decision.");
+			}
+			const adminUsers = await getDatabaseAdapter().admins.getAll();
+			const director = adminUsers.find((u: any) => u.user_id === directorId && u.role === "director");
+			if (!director) {
+				throw new ValidationError("Invalid or inactive Director selected.");
+			}
+			decisionByDirectorId = director.user_id;
+			decisionByDirectorName = director.name;
+			decisionByDirectorEmail = director.email;
+			recordedBy = { id: admin.userId, name: admin.name, email: admin.email, role: admin.role };
+		} else {
+			throw new AuthorizationError("You are not authorized to submit a Director decision.");
+		}
+	}
+
 	const updated = await updateResult(resultId, (current) => {
 		const nextRounds = {
 			...ensureInterviewRounds(current),
 			[round]: {
+				...ensureInterviewRounds(current)[round],
 				...(round !== "director" ? { status: status! } : {}),
 				remarks: remarks?.trim(),
 				interviewerId: admin.userId,
 				interviewerName: admin.name,
 				interviewerEmail: admin.email,
 				updatedAt: new Date().toISOString(),
+				// Attribution info
+				...(round === "director" ? {
+					recordedBy,
+					decisionByDirectorId,
+					decisionByDirectorName,
+					decisionByDirectorEmail,
+				} : {}),
 			},
 		};
 
 		if (round === "director" && nextRounds.director) {
 			delete (nextRounds.director as any).status;
+			if (isReopening) {
+				nextRounds.director = {
+					...nextRounds.director,
+					reopenedAt: new Date().toISOString(),
+					reopenReason: reopenReason!.trim(),
+					reopenedBy: { id: admin.userId, name: admin.name, email: admin.email, role: admin.role }
+				};
+			}
 		}
 
 		return {
@@ -70,6 +140,11 @@ export async function submitRoundFeedback(
 			directorDecision: round === "director" ? (decision || null) : current.directorDecision,
 		};
 	});
+
+	if (updated?.candidate?.id) {
+		const computedStatus = calculateCandidateWorkflowStatus(updated);
+		await updateCandidate(updated.candidate.id, { hiringStatus: computedStatus });
+	}
 
 	// Reload the latest result from the database to ensure we get the updated hiring status (which is updated by PostgreSQL triggers)
 	const fresh = await getResultById(resultId);
@@ -92,11 +167,21 @@ export async function assignInterviewerAndDetails(
 		interviewerEmail?: string;
 		experiences?: any[];
 		references?: any[];
+		round?: string;
 	},
 ) {
 	const result = await getResultById(resultId);
 	if (!result) {
 		throw new NotFoundError("Candidate result not found");
+	}
+
+	// Immutability check for Round 1 & Round 2 interviewer assignment
+	if (body.round && ["face_to_face", "assessment"].includes(body.round)) {
+		const rounds = ensureInterviewRounds(result);
+		const existingStatus = rounds[body.round as InterviewRoundKey]?.status;
+		if (existingStatus === "pass" || existingStatus === "fail") {
+			throw new ConflictError(`Cannot change interviewer: ${body.round === "face_to_face" ? "Face-to-Face" : "Technical Assessment"} review is already submitted and locked.`);
+		}
 	}
 
 	let interviewerId = body.interviewerId;
@@ -128,23 +213,42 @@ export async function assignInterviewerAndDetails(
 		interviewerEmail = result.assignedInterviewerEmail;
 	}
 
-	const updated = await updateResult(resultId, (current) => ({
-		...current,
-		candidate: {
-			...current.candidate,
-			...(body.role ? { role: body.role } : {}),
-			...(body.experience ? { experience: body.experience } : {}),
-			...(body.testLocation ? { testLocation: body.testLocation as any } : {}),
-			...(body.hiringLocation !== undefined ? { hiringLocation: body.hiringLocation || undefined } : {}),
-			...(body.hiringStatus ? { hiringStatus: body.hiringStatus as any } : {}),
-			...(body.expectedSalary !== undefined ? { expectedSalary: body.expectedSalary ?? undefined } : {}),
-			...(body.offerSalary !== undefined ? { offerSalary: body.offerSalary ?? undefined } : {}),
-			...(body.hrNotes !== undefined ? { hrNotes: body.hrNotes } : {}),
-		},
-		assignedInterviewerId: interviewerId,
-		assignedInterviewerName: interviewerName,
-		assignedInterviewerEmail: interviewerEmail,
-	}));
+	const updated = await updateResult(resultId, (current) => {
+		const nextRounds = {
+			...ensureInterviewRounds(current),
+		};
+
+		if (body.round && ["face_to_face", "assessment", "director"].includes(body.round)) {
+			const r = body.round as InterviewRoundKey;
+			nextRounds[r] = {
+				...nextRounds[r],
+				interviewerId: interviewerId || undefined,
+				interviewerName: interviewerName || undefined,
+				interviewerEmail: interviewerEmail || undefined,
+			};
+		}
+
+		return {
+			...current,
+			candidate: {
+				...current.candidate,
+				...(body.role ? { role: body.role } : {}),
+				...(body.experience ? { experience: body.experience } : {}),
+				...(body.testLocation ? { testLocation: body.testLocation as any } : {}),
+				...(body.hiringLocation !== undefined ? { hiringLocation: body.hiringLocation || undefined } : {}),
+				...(body.hiringStatus ? { hiringStatus: body.hiringStatus as any } : {}),
+				...(body.expectedSalary !== undefined ? { expectedSalary: body.expectedSalary ?? undefined } : {}),
+				...(body.offerSalary !== undefined ? { offerSalary: body.offerSalary ?? undefined } : {}),
+				...(body.hrNotes !== undefined ? { hrNotes: body.hrNotes } : {}),
+			},
+			interviewRounds: nextRounds,
+			...(body.round ? {} : {
+				assignedInterviewerId: interviewerId,
+				assignedInterviewerName: interviewerName,
+				assignedInterviewerEmail: interviewerEmail,
+			}),
+		};
+	});
 
 	if (result.candidate.id && (
 		body.role !== undefined ||

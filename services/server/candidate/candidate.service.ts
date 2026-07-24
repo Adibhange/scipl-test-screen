@@ -8,7 +8,7 @@ import { getResultById, saveResult } from "@/repositories/result.repository";
 import { getMetadata, getVacancies } from "@/repositories/metadata.repository";
 import { getDatabaseAdapter } from "@/database/client";
 import { ValidationError, AuthorizationError } from "@/lib/errors";
-import { emptyInterviewRounds } from "@/lib/interview-rounds";
+import { emptyInterviewRounds } from "@/lib/interview-workflow";
 
 /**
  * Service to handle candidate lifecycle, validations, reapplication checks, and pre-registration.
@@ -49,7 +49,7 @@ export async function getCandidateWithSessionValidation(
 	}
 
 	const rounds = resultRecord.interviewRounds || {};
-	const hasFailed = Object.values(rounds).some((r: any) => r?.status === "fail");
+	const hasFailed = (rounds as any)?.face_to_face?.status === "fail";
 	if (hasFailed) {
 		throw new AuthorizationError("Application Process Terminated");
 	}
@@ -219,7 +219,7 @@ export async function preRegisterCandidateByAdmin(input: {
 		answers: [],
 		tabSwitches: 0,
 		secondsUsed: 0,
-		submittedAt: new Date().toISOString(),
+		submittedAt: undefined,
 		interviewRounds: emptyInterviewRounds(),
 	};
 

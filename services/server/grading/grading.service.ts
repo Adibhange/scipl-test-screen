@@ -2,10 +2,12 @@ import { getAllQuestions } from "@/repositories/question.repository";
 import { getResultById, updateResult, saveResult } from "@/repositories/result.repository";
 import { getCandidateById } from "@/repositories/candidate.repository";
 import { getExamSession } from "@/repositories/exam-session.repository";
+import { getSnapshotBySessionId } from "@/repositories/assessment-snapshot.repository";
 import { getDatabaseAdapter } from "@/database/client";
 import { ValidationError, NotFoundError, ConflictError, AuthorizationError } from "@/lib/errors";
-import { emptyInterviewRounds } from "@/lib/interview-rounds";
+import { emptyInterviewRounds, ensureInterviewRounds } from "@/lib/interview-workflow";
 import type { Answer, Candidate } from "@/types";
+import type { QuestionPaperItem } from "@/types";
 
 /**
  * Service to handle MCQ/manual answer grading, final score calculations, and result submissions.
@@ -22,10 +24,8 @@ export async function gradeCandidateAnswer(
 		throw new NotFoundError("Candidate answer not found");
 	}
 
-	// Lookup the question details to find maximum possible marks
-	const questions = await getAllQuestions();
-	const question = questions.find((q) => q.id === questionId);
-	const maxMarks = question ? question.marks : 0;
+	// Look up question marks: prefer snapshot (paper-based) path, fall back to legacy
+	const maxMarks = await resolveQuestionMarks(resultId, questionId);
 
 	// Calculate marks awarded based on grade
 	const marksAwarded =
@@ -67,10 +67,14 @@ export async function calculateCandidateResults(id: string) {
 		throw new ConflictError("Assessment already finalized");
 	}
 
-	const questions = await getAllQuestions();
-	const questionById = new Map(
-		questions.map((question) => [question.id, question]),
-	);
+	// Persisted evidence check of test submission
+	const session = await getDatabaseAdapter().examSessions.getById(id);
+	if (!session || !session.is_exam_submitted) {
+		throw new ValidationError("Assessment has not been submitted by the candidate yet. Score calculation and finalization are unavailable.");
+	}
+
+	// Prefer snapshot items for marks; fall back to legacy question list
+	const questionById = await buildQuestionMarksMap(id);
 
 	interface Accumulator {
 		awarded: number;
@@ -135,19 +139,33 @@ export async function calculateCandidateResults(id: string) {
 		},
 	);
 
+	if (totals.possible <= 0) {
+		throw new ValidationError("Cannot finalize assessment: total possible marks must be greater than zero. Please check the test question configuration.");
+	}
+
 	const tabSwitchDeduction = result.tabSwitches * 10;
 	const finalScore = Math.max(0, totals.awarded - tabSwitchDeduction);
 
-	const updated = await updateResult(id, (currentResult) => ({
-		...currentResult,
-		totalMarksAwarded: finalScore,
-		totalMarksPossible: totals.possible,
-		scoreBreakdown: {
-			...totals.breakdown,
-			scoreBeforeDeduction: totals.awarded,
-			tabSwitchDeduction,
-		},
-	}));
+	const updated = await updateResult(id, (currentResult) => {
+		const nextRounds = {
+			...ensureInterviewRounds(currentResult),
+		};
+		nextRounds.assessment = {
+			...nextRounds.assessment,
+			testStatus: "finalized" as const,
+		};
+		return {
+			...currentResult,
+			interviewRounds: nextRounds,
+			totalMarksAwarded: finalScore,
+			totalMarksPossible: totals.possible,
+			scoreBreakdown: {
+				...totals.breakdown,
+				scoreBeforeDeduction: totals.awarded,
+				tabSwitchDeduction,
+			},
+		};
+	});
 
 	return updated;
 }
@@ -210,7 +228,11 @@ export async function submitResults(body: {
 			face_to_face: existingResult?.interviewRounds?.face_to_face ?? {
 				status: "pass",
 			},
-			assessment: { status: "pending" as const },
+			assessment: {
+				status: "pending" as const,
+				...(existingResult?.interviewRounds?.assessment ?? {}),
+				testStatus: "evaluated" as const,
+			},
 		},
 		assignedInterviewerId: existingResult?.assignedInterviewerId,
 		assignedInterviewerName: existingResult?.assignedInterviewerName,
@@ -219,4 +241,43 @@ export async function submitResults(body: {
 
 	await saveResult(result);
 	return result;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Builds a marks-by-questionId map for grading.
+ * Uses the assessment snapshot (immutable, paper-based) when one exists;
+ * falls back to the legacy question list for pre-migration sessions.
+ */
+async function buildQuestionMarksMap(
+	sessionId: string,
+): Promise<Map<string, { marks: number; type: string }>> {
+	// Try snapshot path
+	const snapshot = await getSnapshotBySessionId(sessionId);
+	if (snapshot && snapshot.snapshotItems.length > 0) {
+		return new Map(
+			snapshot.snapshotItems.map((item: QuestionPaperItem) => [
+				item.id,
+				{ marks: item.marks, type: item.questionType },
+			]),
+		);
+	}
+	// Legacy path
+	const questions = await getAllQuestions();
+	return new Map(
+		questions.map((q) => [q.id, { marks: q.marks, type: q.type }]),
+	);
+}
+
+/**
+ * Resolves the maximum marks for a single question, using the snapshot when
+ * available and falling back to the legacy question list.
+ */
+async function resolveQuestionMarks(
+	sessionId: string,
+	questionId: string,
+): Promise<number> {
+	const map = await buildQuestionMarksMap(sessionId);
+	return map.get(questionId)?.marks ?? 0;
 }

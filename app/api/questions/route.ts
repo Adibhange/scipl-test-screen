@@ -18,9 +18,15 @@ export async function GET(req: NextRequest) {
 			role: searchParams.get("role"),
 			experience: searchParams.get("experience"),
 			all: searchParams.get("all") || undefined,
+			sessionId: searchParams.get("sessionId") || undefined,
 		});
 
-		const questions = await getQuestionsForAssessment(query.role, query.experience, query.all);
+		const questions = await getQuestionsForAssessment(
+			query.role,
+			query.experience,
+			query.all,
+			query.sessionId,
+		);
 		return apiResponse.success(questions);
 	} catch (error) {
 		return handleApiError(error, "Could not load questions");

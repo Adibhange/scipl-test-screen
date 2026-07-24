@@ -13,7 +13,7 @@ export type AssessmentRound = {
 export const ASSESSMENT_ROUNDS: AssessmentRound[] = [
 	{
 		id: 1,
-		label: "MCQ",
+		label: "Multiple Choice",
 		types: ["mcq_single", "mcq_multi", "output_prediction"],
 		limit: 20,
 		durationSeconds: 20 * 60,
@@ -21,18 +21,26 @@ export const ASSESSMENT_ROUNDS: AssessmentRound[] = [
 	},
 	{
 		id: 2,
-		label: "Subjective",
-		types: ["subjective"],
+		label: "Coding",
+		types: ["coding"],
 		limit: 3,
-		durationSeconds: 15 * 60,
+		durationSeconds: 20 * 60,
 		audience: "it",
 	},
 	{
 		id: 3,
-		label: "Coding",
-		types: ["coding", "sql"],
-		limit: 5,
-		durationSeconds: 30 * 60,
+		label: "SQL",
+		types: ["sql"],
+		limit: 2,
+		durationSeconds: 10 * 60,
+		audience: "it",
+	},
+	{
+		id: 4,
+		label: "Subjective",
+		types: ["subjective"],
+		limit: 3,
+		durationSeconds: 15 * 60,
 		audience: "it",
 	},
 ];

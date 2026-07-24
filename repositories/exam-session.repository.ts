@@ -2,6 +2,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { getAssessmentRounds } from "@/constants/assessment-rounds";
 import { getDatabaseAdapter } from "@/database/client";
+import { getPublishedPaper } from "@/repositories/question-paper.repository";
+import { createAssessmentSnapshot, getSnapshotBySessionId } from "@/repositories/assessment-snapshot.repository";
+import type { QuestionPaperItem } from "@/types";
 
 function getExamDurationSeconds(role: string) {
 	const rounds = getAssessmentRounds(role);
@@ -104,6 +107,10 @@ export async function startExamSession({
 		seconds_used: 0,
 	});
 
+	// Atomically create assessment snapshot if a published paper exists.
+	// This is the ONLY place a snapshot is ever created — never during question fetch.
+	await tryCreateSnapshotForSession(created.id, roleData.id, expData.id);
+
 	return { session: created, conflict: false };
 }
 
@@ -155,4 +162,65 @@ export async function updateExamSession(
 
 export async function clearExamSession(candidateId: string) {
 	await getDatabaseAdapter().examSessions.deleteByCandidateId(candidateId);
+}
+
+/**
+ * Fisher-Yates shuffle — returns a new shuffled copy.
+ */
+function shuffle<T>(arr: T[]): T[] {
+	const a = [...arr];
+	for (let i = a.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[a[i], a[j]] = [a[j], a[i]];
+	}
+	return a;
+}
+
+/**
+ * Looks up the published paper for roleId+experienceId and, if found,
+ * creates a one-time shuffled snapshot for the given session.
+ * Safe to call on session creation — the UNIQUE constraint on session_id
+ * ensures it is never overwritten even if called twice.
+ */
+async function tryCreateSnapshotForSession(
+	sessionId: string,
+	roleId: string,
+	experienceId: string,
+): Promise<void> {
+	try {
+		// Guard: skip if snapshot already exists (e.g. session takeover)
+		const existing = await getSnapshotBySessionId(sessionId);
+		if (existing) return;
+
+		const paper = await getPublishedPaper(roleId, experienceId);
+		if (!paper || !paper.items || paper.items.length === 0) return;
+
+		// Shuffle question order
+		const shuffledItems = shuffle(paper.items);
+		const questionOrder = shuffledItems.map((item: QuestionPaperItem) => item.id);
+
+		// Shuffle option keys per MCQ item
+		const optionOrder: Record<string, string[]> = {};
+		const MCQ_TYPES = new Set(["mcq_single", "mcq_multi", "output_prediction"]);
+		for (const item of shuffledItems) {
+			if (MCQ_TYPES.has(item.questionType) && item.options && item.options.length > 0) {
+				optionOrder[item.id] = shuffle(item.options.map((o: any) => o.key));
+			}
+		}
+
+		// Update exam_sessions.paper_id
+		await getDatabaseAdapter().examSessions.update(sessionId, { paper_id: paper.id });
+
+		await createAssessmentSnapshot({
+			sessionId,
+			paperId: paper.id,
+			questionOrder,
+			optionOrder,
+			snapshotItems: shuffledItems,
+		});
+	} catch (err: any) {
+		// Snapshot creation is best-effort at session creation.
+		// If it fails, the session is still valid; legacy fallback applies.
+		console.warn("[snapshot] Failed to create assessment snapshot:", err?.message);
+	}
 }

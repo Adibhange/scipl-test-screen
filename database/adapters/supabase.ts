@@ -1085,4 +1085,174 @@ export const supabaseAdapter: IDatabaseAdapter = {
 			return data || [];
 		},
 	},
+
+	questionPapers: {
+		async listAll() {
+			const { data, error } = await getSupabaseServerClient()
+				.from("question_papers")
+				.select("*, roleObj:master_roles(id,value,label), experienceObj:master_experiences(id,value,label)")
+				.order("created_at", { ascending: false });
+			if (error) handleDatabaseError(error, "Could not list question papers.");
+			return data || [];
+		},
+
+		async listByUploader(uploadedBy: string) {
+			const { data, error } = await getSupabaseServerClient()
+				.from("question_papers")
+				.select("*, roleObj:master_roles(id,value,label), experienceObj:master_experiences(id,value,label)")
+				.eq("uploaded_by", uploadedBy)
+				.order("created_at", { ascending: false });
+			if (error) handleDatabaseError(error, "Could not list question papers.");
+			return data || [];
+		},
+
+		async getById(id: string) {
+			const { data, error } = await getSupabaseServerClient()
+				.from("question_papers")
+				.select("*, roleObj:master_roles(id,value,label), experienceObj:master_experiences(id,value,label)")
+				.eq("id", id)
+				.maybeSingle();
+			if (error) handleDatabaseError(error, "Could not load question paper.");
+			return data;
+		},
+
+		async getWithItems(id: string) {
+			const { data, error } = await getSupabaseServerClient()
+				.from("question_papers")
+				.select(`
+					*,
+					roleObj:master_roles(id,value,label),
+					experienceObj:master_experiences(id,value,label),
+					items:question_paper_items(*)
+				`)
+				.eq("id", id)
+				.maybeSingle();
+			if (error) handleDatabaseError(error, "Could not load question paper with items.");
+			return data;
+		},
+
+		async getPublished(roleId: string, experienceId: string) {
+			const { data, error } = await getSupabaseServerClient()
+				.from("question_papers")
+				.select(`*, items:question_paper_items(*)`)
+				.eq("role_id", roleId)
+				.eq("experience_id", experienceId)
+				.eq("status", "published")
+				.maybeSingle();
+			if (error) handleDatabaseError(error, "Could not load published question paper.");
+			return data;
+		},
+
+		async create(paperData: any) {
+			const { data, error } = await getSupabaseServerClient()
+				.from("question_papers")
+				.insert(paperData)
+				.select()
+				.single();
+			if (error) handleDatabaseError(error, "Could not create question paper.");
+			return data;
+		},
+
+		async createItems(items: any[]) {
+			if (!items.length) return;
+			const { error } = await getSupabaseServerClient()
+				.from("question_paper_items")
+				.insert(items);
+			if (error) handleDatabaseError(error, "Could not create question paper items.");
+		},
+
+		async updateStatus(id: string, updateData: any) {
+			const { data, error } = await getSupabaseServerClient()
+				.from("question_papers")
+				.update({ ...updateData, updated_at: new Date().toISOString() })
+				.eq("id", id)
+				.select()
+				.single();
+			if (error) {
+				// Re-throw PG RESTRICT violation as a recognizable error
+				if (String(error.code) === "23001" || String(error.message).includes("restrict")) {
+					throw new Error("RESTRICT_VIOLATION: " + error.message);
+				}
+				handleDatabaseError(error, "Could not update question paper.");
+			}
+			return data;
+		},
+
+		async delete(id: string) {
+			const { error } = await getSupabaseServerClient()
+				.from("question_papers")
+				.delete()
+				.eq("id", id);
+			if (error) {
+				if (String(error.code) === "23001" || String(error.message).includes("restrict")) {
+					throw new Error("RESTRICT_VIOLATION: " + error.message);
+				}
+				handleDatabaseError(error, "Could not delete question paper.");
+			}
+		},
+
+		async replaceItems(
+			paperId: string,
+			actorId: string,
+			actorRole: string,
+			title: string,
+			totalQuestions: number,
+			totalMarks: number,
+			questionCountByType: Record<string, number>,
+			newItems: any[],
+		) {
+			const { error } = await getSupabaseServerClient()
+				.rpc("replace_paper_items_rpc", {
+					p_paper_id: paperId,
+					p_actor_id: actorId,
+					p_actor_role: actorRole,
+					p_title: title,
+					p_total_questions: totalQuestions,
+					p_total_marks: totalMarks,
+					p_question_count_by_type: questionCountByType,
+					p_new_items: newItems,
+				});
+			if (error) {
+				if (String(error.message).includes("RESTRICT_VIOLATION")) {
+					throw new Error("RESTRICT_VIOLATION: " + error.message);
+				}
+				handleDatabaseError(error, "Could not atomically replace question paper items.");
+			}
+		},
+	},
+
+	assessmentSnapshots: {
+		async create(data: {
+			session_id: string;
+			paper_id: string;
+			question_order: string[];
+			option_order: Record<string, string[]>;
+			snapshot_items: any[];
+		}) {
+			const { data: created, error } = await getSupabaseServerClient()
+				.from("candidate_assessment_snapshots")
+				.insert({
+					session_id: data.session_id,
+					paper_id: data.paper_id,
+					question_order: data.question_order,
+					option_order: data.option_order,
+					snapshot_items: data.snapshot_items,
+				})
+				.select()
+				.single();
+			if (error) handleDatabaseError(error, "Could not create assessment snapshot.");
+			return created;
+		},
+
+		async getBySessionId(sessionId: string) {
+			const { data, error } = await getSupabaseServerClient()
+				.from("candidate_assessment_snapshots")
+				.select("*")
+				.eq("session_id", sessionId)
+				.maybeSingle();
+			if (error) handleDatabaseError(error, "Could not load assessment snapshot.");
+			return data;
+		},
+	},
 };
+

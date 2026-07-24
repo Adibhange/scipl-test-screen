@@ -31,6 +31,8 @@ export async function PATCH(request: NextRequest) {
 			validated.remarks,
 			admin,
 			validated.decision,
+			validated.directorId,
+			validated.reopenReason,
 		);
 
 		logSecurityEvent({

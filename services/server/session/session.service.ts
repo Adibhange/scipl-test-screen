@@ -21,7 +21,7 @@ export async function getExamSessionDetails(candidateId: string) {
 	const resultRecord = await getResultById(session.id);
 	if (resultRecord) {
 		const rounds = resultRecord.interviewRounds || {};
-		const hasFailed = Object.values(rounds).some((r: any) => r?.status === "fail");
+		const hasFailed = (rounds as any)?.face_to_face?.status === "fail";
 		if (hasFailed) {
 			throw new AuthorizationError("Application Process Terminated");
 		}
@@ -47,7 +47,7 @@ export async function initiateExamSession(body: {
 		const resultRecord = await getResultById(existing.id);
 		if (resultRecord) {
 			const rounds = resultRecord.interviewRounds || {};
-			const hasFailed = Object.values(rounds).some((r: any) => r?.status === "fail");
+			const hasFailed = (rounds as any)?.face_to_face?.status === "fail";
 			if (hasFailed) {
 				throw new AuthorizationError("Application Process Terminated");
 			}

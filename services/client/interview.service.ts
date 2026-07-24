@@ -8,6 +8,8 @@ export async function submitRoundFeedback(payload: {
 	status: InterviewDecision;
 	remarks: string;
 	decision?: "hire" | "reject" | "hold" | null;
+	directorId?: string;
+	reopenReason?: string;
 }): Promise<CandidateResult> {
 	return apiRequest<CandidateResult>("/api/admin/round", {
 		method: "PATCH",
@@ -30,6 +32,7 @@ export async function assignInterviewerAndMetadata(payload: {
 	interviewerEmail?: string;
 	experiences?: any[];
 	references?: any[];
+	round?: string;
 }): Promise<CandidateResult> {
 	return apiRequest<CandidateResult>("/api/admin/assignment", {
 		method: "PATCH",

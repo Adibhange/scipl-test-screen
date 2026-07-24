@@ -57,6 +57,14 @@ export type InterviewRoundReview = {
 	interviewerEmail?: string;
 	remarks?: string;
 	updatedAt?: string;
+	testStatus?: "pending" | "evaluated" | "finalized";
+	recordedBy?: { id: string; name: string; email: string; role: string };
+	decisionByDirectorId?: string;
+	decisionByDirectorName?: string;
+	decisionByDirectorEmail?: string;
+	reopenReason?: string;
+	reopenedAt?: string;
+	reopenedBy?: { id: string; name: string; email: string; role: string };
 };
 
 export type Answer = {
@@ -75,7 +83,7 @@ export type CandidateResult = {
 	answers: Answer[];
 	tabSwitches: number;
 	secondsUsed: number;
-	submittedAt: string;
+	submittedAt?: string;
 	totalMarksAwarded?: number;
 	totalMarksPossible?: number;
 	scoreBreakdown?: {
@@ -91,6 +99,8 @@ export type CandidateResult = {
 	assignedInterviewerEmail?: string;
 	interviewRounds?: Record<InterviewRoundKey, InterviewRoundReview>;
 	directorDecision?: "hire" | "reject" | "hold" | null;
+	isExamStarted?: boolean;
+	isExamSubmitted?: boolean;
 };
 
 export type SavedAttempt = {

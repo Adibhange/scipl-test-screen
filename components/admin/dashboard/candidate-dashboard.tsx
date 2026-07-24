@@ -22,6 +22,7 @@ const AddCandidateDialog = nextDynamic(
 
 import { ResultsFilterBar } from "@/components/admin/dashboard/results-filter-bar";
 import { filterResults, computeCandidateStatus } from "@/lib/filters";
+import { canAccessRound } from "@/lib/interview-workflow";
 import { logger } from "@/lib/logger";
 import { ROLES } from "@/constants/roles";
 import { EXPERIENCE_LEVELS } from "@/constants/experience";
@@ -140,7 +141,7 @@ export async function CandidateDashboard({
 			)
 		: admin?.role === "director" ?
 			results.filter(
-				(result) => result.interviewRounds?.assessment?.status === "pass",
+				(result) => canAccessRound(result, "director"),
 			)
 		:	results;
 	const {

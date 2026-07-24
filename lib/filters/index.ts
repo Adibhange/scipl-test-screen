@@ -31,12 +31,6 @@ export function getCurrentRoundKey(
 }
 
 export function computeCandidateStatus(r: CandidateResult): "rejected" | "hired" | "on_hold" | "in_interview" | "screening" {
-	// Score zero represents direct failure/rejection
-	const isScoreZero = r.totalMarksAwarded !== undefined && r.totalMarksAwarded === 0;
-	if (isScoreZero) {
-		return "rejected";
-	}
-	
 	const status = calculateCandidateWorkflowStatus(r);
 	if (status === "interviewing") {
 		return "in_interview";

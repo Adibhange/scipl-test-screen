@@ -97,6 +97,7 @@ export const AssignInterviewerSchema = z.object({
 	interviewerId: z.string().trim().optional(),
 	interviewerName: z.string().trim().optional(),
 	interviewerEmail: z.string().trim().optional(),
+	round: z.enum(["face_to_face", "assessment", "director"]).optional(),
 	experiences: z.array(z.object({
 		id: z.string().trim().optional(),
 		companyName: z.string().trim().min(1, "Company name is required"),
@@ -124,4 +125,12 @@ export const SubmitRoundFeedbackSchema = z.object({
 	status: z.enum(["pending", "pass", "fail"]).optional(),
 	remarks: z.string().trim().optional(),
 	decision: z.enum(["hire", "reject", "hold"]).nullable().optional(),
+	directorId: z.string().trim().optional(),
+	reopenReason: z.string().trim().optional(),
 });
+
+export const PaperActionSchema = z.object({
+	action: z.enum(["submit", "approve", "reject", "archive"]),
+	reason: z.string().trim().optional(),
+});
+

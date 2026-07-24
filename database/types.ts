@@ -112,4 +112,39 @@ export interface IDatabaseAdapter {
 	candidateExperiences: ICandidateExperiencesAdapter;
 	candidateReferences: ICandidateReferencesAdapter;
 	candidateShares: ICandidateSharesAdapter;
+	questionPapers: IQuestionPapersAdapter;
+	assessmentSnapshots: IAssessmentSnapshotsAdapter;
+}
+
+export interface IQuestionPapersAdapter {
+	listAll(): Promise<any[]>;
+	listByUploader(uploadedBy: string): Promise<any[]>;
+	getById(id: string): Promise<any | null>;
+	getWithItems(id: string): Promise<any | null>;
+	getPublished(roleId: string, experienceId: string): Promise<any | null>;
+	create(data: any): Promise<any>;
+	createItems(items: any[]): Promise<void>;
+	updateStatus(id: string, data: any): Promise<any>;
+	delete(id: string): Promise<void>;
+	replaceItems(
+		paperId: string,
+		actorId: string,
+		actorRole: string,
+		title: string,
+		totalQuestions: number,
+		totalMarks: number,
+		questionCountByType: Record<string, number>,
+		newItems: any[],
+	): Promise<void>;
+}
+
+export interface IAssessmentSnapshotsAdapter {
+	create(data: {
+		session_id: string;
+		paper_id: string;
+		question_order: string[];
+		option_order: Record<string, string[]>;
+		snapshot_items: any[];
+	}): Promise<any>;
+	getBySessionId(sessionId: string): Promise<any | null>;
 }

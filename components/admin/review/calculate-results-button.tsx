@@ -18,11 +18,13 @@ export function CalculateResultsButton({
 	resultId,
 	tabSwitches,
 	disabled = false,
+	isFinalized = false,
 	onCalculate,
 }: {
 	resultId: string;
 	tabSwitches: number;
 	disabled?: boolean;
+	isFinalized?: boolean;
 	onCalculate?: (updatedResult: CandidateResult) => void;
 }) {
 	const [calculating, setCalculating] = useState(false);
@@ -45,15 +47,17 @@ export function CalculateResultsButton({
 		}
 	}
 
+	const showLock = disabled || isFinalized;
+
 	return (
 		<Dialog
 			open={open}
 			onOpenChange={setOpen}>
 			<button
-				onClick={() => !disabled && setOpen(true)}
-				disabled={calculating || disabled}
+				onClick={() => !showLock && setOpen(true)}
+				disabled={calculating || showLock}
 				className='flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-900 px-4 py-2.5 text-[12px] font-semibold text-slate-100 transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60'>
-				{disabled ?
+				{showLock ?
 					<Lock
 						className='h-3.5 w-3.5'
 						strokeWidth={1.5}
@@ -63,9 +67,9 @@ export function CalculateResultsButton({
 						strokeWidth={1.5}
 					/>
 				}
-				{disabled ? "Finalized" : "Calculate results"}
+				{isFinalized ? "Finalized" : "Calculate results"}
 			</button>
-			{!disabled && (
+			{!showLock && (
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Confirm final evaluation</DialogTitle>

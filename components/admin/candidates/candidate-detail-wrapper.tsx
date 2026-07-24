@@ -6,12 +6,14 @@ import { getCandidateMetadata } from "@/services/client/candidate.service";
 import { fetchAdminUsers } from "@/services/client/admin.service";
 import { submitRoundFeedback, assignInterviewerAndMetadata } from "@/services/client/interview.service";
 import Link from "next/link";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { computeCandidateStatus } from "@/lib/filters";
-import { canAccessRound } from "@/lib/interview-workflow";
+import { canAccessRound, canSubmitFeedback, ensureInterviewRounds, getCurrentRound, getAssessmentLifecycle } from "@/lib/interview-workflow";
 import { ArrowLeft, BookOpen, Mail, Phone, Settings, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	Select,
@@ -208,7 +210,6 @@ export function CandidateDetailWrapper({
 	}, [isManageDialogOpen, result, vacanciesList]);
 
 	const [savingDetails, setSavingDetails] = useState(false);
-	const [detailsMessage, setDetailsMessage] = useState("");
 
 	async function handleSaveDetails() {
 		const oldResult = result;
@@ -234,7 +235,6 @@ export function CandidateDetailWrapper({
 
 		setResult(updatedResult);
 		setSavingDetails(true);
-		setDetailsMessage("");
 
 		try {
 			const nextResult = await assignInterviewerAndMetadata({
@@ -253,10 +253,10 @@ export function CandidateDetailWrapper({
 				references: form.references,
 			});
 			setResult(nextResult);
-			setDetailsMessage("Candidate details and assignment saved successfully");
+			toast.success("Candidate details saved.");
 			router.refresh();
 		} catch (err: any) {
-			setDetailsMessage(err.message ?? "Could not save candidate details");
+			toast.error(err.message ?? "Could not save candidate details. Please try again.");
 			setResult(oldResult);
 		} finally {
 			setSavingDetails(false);
@@ -264,13 +264,14 @@ export function CandidateDetailWrapper({
 	}
 
 	const [savingRound, setSavingRound] = useState(false);
-	const [roundMessage, setRoundMessage] = useState("");
 
 	async function saveRound(
 		round: "face_to_face" | "assessment" | "director",
 		status: "pass" | "fail",
 		remarks: string,
 		decision?: "hire" | "reject" | "hold" | null,
+		directorId?: string,
+		reopenReason?: string,
 	) {
 		const oldResult = result;
 		const updatedRounds = {
@@ -291,7 +292,6 @@ export function CandidateDetailWrapper({
 		// Optimistic Update
 		setResult(updatedResult);
 		setSavingRound(true);
-		setRoundMessage("");
 
 		try {
 			const nextResult = await submitRoundFeedback({
@@ -300,12 +300,29 @@ export function CandidateDetailWrapper({
 				status,
 				remarks,
 				decision,
+				directorId,
+				reopenReason,
 			});
 			setResult(nextResult);
-			setRoundMessage(`Round marked ${status} successfully`);
+			
+			const roundLabels = {
+				face_to_face: "Face-to-Face",
+				assessment: "Technical Assessment",
+				director: "Director"
+			};
+			let successMsg = "";
+			if (round === "face_to_face") {
+				successMsg = `Face-to-Face review marked as ${status}.`;
+			} else if (round === "assessment") {
+				successMsg = `Technical Assessment feedback marked as ${status}.`;
+			} else if (round === "director") {
+				const decisionLabel = decision === "hire" ? "hired" : decision === "reject" ? "rejected" : decision === "hold" ? "on hold" : "saved";
+				successMsg = `Director decision saved: ${decisionLabel}.`;
+			}
+			toast.success(successMsg);
 			router.refresh();
-		} catch {
-			setRoundMessage("Could not save round review due to a network error.");
+		} catch (err: any) {
+			toast.error(err.message ?? "Could not save the review. Please try again.");
 			setResult(oldResult);
 		} finally {
 			setSavingRound(false);
@@ -324,23 +341,50 @@ export function CandidateDetailWrapper({
 	) {
 		const oldResult = result;
 		const assignedId = interviewerEmail
-			? (staff.find(u => u.email === interviewerEmail)?.user_id ?? result.assignedInterviewerId)
+			? (staff.find(u => u.email === interviewerEmail)?.user_id ?? "")
 			: undefined;
-		setResult(prev => ({
-			...prev,
-			assignedInterviewerId: assignedId,
-			assignedInterviewerEmail: interviewerEmail || undefined,
-			assignedInterviewerName: interviewerName || undefined,
-		}));
+		setResult(prev => {
+			const nextRounds = { ...ensureInterviewRounds(prev) };
+			nextRounds[round] = {
+				...nextRounds[round],
+				interviewerId: assignedId,
+				interviewerName: interviewerName || undefined,
+				interviewerEmail: interviewerEmail || undefined,
+			};
+			return {
+				...prev,
+				interviewRounds: nextRounds,
+			};
+		});
 		setSavingRoundInterviewer(prev => ({ ...prev, [round]: true }));
 		try {
 			const nextResult = await assignInterviewerAndMetadata({
 				resultId: result.id,
 				interviewerEmail,
 				interviewerName,
+				round,
 			});
 			setResult(nextResult);
+
+			const roundLabels = {
+				face_to_face: "Face-to-Face",
+				assessment: "Technical Assessment",
+				director: "Director"
+			};
+			const roundLabel = roundLabels[round];
+			if (!interviewerEmail) {
+				toast.success(`${roundLabel} interviewer removed.`);
+			} else {
+				const oldRoundInfo = oldResult.interviewRounds?.[round];
+				const hadInterviewer = !!oldRoundInfo?.interviewerEmail;
+				if (hadInterviewer) {
+					toast.success(`${roundLabel} interviewer changed to ${interviewerName}.`);
+				} else {
+					toast.success(`${roundLabel} interviewer assigned to ${interviewerName}.`);
+				}
+			}
 		} catch {
+			toast.error("Could not update the interviewer. Please try again.");
 			setResult(oldResult);
 		} finally {
 			setSavingRoundInterviewer(prev => ({ ...prev, [round]: false }));
@@ -607,9 +651,6 @@ export function CandidateDetailWrapper({
 												</FormSection>
 											</div>
 
-											{detailsMessage && (
-												<p className="text-xs font-semibold text-muted-foreground px-6 py-2">{detailsMessage}</p>
-											)}
 
 											<SheetFooter className="p-4 border-t border-slate-100 bg-slate-50/50 dark:bg-slate-900/10 flex flex-row items-center justify-end gap-2 shrink-0">
 												<SheetClose asChild>
@@ -793,6 +834,13 @@ export function CandidateDetailWrapper({
 										// Check workflow locks
 										const isLocked = !canAccessRound(result, key);
 
+										const lifecycle = key === "assessment" ? getAssessmentLifecycle(result) : undefined;
+										const isRoundLocked = !isDirector && (status === "pass" || status === "fail");
+
+										const isActiveRound = key === getCurrentRound(result);
+										const roundInterviewerName = round?.interviewerName || (isActiveRound ? result.assignedInterviewerName : undefined);
+										const roundInterviewerEmail = round?.interviewerEmail || (isActiveRound ? result.assignedInterviewerEmail : undefined);
+
 										const borderStatusClass = 
 											isLocked ? "border-l-4 border-l-slate-200 dark:border-l-slate-800"
 											: isPass ? "border-l-4 border-l-emerald-500"
@@ -809,12 +857,12 @@ export function CandidateDetailWrapper({
 												{/* Active colored path overlay */}
 												{idx < sortedRounds.length - 1 && (isPass || isFail) && (
 													<div className={`absolute -left-[24px] top-6 bottom-[-24px] w-0.5 ${
-														isPass ? "bg-emerald-500" : "bg-red-200 dark:bg-red-950"
+														isPass ? "bg-emerald-500" : "bg-red-200 dark:bg-red-955"
 													}`} />
 												)}
 
 												{/* Timeline Dot Indicator */}
-												<div className={`absolute -left-[33px] top-1.5 h-4.5 w-4.5 rounded-full border-4 border-white dark:border-slate-950 shadow-xs ${
+												<div className={`absolute -left-[33px] top-1.5 h-4.5 w-4.5 rounded-full border-4 border-white dark:border-slate-955 shadow-xs ${
 													isLocked ? "bg-slate-350 dark:bg-slate-700"
 													: isPass ? "bg-emerald-500"
 													: isFail ? "bg-rose-500"
@@ -823,14 +871,14 @@ export function CandidateDetailWrapper({
 												}`} />
 
 												<SectionCard
-													className={cn("bg-card shadow-xs transition-all duration-200", borderStatusClass)}
+													className={cn("bg-card shadow-xs transition-all duration-200 !overflow-visible", borderStatusClass)}
 													title={label}
 													headerActions={
 														<span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${
 															isLocked ? "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-400 line-through"
-															: isPass ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-250 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300"
-															: isFail ? "bg-rose-50 dark:bg-rose-950/20 border-rose-250 dark:border-rose-900/50 text-rose-700 dark:text-rose-300"
-															: "bg-amber-50 dark:bg-amber-950/20 border-amber-250/50 dark:border-amber-900/50 text-amber-700 dark:text-amber-300"
+															: isPass ? "bg-emerald-50 dark:bg-emerald-955/20 border-emerald-250 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300"
+															: isFail ? "bg-rose-50 dark:bg-rose-955/20 border-rose-250 dark:border-rose-900/50 text-rose-700 dark:text-rose-300"
+															: "bg-amber-50 dark:bg-amber-955/10 border-amber-250/50 dark:border-amber-900/50 text-amber-700 dark:text-amber-300"
 														}`}>{isLocked ? "LOCKED" : status}</span>
 													}
 												>
@@ -848,98 +896,206 @@ export function CandidateDetailWrapper({
 														) : (
 															<p className="text-xs italic text-slate-400 font-semibold">No feedback submitted yet</p>
 														)}
-														{key === "assessment" && status === "fail" && (
-															<div className="mt-3 p-3 rounded-xl bg-amber-50/60 dark:bg-amber-955/10 border border-amber-200/50 text-amber-800 dark:text-amber-300 text-xs font-bold leading-relaxed flex items-start gap-2 shadow-2xs select-none">
+														{key === "assessment" && (
+															<div className="mt-2.5 mb-3 flex items-center gap-2">
+																<span className="text-[11px] font-bold text-slate-400">Assessment Lifecycle:</span>
+																{(() => {
+																	let labelText = "";
+																	let styleClass = "";
+																	if (lifecycle === "not_started") {
+																		labelText = "Not started";
+																		styleClass = "bg-slate-50 border-slate-200 text-slate-500 dark:bg-slate-900 dark:border-slate-800";
+																	} else if (lifecycle === "in_progress") {
+																		labelText = "In progress / not submitted";
+																		styleClass = "bg-amber-55/60 border-amber-250/50 text-amber-800 dark:bg-amber-955/10 dark:border-amber-900/50 dark:text-amber-300";
+																	} else if (lifecycle === "submitted") {
+																		labelText = "Submitted / awaiting grading";
+																		styleClass = "bg-sky-50 border-sky-200 text-sky-750 dark:bg-sky-955/10 dark:border-sky-900/50 dark:text-sky-300";
+																	} else if (lifecycle === "ready_to_finalize") {
+																		labelText = "Ready to finalize";
+																		styleClass = "bg-indigo-50 border-indigo-200 text-indigo-750 dark:bg-indigo-955/10 dark:border-indigo-900/50 dark:text-indigo-300";
+																	} else if (lifecycle === "finalized") {
+																		labelText = "Finalized";
+																		styleClass = "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-955/20 dark:border-emerald-900/50 dark:text-emerald-300";
+																	}
+																	return (
+																		<span className={cn("rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase border", styleClass)}>
+																			{labelText}
+																		</span>
+																	);
+																})()}
+															</div>
+														)}
+														{key === "assessment" && lifecycle === "finalized" && (
+															<div className="mt-2.5 mb-3 flex items-center gap-2">
+																<span className="text-[11px] font-bold text-slate-400">Finalized Score:</span>
+																{(() => {
+																	const awarded = result.totalMarksAwarded;
+																	const possible = result.totalMarksPossible;
+																	if (
+																		awarded !== undefined &&
+																		possible !== undefined &&
+																		Number.isFinite(awarded) &&
+																		Number.isFinite(possible) &&
+																		possible > 0
+																	) {
+																		const percentage = Math.round((awarded / possible) * 100);
+																		return (
+																			<span className="text-xs font-extrabold text-indigo-650 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/30 rounded-md px-2 py-0.5">
+																				Score: {awarded} / {possible} ({percentage}%)
+																			</span>
+																		);
+																	} else {
+																		return (
+																			<span className="text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-955/10 border border-rose-200 dark:border-rose-900/30 rounded-md px-2 py-0.5 animate-pulse">
+																				⚠️ Score data inconsistent / invalid configuration
+																			</span>
+																		);
+																	}
+																})()}
+															</div>
+														)}
+														{key === "assessment" && lifecycle !== "finalized" && (
+															<div className="mt-3 p-3 rounded-xl bg-amber-50/60 dark:bg-amber-955/10 border border-amber-250/30 text-amber-800 dark:text-amber-300 text-xs font-bold leading-relaxed flex items-start gap-2 shadow-2xs select-none">
 																<span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0 mt-1.5 animate-pulse" />
-																<span>Technical Assessment completed with result: FAIL. Candidate remains eligible for Round 3 (Director Review).</span>
+																<span>Assessment must be Finalized before submitting Technical Interviewer feedback.</span>
+															</div>
+														)}
+														{key === "assessment" && status === "fail" && (
+															<div className="mt-3 p-3 rounded-xl bg-amber-50/60 dark:bg-amber-955/10 border border-amber-205/50 text-amber-800 dark:text-amber-300 text-xs font-bold leading-relaxed flex items-start gap-2 shadow-2xs select-none">
+																<span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0 mt-1.5 animate-pulse" />
+																<span>Technical Interview completed with result: FAIL. Candidate remains eligible for Round 3 (Director Review).</span>
+															</div>
+														)}
+
+														{isDirector && round?.decisionByDirectorName && (
+															<div className="mt-2.5 flex flex-col gap-0.5 text-xs text-slate-500 border-t border-slate-100 dark:border-slate-800 pt-2 bg-slate-50/30 dark:bg-slate-900/10 p-2 rounded-lg">
+																<span className="font-bold text-slate-700 dark:text-slate-300">
+																	Decision by: {round.decisionByDirectorName}
+																</span>
+																{round.recordedBy && round.recordedBy.id !== round.decisionByDirectorId && (
+																	<span className="text-[10px] text-slate-450 italic">
+																		(Recorded by {round.recordedBy.name} on behalf)
+																	</span>
+																)}
+																{round.reopenReason && (
+																	<span className="text-[10px] text-rose-500 font-semibold mt-1">
+																		⚠️ Corrected. Reason: &ldquo;{round.reopenReason}&rdquo; by {round.reopenedBy?.name}
+																	</span>
+																)}
 															</div>
 														)}
 													</div>
 
-													{canEdit && !isLocked && (
+													{((!isDirector) || isRoundLocked || (isDirector && result.directorDecision && ["hire", "reject", "hold"].includes(result.directorDecision)) || (canEdit && !isLocked)) && (
 														<div className="mt-4 pt-4 border-t border-border/40 space-y-3">
-															{/* Per-round Interviewer Assignment row (HR only) */}
-															{admin.role === "hr" && (
+															{/* Per-round Interviewer Assignment row (Visible to all, HR can edit if not locked) */}
+															{!isDirector && (
 																<div className="flex flex-wrap items-center justify-between gap-3">
 																	<div className="flex items-center gap-2 min-w-0">
 																		<span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">Interviewer:</span>
-																		{result.assignedInterviewerName ? (
-																			<span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-400 truncate">{result.assignedInterviewerName}</span>
+																		{roundInterviewerName ? (
+																			<span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-400 truncate">
+																				{roundInterviewerName} {roundInterviewerEmail && <span className="text-[10px] font-medium text-slate-400">({roundInterviewerEmail})</span>}
+																			</span>
 																		) : (
-																			<span className="text-[11px] italic text-slate-400">Unassigned</span>
+																			<span className="text-[11px] italic text-slate-400">Not assigned</span>
 																		)}
 																	</div>
-																	{/* Inline Combobox */}
-																	<div className="relative">
-																		<button
-																			type="button"
-																			disabled={savingRoundInterviewer[key]}
-																			onClick={() => setRoundInterviewerOpen(prev => ({ ...prev, [key]: !prev[key] }))}
-																			className="h-8 px-3 text-[11px] font-bold rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50"
-																		>
-																			{savingRoundInterviewer[key] ? "Saving…" : "Change ▾"}
-																		</button>
-																		{roundInterviewerOpen[key] && (
-																			<div className="absolute right-0 z-50 mt-1 w-64 overflow-auto max-h-56 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-1.5 shadow-xl animate-in fade-in duration-100">
-																				<input
-																					type="text"
-																					placeholder="Search interviewer…"
-																					value={roundInterviewerSearch[key] ?? ""}
-																					onChange={e => setRoundInterviewerSearch(prev => ({ ...prev, [key]: e.target.value }))}
-																					className="h-8 w-full rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-2.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-indigo-500 focus:bg-white"
-																				/>
-																				<div className="mt-1.5 space-y-0.5">
-																					<button
-																						type="button"
-																						onClick={() => {
-																							setRoundInterviewerOpen(prev => ({ ...prev, [key]: false }));
-																							saveRoundInterviewer(key, "", "");
-																						}}
-																						className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-[11px] font-semibold text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
-																					>
-																						Remove assignment
-																					</button>
-																					{staff
-																						.filter(u => u.role === "interviewer")
-																						.filter(u => {
-																							const q = (roundInterviewerSearch[key] ?? "").toLowerCase();
-																							return !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
-																						})
-																						.map(user => (
-																							<button
-																								key={user.user_id}
-																								type="button"
-																								onClick={() => {
-																									setRoundInterviewerOpen(prev => ({ ...prev, [key]: false }));
-																									setRoundInterviewerSearch(prev => ({ ...prev, [key]: "" }));
-																									saveRoundInterviewer(key, user.email, user.name);
-																								}}
-																								className={`flex w-full flex-col rounded-lg px-2.5 py-1.5 text-left text-[11px] font-semibold cursor-pointer transition-colors ${
-																									result.assignedInterviewerEmail === user.email ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900"
-																								}`}
-																							>
-																								<span>{user.name}</span>
-																								<span className="text-[10px] font-medium text-slate-400">{user.email}</span>
-																							</button>
-																						))}
+																	{/* Inline Combobox (HR only and not locked) */}
+																	{canEdit && !isLocked && admin.role === "hr" && !isRoundLocked && (
+																		<div className="relative">
+																			<button
+																				type="button"
+																				disabled={savingRoundInterviewer[key]}
+																				onClick={() => setRoundInterviewerOpen(prev => ({ ...prev, [key]: !prev[key] }))}
+																				className="h-8 px-3 text-[11px] font-bold rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50"
+																			>
+																				{savingRoundInterviewer[key] ? "Saving…" : "Change ▾"}
+																			</button>
+																			{roundInterviewerOpen[key] && (
+																				<div className="absolute right-0 z-50 mt-1 w-64 overflow-auto max-h-56 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 p-1.5 shadow-xl animate-in fade-in duration-100">
+																					<input
+																						type="text"
+																						placeholder="Search interviewer…"
+																						value={roundInterviewerSearch[key] ?? ""}
+																						onChange={e => setRoundInterviewerSearch(prev => ({ ...prev, [key]: e.target.value }))}
+																						className="h-8 w-full rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-2.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-indigo-500 focus:bg-white"
+																					/>
+																					<div className="mt-1.5 space-y-0.5">
+																						<button
+																							type="button"
+																							onClick={() => {
+																								setRoundInterviewerOpen(prev => ({ ...prev, [key]: false }));
+																								saveRoundInterviewer(key, "", "");
+																							}}
+																							className="flex w-full items-center rounded-lg px-2.5 py-2 text-left text-[11px] font-semibold text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
+																						>
+																							Remove assignment
+																						</button>
+																						{staff
+																							.filter(u => u.role === "interviewer")
+																							.filter(u => {
+																								const q = (roundInterviewerSearch[key] ?? "").toLowerCase();
+																								return !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+																							})
+																							.map(user => (
+																								<button
+																									key={user.user_id}
+																									type="button"
+																									onClick={() => {
+																										setRoundInterviewerOpen(prev => ({ ...prev, [key]: false }));
+																										setRoundInterviewerSearch(prev => ({ ...prev, [key]: "" }));
+																										saveRoundInterviewer(key, user.email, user.name);
+																									}}
+																									className={`flex w-full flex-col rounded-lg px-2.5 py-1.5 text-left text-[11px] font-semibold cursor-pointer transition-colors ${
+																										roundInterviewerEmail === user.email ? "bg-indigo-50 dark:bg-indigo-955/40 text-indigo-700 dark:text-indigo-300" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900"
+																									}`}
+																								>
+																									<span>{user.name}</span>
+																									<span className="text-[10px] font-medium text-slate-400">{user.email}</span>
+																								</button>
+																							))}
+																					</div>
 																				</div>
-																			</div>
-																		)}
-																	</div>
+																			)}
+																		</div>
+																	)}
 																</div>
 															)}
+
+															{isRoundLocked && (
+																<div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-450 text-xs font-semibold leading-relaxed flex items-center gap-2 select-none">
+																	<span>🔒 Review submitted — interviewer and feedback are locked.</span>
+																</div>
+															)}
+
+															{isDirector && result.directorDecision && ["hire", "reject", "hold"].includes(result.directorDecision) && (
+																<div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-450 text-xs font-semibold leading-relaxed flex flex-col gap-1 select-none">
+																	<span>🔒 Director decision is locked. {admin.role === "hr" ? "Corrections require a mandatory reason." : "Corrections require HR administrator action."}</span>
+																</div>
+															)}
+
 															{/* Feedback button row */}
-															<div className="flex justify-end">
-																<RoundFeedbackDialog
-																	label={label}
-																	status={isDirector ? "pending" : (status as "pending" | "pass" | "fail")}
-																	remarks={remarks}
-																	onSave={(newStatus, newRemarks, decision) => saveRound(key, newStatus, newRemarks, decision)}
-																	saving={savingRound}
-																	roundKey={key}
-																	currentDecision={result.directorDecision}
-																/>
-															</div>
+															{canEdit && !isLocked && (!isRoundLocked && (!isDirector || !result.directorDecision || ["hire", "reject", "hold"].includes(result.directorDecision) === false || admin.role === "hr")) && (
+																<div className="flex justify-end mt-3">
+																	<RoundFeedbackDialog
+																		label={label}
+																		status={isDirector ? "pending" : (status as "pending" | "pass" | "fail")}
+																		remarks={remarks}
+																		onSave={(newStatus, newRemarks, decision, directorId, reopenReason) => 
+																			saveRound(key, newStatus, newRemarks, decision, directorId, reopenReason)
+																		}
+																		saving={savingRound}
+																		roundKey={key}
+																		currentDecision={result.directorDecision}
+																		disabled={!canSubmitFeedback(result, key)}
+																		admin={admin}
+																		directors={staff.filter(u => u.role === "director")}
+																		initialDirectorId={round?.decisionByDirectorId}
+																	/>
+																</div>
+															)}
 														</div>
 													)}
 												</SectionCard>
@@ -947,9 +1103,6 @@ export function CandidateDetailWrapper({
 										);
 									})}
 								</div>
-								{roundMessage && (
-									<p className="mt-4 text-xs font-semibold text-slate-500 text-center">{roundMessage}</p>
-								)}
 							</div>
 						</div>
 					</div>
@@ -978,28 +1131,44 @@ function RoundFeedbackDialog({
 	disabled,
 	roundKey,
 	currentDecision,
+	admin,
+	directors,
+	initialDirectorId,
 }: {
 	label: string;
 	status: "pending" | "pass" | "fail";
 	remarks: string;
-	onSave: (status: "pass" | "fail", remarks: string, decision?: "hire" | "reject" | "hold" | null) => void;
+	onSave: (status: "pass" | "fail", remarks: string, decision?: "hire" | "reject" | "hold" | null, directorId?: string, reopenReason?: string) => void;
 	saving: boolean;
 	disabled?: boolean;
 	roundKey: string;
 	currentDecision?: "hire" | "reject" | "hold" | null;
+	admin: any;
+	directors: any[];
+	initialDirectorId?: string;
 }) {
 	const [note, setNote] = useState(remarks);
 	const [decision, setDecision] = useState<"hire" | "reject" | "hold" | null>(currentDecision || null);
+	const [selectedDirectorId, setSelectedDirectorId] = useState<string>(initialDirectorId || "");
+	const [reopenReason, setReopenReason] = useState<string>("");
 
 	useEffect(() => {
 		Promise.resolve().then(() => {
 			setNote(remarks);
 			setDecision(currentDecision || null);
+			setSelectedDirectorId(initialDirectorId || "");
+			setReopenReason("");
 		});
-	}, [remarks, currentDecision]);
+	}, [remarks, currentDecision, initialDirectorId]);
 
 	const isFeedbackEmpty = !note || !note.trim();
-	const isSubmitDisabled = saving || isFeedbackEmpty || (roundKey === "director" && !decision);
+	const isReopenRequired = !!currentDecision && ["hire", "reject", "hold"].includes(currentDecision);
+	
+	const isSubmitDisabled = saving || isFeedbackEmpty || (roundKey === "director" && (
+		!decision || 
+		(admin.role === "hr" && !selectedDirectorId) || 
+		(isReopenRequired && !reopenReason.trim())
+	));
 
 	return (
 		<Dialog>
@@ -1012,47 +1181,80 @@ function RoundFeedbackDialog({
 				<DialogHeader className="pb-2">
 					<DialogTitle className="text-base font-extrabold text-slate-900">{label}</DialogTitle>
 					<DialogDescription className="text-xs text-slate-500 mt-1">
-						{roundKey === "director" ? "Record your final hiring decision and review notes." : "Submit your interview evaluation and remarks for this round."}
+						{roundKey === "director" ? "Record the final hiring decision and review notes." : "Submit your interview evaluation and remarks for this round."}
 					</DialogDescription>
 				</DialogHeader>
 
 				{roundKey === "director" && (
-					<div className="mt-4 flex flex-col gap-2 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-						<span className="text-xs font-bold text-slate-700 dark:text-slate-300">Final Decision</span>
-						<div className="flex gap-2">
-							<button
-								type="button"
-								onClick={() => setDecision("hire")}
-								className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all ${
-									decision === "hire"
-										? "bg-indigo-50 border-indigo-300 text-indigo-800 dark:bg-indigo-950/20 dark:border-indigo-800 dark:text-indigo-300"
-										: "bg-white border-slate-200 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 hover:bg-slate-50"
-								}`}
-							>
-								HIRE
-							</button>
-							<button
-								type="button"
-								onClick={() => setDecision("reject")}
-								className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all ${
-									decision === "reject"
-										? "bg-rose-50 border-rose-300 text-rose-805 dark:bg-rose-955/20 dark:border-rose-800 dark:text-rose-300"
-										: "bg-white border-slate-200 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 hover:bg-slate-50"
-								}`}
-							>
-								REJECT
-							</button>
-							<button
-								type="button"
-								onClick={() => setDecision("hold")}
-								className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all ${
-									decision === "hold"
-										? "bg-amber-50 border-amber-300 text-amber-800 dark:bg-amber-955/10 dark:border-amber-800 dark:text-amber-300"
-										: "bg-white border-slate-200 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 hover:bg-slate-50"
-								}`}
-							>
-								HOLD
-							</button>
+					<div className="mt-4 flex flex-col gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+						{admin.role === "hr" && (
+							<div className="flex flex-col gap-1">
+								<Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Director whose decision is being recorded</Label>
+								<Select value={selectedDirectorId} onValueChange={setSelectedDirectorId}>
+									<SelectTrigger className="w-full bg-white dark:bg-slate-950 rounded-xl border-slate-200 text-xs mt-1">
+										<SelectValue placeholder="Select Director..." />
+									</SelectTrigger>
+									<SelectContent className="bg-white border">
+										{directors.map(dir => (
+											<SelectItem key={dir.user_id} value={dir.user_id}>
+												{dir.name} ({dir.email})
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						)}
+
+						{isReopenRequired && (
+							<div className="flex flex-col gap-1">
+								<Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Reopen / Correction Reason (Mandatory)</Label>
+								<Input
+									type="text"
+									placeholder="Explain the reason for correcting this final decision..."
+									value={reopenReason}
+									onChange={(e) => setReopenReason(e.target.value)}
+									className="bg-white dark:bg-slate-955 rounded-xl border-slate-200 text-xs mt-1"
+								/>
+							</div>
+						)}
+
+						<div className="flex flex-col gap-1">
+							<span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-sans">Final Decision</span>
+							<div className="flex gap-2 mt-1">
+								<button
+									type="button"
+									onClick={() => setDecision("hire")}
+									className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all ${
+										decision === "hire"
+											? "bg-indigo-50 border-indigo-300 text-indigo-800 dark:bg-indigo-950/20 dark:border-indigo-800 dark:text-indigo-300"
+											: "bg-white border-slate-200 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 hover:bg-slate-50"
+									}`}
+								>
+									HIRE
+								</button>
+								<button
+									type="button"
+									onClick={() => setDecision("reject")}
+									className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all ${
+										decision === "reject"
+											? "bg-rose-50 border-rose-300 text-rose-805 dark:bg-rose-955/20 dark:border-rose-800 dark:text-rose-300"
+											: "bg-white border-slate-200 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 hover:bg-slate-50"
+									}`}
+								>
+									REJECT
+								</button>
+								<button
+									type="button"
+									onClick={() => setDecision("hold")}
+									className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all ${
+										decision === "hold"
+											? "bg-amber-50 border-amber-300 text-amber-800 dark:bg-amber-955/10 dark:border-amber-800 dark:text-amber-300"
+											: "bg-white border-slate-200 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 hover:bg-slate-50"
+									}`}
+								>
+									HOLD
+								</button>
+							</div>
 						</div>
 					</div>
 				)}
@@ -1070,7 +1272,7 @@ function RoundFeedbackDialog({
 						<DialogClose asChild>
 							<Button
 								disabled={isSubmitDisabled}
-								onClick={() => onSave("pass", note, decision)}
+								onClick={() => onSave("pass", note, decision, selectedDirectorId, reopenReason)}
 								className="h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs cursor-pointer shadow-md w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed px-6"
 							>
 								Save Review
@@ -1082,7 +1284,7 @@ function RoundFeedbackDialog({
 								<Button
 									disabled={isSubmitDisabled}
 									onClick={() => onSave("fail", note)}
-									className="h-10 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-800 font-bold text-xs cursor-pointer shadow-none w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+									className="h-10 rounded-xl border border-red-200 bg-red-55/60 hover:bg-red-100 text-red-700 hover:text-red-800 font-bold text-xs cursor-pointer shadow-none w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									Fail Round
 								</Button>

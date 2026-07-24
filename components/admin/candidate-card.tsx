@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import type { CandidateResult } from "@/types";
 import { StatusBadge, DetailRow, type StatusVariant } from "@/components/ui/enterprise-primitives";
 import { computeCandidateStatus, getCurrentRoundKey } from "@/lib/filters";
-import { getFirstRoundCompletionDate, formatCompletionDate } from "@/lib/interview-rounds";
+import { getFirstRoundCompletionDate, formatCompletionDate } from "@/lib/interview-workflow";
 
 interface CandidateCardProps {
 	result: CandidateResult;
